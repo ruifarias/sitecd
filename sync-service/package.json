@@ -1,0 +1,17 @@
+{
+  "name": "zapp-dbsitecd-sync",
+  "version": "0.1.0",
+  "description": "Serviço de sincronização DBClassico -> DBSiteCD (ver PLANO_PROJETO.md secção 2.6)",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "extract-main-images": "node src/extractMainImages.js",
+    "sync": "node src/sync.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "mssql": "^11.0.1",
+    "node-cron": "^4.5.0"
+  }
+}

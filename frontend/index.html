@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clássico Desportivo</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo-linha1">
+    <a href="index.html" class="logo">Clássico Desportivo</a>
+    <div class="pesquisas-centro">
+      <div class="pesquisa-topo">
+        <input type="text" id="pesquisa-input" placeholder="Pesquisar artigos...">
+      </div>
+      <div class="pesquisa-topo">
+        <input type="text" id="pesquisa-marca" placeholder="Marca...">
+      </div>
+      <div class="pesquisa-topo">
+        <input type="text" id="pesquisa-cor" placeholder="Cor...">
+      </div>
+      <div class="pesquisa-topo">
+        <input type="text" id="pesquisa-tamanho" placeholder="Tamanho...">
+      </div>
+    </div>
+    <div class="acoes">
+      <button id="limpar-filtros-header" class="botao-limpar-filtros">Limpar Filtros</button>
+      <a href="admin.html" class="carrinho-icone" title="Admin">⚙️</a>
+      <a href="carrinho.html" class="carrinho-icone">
+        🛒
+        <span id="carrinho-badge" class="carrinho-badge" style="display:none">0</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="topo-linha2" id="familias-cascata-header">
+    <select id="familia-grau1" class="select-familia">
+      <option value="">Seleccionar Familia...</option>
+    </select>
+    <select id="familia-grau2" class="select-familia" disabled style="display:none;">
+      <option value="">Seleccionar Sub-Familia1...</option>
+    </select>
+    <select id="familia-grau3" class="select-familia" disabled style="display:none;">
+      <option value="">Seleccionar Sub-Familia2...</option>
+    </select>
+    <select id="familia-grau4" class="select-familia" disabled style="display:none;">
+      <option value="">Seleccionar Sub-Familia3...</option>
+    </select>
+  </div>
+</header>
+
+<div class="layout-listagem">
+  <aside class="filtros">
+    <div class="separadores" id="separadores"></div>
+
+    <h3>Género</h3>
+    <ul class="filtro-lista" id="filtro-genero"><li>A carregar...</li></ul>
+
+    <h3>Marca</h3>
+    <ul class="filtro-lista" id="filtro-marca"><li>A carregar...</li></ul>
+
+    <h3>Modalidade</h3>
+    <ul class="filtro-lista" id="filtro-modalidade"><li>A carregar...</li></ul>
+
+    <span class="limpar-filtros" id="limpar-filtros">Limpar filtros</span>
+  </aside>
+
+  <main>
+    <div class="topo-resultados">
+      <span id="contagem-resultados">A carregar...</span>
+      <div class="ordenacao-controls">
+        <select id="ordenar">
+          <option value="preco_desc">Preço ↓</option>
+          <option value="preco_asc">Preço ↑</option>
+          <option value="descricao">Descrição</option>
+          <option value="familia">Família</option>
+          <option value="genero">Género</option>
+          <option value="modalidade">Modalidade</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grelha-produtos" id="grelha-produtos"></div>
+    <div class="paginacao" id="paginacao"></div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/listagem.js"></script>
+</body>
+</html>

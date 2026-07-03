@@ -1,0 +1,12 @@
+{
+  "name": "zapp-dbsitecd-frontend",
+  "version": "0.1.0",
+  "description": "Frontend estático do site (HTML/CSS/JS) - ver PLANO_PROJETO.md secção 3 Fase 3",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

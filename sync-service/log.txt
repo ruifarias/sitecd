@@ -1,0 +1,81 @@
+02/07/2026 19:38 : **************************** INICIO DE SINCRONISMO ****************************
+02/07/2026 19:38 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:38 : Sincronizacao do tipo "Familias" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:38 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 1 registo carregado.
+02/07/2026 19:38 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 12 registos carregados.
+02/07/2026 19:38 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:38 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:38 : Sincronizacao do tipo "Imagens" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:38 : **************************** FIM DE SINCRONISMO    ****************************
+02/07/2026 19:38 : **************************** INICIO DE SINCRONISMO ****************************
+02/07/2026 19:38 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:38 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:38 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:38 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:38 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:38 : **************************** FIM DE SINCRONISMO    ****************************
+02/07/2026 19:38 : **************************** FIM DE SINCRONISMO    ****************************
+02/07/2026 19:39 : **************************** INICIO DE SINCRONISMO ****************************
+02/07/2026 19:39 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:39 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:39 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:39 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:39 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:39 : **************************** FIM DE SINCRONISMO    ****************************
+02/07/2026 19:40 : **************************** INICIO DE SINCRONISMO ****************************
+02/07/2026 19:40 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:40 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:40 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:40 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:40 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:40 : **************************** FIM DE SINCRONISMO    ****************************
+02/07/2026 19:51 : **************************** INICIO DE SINCRONISMO ****************************
+02/07/2026 19:51 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:51 : Sincronizacao do tipo "Familias" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:51 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 1 registo carregado.
+02/07/2026 19:51 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 1 registo carregado.
+02/07/2026 19:51 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:51 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:51 : Sincronizacao do tipo "Imagens" efectuada com sucesso. 1 registo carregado.
+02/07/2026 19:51 : **************************** FIM DE SINCRONISMO    ****************************
+02/07/2026 19:51 : **************************** INICIO DE SINCRONISMO ****************************
+02/07/2026 19:51 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:51 : Sincronizacao do tipo "Familias" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:51 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 1 registo carregado.
+02/07/2026 19:51 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 1 registo carregado.
+02/07/2026 19:51 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:51 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+02/07/2026 19:51 : Sincronizacao do tipo "Imagens" efectuada com sucesso. 1 registo carregado.
+02/07/2026 19:51 : **************************** FIM DE SINCRONISMO    ****************************
+02/07/2026 22:49 : ALERTA: Teste - Isto é um teste do módulo de alertas.
+02/07/2026 22:49 : [ALERTA - WhatsApp não configurado, só registado] ⚠️ Clássico Desportivo: Teste
+Isto é um teste do módulo de alertas.
+02/07/2026 22:49 : **************************** INICIO DE SINCRONISMO ****************************
+02/07/2026 22:49 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:49 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:49 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:49 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:49 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:49 : **************************** FIM DE SINCRONISMO    ****************************
+02/07/2026 22:52 : **************************** INICIO DE SINCRONISMO ****************************
+02/07/2026 22:52 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:52 : Sincronizacao do tipo "Familias" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:52 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 1 registo carregado.
+02/07/2026 22:52 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 1 registo carregado.
+02/07/2026 22:52 : ALERTA: Artigos com preço de venda a 0€ (despublicados automaticamente) - 10002 - BONE ADIDAS SLB MINI 904151 AUTOMOVEL
+02/07/2026 22:52 : [ALERTA - WhatsApp não configurado, só registado] ⚠️ Clássico Desportivo: Artigos com preço de venda a 0€ (despublicados automaticamente)
+10002 - BONE ADIDAS SLB MINI 904151 AUTOMOVEL
+02/07/2026 22:52 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:52 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:52 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:52 : Sincronizacao do tipo "Imagens" efectuada com sucesso. 1 registo carregado.
+02/07/2026 22:52 : **************************** FIM DE SINCRONISMO    ****************************
+02/07/2026 22:53 : **************************** INICIO DE SINCRONISMO ****************************
+02/07/2026 22:53 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:53 : Sincronizacao do tipo "Familias" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:53 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 1 registo carregado.
+02/07/2026 22:53 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 1 registo carregado.
+02/07/2026 22:53 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:53 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+02/07/2026 22:53 : Sincronizacao do tipo "Imagens" efectuada com sucesso. 1 registo carregado.
+02/07/2026 22:53 : **************************** FIM DE SINCRONISMO    ****************************

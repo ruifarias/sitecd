@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Clássico Desportivo</title>
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<div class="backoffice-container">
+  <!-- Menu Lateral -->
+  <aside class="menu-lateral">
+    <div class="menu-header">
+      <a href="index.html" class="btn-voltar" title="Voltar à página">← Voltar</a>
+      <h2>Backoffice</h2>
+    </div>
+    <nav class="menu-opcoes">
+      <button class="menu-item activo" data-secao="marcas-principais">
+        Marcas Principais
+      </button>
+      <button class="menu-item" data-secao="config-novidades">
+        Configuração Novidades
+      </button>
+      <button class="menu-item" data-secao="visibilidade-familias">
+        Visibilidade de Famílias
+      </button>
+      <button class="menu-item" data-secao="familias-classificar">
+        Famílias por Classificar
+      </button>
+      <button class="menu-item" data-secao="sync-log">
+        Log de Sincronização
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Conteúdo Principal -->
+  <main class="conteudo-principal">
+    <!-- Marcas Principais -->
+    <section id="secao-marcas-principais" class="secao activa">
+      <h1>Marcas Principais</h1>
+      <p class="descricao">Seleccione as marcas que aparecem no topo do filtro lateral. As restantes ficarão sob "Outras Marcas".</p>
+
+      <div class="loader" id="loader-marcas" style="display:none;">A carregar marcas...</div>
+
+      <div class="marcas-grid" id="marcas-grid"></div>
+
+      <div class="acoes">
+        <button id="btn-guardar-marcas" class="botao-principal">Guardar Alterações</button>
+        <span id="msg-marcas" class="mensagem"></span>
+      </div>
+    </section>
+
+    <!-- Configuração Novidades -->
+    <section id="secao-config-novidades" class="secao">
+      <h1>Configuração Novidades</h1>
+      <p class="descricao">Defina quantos dias um artigo é considerado "Novidade".</p>
+
+      <div class="form-group">
+        <label for="dias-novidades">Dias para consideração como Novidade:</label>
+        <input type="number" id="dias-novidades" min="1" max="365" value="180">
+        <small>Artigos com Data_Ult_Compra dentro deste período aparecem em "Novidades"</small>
+      </div>
+
+      <div class="acoes">
+        <button id="btn-guardar-novidades" class="botao-principal">Guardar</button>
+        <span id="msg-novidades" class="mensagem"></span>
+      </div>
+    </section>
+
+    <!-- Visibilidade de Famílias -->
+    <section id="secao-visibilidade-familias" class="secao">
+      <h1>Visibilidade de Famílias</h1>
+      <p class="descricao">Selecciona quais as categorias de famílias (Grau 1) que devem aparecer no filtro de famílias do site.</p>
+
+      <div class="loader" id="loader-familias" style="display:none;">A carregar famílias...</div>
+
+      <table id="familias-table" class="familias-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Família</th>
+            <th class="col-visivel">Visível</th>
+            <th class="col-acao">Acção</th>
+          </tr>
+        </thead>
+        <tbody id="familias-tbody"></tbody>
+      </table>
+
+      <div class="acoes">
+        <button id="btn-guardar-familias" class="botao-principal">Guardar Alterações</button>
+        <span id="msg-familias" class="mensagem"></span>
+      </div>
+    </section>
+
+    <!-- Famílias por Classificar -->
+    <section id="secao-familias-classificar" class="secao">
+      <h1>Famílias por Classificar</h1>
+      <p class="descricao">Famílias com artigos publicados sem Modalidade e/ou Género atribuídos. Não bloqueia a publicação dos artigos, mas eles não aparecem nos filtros de Modalidade/Género até serem classificados.</p>
+
+      <div class="loader" id="loader-classificar" style="display:none;">A carregar famílias...</div>
+
+      <table id="classificar-table" class="classificar-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Família</th>
+            <th>Categoria</th>
+            <th>Nº Artigos</th>
+            <th>Modalidade</th>
+            <th>Género</th>
+            <th>Acção</th>
+          </tr>
+        </thead>
+        <tbody id="classificar-tbody"></tbody>
+      </table>
+
+      <div id="msg-classificar" class="mensagem"></div>
+    </section>
+
+    <!-- Log de Sincronização -->
+    <section id="secao-sync-log" class="secao">
+      <h1>Log de Sincronização</h1>
+      <p class="descricao">Histórico das últimas sincronizações de dados.</p>
+
+      <div class="sync-controles">
+        <label>
+          <input type="checkbox" id="filtro-erros-only">
+          Mostrar apenas erros
+        </label>
+        <button id="btn-atualizar-log" class="botao-secundario">Atualizar</button>
+      </div>
+
+      <div class="loader" id="loader-sync" style="display:none;">A carregar log...</div>
+
+      <div class="sync-log-painel">
+        <table class="sync-table">
+          <thead>
+            <tr>
+              <th>Data/Hora</th>
+              <th>Tipo</th>
+              <th>Status</th>
+              <th>Registos</th>
+              <th>Mensagem</th>
+            </tr>
+          </thead>
+          <tbody id="sync-log-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,1137 @@
+﻿Codigo_Familia	Familia	Grau
+1	CALÇADO	1
+11	FUTEBOL - FUTSAL - TURF	2
+111	SAPATILHAS FUTEBOL HOMEM	3
+1111	Chuteiras Futebol Homem Pelado HG	4
+1112	Chuteiras Futebol Homem Relvado FG	4
+1113	Chuteiras Futebol Homem MultiGround MG	4
+1114	Chuteiras Futebol Homem Relva Artificial AG	4
+1115	Chuteiras Futebol Homem piton Misto FG/AG	4
+1117	Sapatilhas Futebol Homem Turf	4
+113	SAPATILHAS FUTEBOL JUNIOR	3
+1131	Chuteiras Futebol Junior Pelado HG	4
+1132	Chuteiras Futebol Junior Relvado FG	4
+1133	Chuteiras Futebol Junior Multiground MG	4
+1134	Chuteiras Futebol Junior Relva Artificial AG	4
+1135	Chuteiras Futebol Junior piton Misto FG/AG	4
+1137	Sapatilhas Futebol Junior Turf	4
+115	SAPATILHAS FUTSAL HOMEM	3
+1151	Sapatilhas Futsal Homem Atacador	4
+1152	Sapatilhas Futsal Homem Elástico	4
+1153	Sapatilhas Futsal Homem Velcro	4
+116	SAPATILHAS FUTSAL SENHORA	3
+1161	Sapatilhas Futsal Senhora Atacador	4
+117	SAPATILHAS FUTSAL JUNIOR	3
+1171	Sapatilhas Futsal Junior Atacador	4
+1172	Sapatilhas Futsal Junior Elástico	4
+1173	Sapatilhas Futsal Junior Velcro	4
+12	TÉNIS - PADEL - SKATE - BIKE	2
+121	SAPATILHAS TÉNIS-PADEL HOMEM	3
+1211	Sapatilhas Ténis-Padel Homem Atacador	4
+122	SAPATILHAS TÉNIS-PADEL SENHORA	3
+1221	Sapatilhas Ténis-Padel Senhora Atacador	4
+123	SAPATILHAS TÉNIS-PADEL JUNIOR	3
+1231	Sapatilhas Ténis-Padel Junior Atacador	4
+124	SAPATILHAS SKATE HOMEM	3
+1241	Sapatilhas Skate Homem Atacador	4
+125	SAPATILHAS SKATE SENHORA	3
+1251	Sapatilhas Skate Senhora Atacador	4
+126	SAPATILHAS SKATE JUNIOR	3
+1261	Sapatilhas Skate Junior Atacador	4
+1262	Sapatilhas Skate Junior Elastico	4
+127	SAPATILHAS BICICLETA	3
+1271	Sapatilhas Bicicleta/BTT/Indoor Cycling	4
+13	ATLETISMO - TREINO - ANDAMENTO	2
+131	SAPATILHAS ATLETISMO HOMEM	3
+1311	Sapatilhas Atletismo Homem Treino	4
+1312	Sapatilhas Atletismo Homem Competição	4
+1313	Sapatilhas Atletismo Homem Pista (Bicos)	4
+1314	Sapatilhas Andamento Homem (Walking)	4
+1315	Sapatilhas Atletismo Salto em Altura (Unisexo)	4
+1316	Sapatilhas Atletismo Lançamento do Disco (Unisexo)	4
+1317	Sapatilhas Atletismo Homem Trail	4
+132	SAPATILHAS ATLETISMO SENHORA	3
+1321	Sapatilhas Atletismo Senhora Treino	4
+1322	Sapatilhas Atletismo Senhora Competição	4
+1323	Sapatilhas Atletismo Senhora Pista (Bicos)	4
+1324	Sapatilhas Andamento Senhora (Walking)	4
+1327	Sapatilhas Atletismo Senhora Trail	4
+133	SAPATILHAS ATLETISMO JUNIOR	3
+1331	Sapatilhas Atletismo Junior Treino	4
+1332	Sapatilhas Atletismo Junior Competição	4
+1333	Sapatilhas Atletismo Junior Pista (Bicos)	4
+1334	Sapatilhas Andamento Junior (Walking)	4
+1337	Sapatilhas Atletismo Junior Trail	4
+14	BASQUETEBOL - ANDEBOL - PAVILHÃO	2
+141	SAPATILHAS BASQUETEBOL HOMEM	3
+1411	Sapatilhas Basquetebol Homem Altas	4
+1412	Sapatilhas Basquetebol Homem Baixas	4
+143	SAPATILHAS BASQUETEBOL JUNIOR	3
+1431	Sapatilhas Basquetebol Junior Altas	4
+1432	Sapatilhas Basquetebol Junior Baixas	4
+145	SAPATILHAS ANDEBOL HOMEM	3
+1451	Sapatilhas Andebol Homem Atacador	4
+146	SAPATILHAS ANDEBOL SENHORA	3
+1461	Sapatilhas Andebol Senhora Atacador	4
+147	SAPATILHAS ANDEBOL JUNIOR	3
+1471	Sapatilhas Andebol Junior Atacador	4
+1472	Sapatilhas Andebol Junior Velcro	4
+148	SAPATILHAS PAVILHÃO/VOLLEY	3
+1481	Sapatilhas Pavilhão Homem	4
+1482	Sapatilhas Pavilhão Senhora	4
+1483	Sapatilhas Pavilhão Junior	4
+15	GINASIO - DANÇA - YOGA	2
+151	SAPATILHAS GINÁSIO	3
+1511	Sapatilhas Ginásio/Treino Homem	4
+1512	Sapatilhas Ginásio/Treino Senhora	4
+1513	Sapatilhas Ginásio/Treino Junior	4
+153	SAPATILHAS DANÇA	3
+1531	Sapatilhas Dança Homem	4
+1532	Sapatilhas Dança Senhora	4
+1533	Sapatilhas Dança Junior	4
+154	SAPATILHAS YOGA	3
+1541	Sapatilhas Yoga Homem	4
+1542	Sapatilhas Yoga Senhora	4
+1543	Sapatilhas Yoga Junior	4
+155	SABRINAS	3
+1551	Sabrinas Ginástica	4
+16	MODA - LAZER - CASUAL	2
+161	SAPATILHAS LAZER HOMEM	3
+1611	Sapatilhas Lazer Homem Atacador	4
+1612	Sapatilhas Lazer Homem Velcro	4
+1613	Sapatilhas Lazer Homem Elastico	4
+1614	Sapatilhas Lazer Homem Fecho	4
+1615	Sapatilhas Lazer Homem de Enfiar	4
+162	SAPATILHAS LAZER SENHORA	3
+1621	Sapatilhas Lazer Senhora Atacador	4
+1622	Sapatilhas Lazer Senhora Velcro	4
+1623	Sapatilhas Lazer Senhora Elastico	4
+1624	Sapatilhas Lazer Senhora Fecho	4
+1625	Sapatilhas Lazer Senhora de Enfiar	4
+163	SAPATILHAS LAZER JUNIOR	3
+1631	Sapatilhas Lazer Junior Atacador	4
+1632	Sapatilhas Lazer Junior Velcro	4
+1633	Sapatilhas Lazer Junior Elastico	4
+1634	Sapatilhas Lazer Junior Fecho	4
+164	SAPATILHAS LAZER BEBE	3
+1641	Sapatilhas Lazer Bebé Atacador	4
+1642	Sapatilhas Lazer Bebé Velcro	4
+1643	Sapatilhas Lazer Bebé Elastico	4
+1644	Sapatilhas Lazer Bebé Fecho	4
+17	SAPATOS - BOTAS - OUTDOOR	2
+171	SAPATOS VELA	3
+1711	Sapatos Vela Homem	4
+1712	Sapatos Vela Senhora	4
+1713	Sapatos Vela Junior	4
+172	SAPATOS LAZER	3
+1721	Sapatos Lazer Homem	4
+1722	Sapatos Lazer Senhora	4
+1723	Sapatos Lazer Junior	4
+173	BOTAS LAZER	3
+1731	Botas Lazer Homem	4
+1732	Botas Lazer Senhora	4
+1733	Botas Lazer Junior	4
+1734	Botas Lazer Bebé	4
+175	SAPATOS OUTDOOR/MONTANHA	3
+1751	Sapatos Outdoor/Montanha Homem	4
+1752	Sapatos Outdoor/Montanha Senhora	4
+1753	Sapatos Outdoor/Montanha Junior	4
+176	BOTAS OUTDOOR/MONTANHA	3
+1761	Botas Outdoor/Montanha Homem	4
+1762	Botas Outdoor/Montanha Senhora	4
+1763	Botas Outdoor/Montanha Junior	4
+18	SANDÁLIAS - CHINELOS	2
+181	SANDALIAS HOMEM	3
+1811	Sandálias Homem	4
+182	SANDALIAS SENHORA	3
+1821	Sandálias Senhora	4
+183	SANDALIAS JUNIOR	3
+1831	Sandálias Junior	4
+184	SANDALIAS BEBÉ	3
+1841	Sandálias Bebé	4
+185	CHINELOS HOMEM	3
+1851	Chinelos Homem Enfiar	4
+1852	Chinelos Homem Dedo	4
+1853	Chinelos Homem Velcro	4
+1854	Sapatos Homem HidroGinástica	4
+186	CHINELOS SENHORA	3
+1861	Chinelos Senhora Enfiar	4
+1862	Chinelos Senhora Dedo	4
+1863	Chinelos Senhora Velcro	4
+1864	Sapatos Senhora HidroGinástica	4
+187	CHINELOS JUNIOR	3
+1871	Chinelos Junior Enfiar	4
+1872	Chinelos Junior Dedo	4
+1873	Chinelos Junior Velcro	4
+1874	Sapatos Junior HidroGinástica	4
+19	SLIP-ON - LONAS	2
+191	SLIP-ON HOMEM	3
+1911	Slip-On Homem Lisas	4
+1912	Slip-On Homem Estampadas	4
+192	SLIP-ON SENHORA	3
+1921	Slip-On Senhora Lisas	4
+1922	Slip-On Senhora Estampadas	4
+193	SLIP-ON JUNIOR	3
+1931	Slip-On Junior Lisas	4
+1932	Slip-On Junior Estampadas	4
+196	LONAS HOMEM	3
+1961	Lonas Homem Atacador	4
+197	LONAS SENHORA	3
+1971	Lonas Senhora Atacador	4
+198	LONAS JUNIOR	3
+1981	Lonas Junior Atacador	4
+1982	Lonas Junior Velcro	4
+1983	Lonas Junior Elástico	4
+199	LONAS BEBÉ	3
+1991	Lonas Bebé Atacador	4
+1992	Lonas Bebé Velcro	4
+1993	Lonas Bebé Elástico	4
+3	TEXTIL	1
+31	FATOS DE TREINO	2
+311	FT HOMEM	3
+3111	FT Homem Algodão	4
+3112	FT Homem Acetato	4
+3113	FT Homem Pele Pessego	4
+3114	FT Homem Micro-Fibra	4
+3115	FT Homem Poliester	4
+312	FT SENHORA	3
+3121	FT Senhora Algodão	4
+3122	FT Senhora Acetato	4
+3123	FT Senhora Pele Pessego	4
+3124	FT Senhora MicroFibra	4
+3125	FT Senhora Poliester	4
+3126	FT Senhora Algodão-Lycra	4
+313	FT RAPAZ	3
+3131	FT Rapaz Algodão	4
+3132	FT Rapaz Acetato	4
+3133	FT Rapaz Pele Pessego	4
+3134	FT Rapaz Microfibra	4
+3135	FT Rapaz Poliester	4
+314	FT RAPARIGA	3
+3141	FT Rapariga Algodão	4
+3142	FT Rapariga Acetato	4
+3143	FT Rapariga Pele Pessego	4
+3144	FT Rapariga Microfibra	4
+3145	FT Rapariga Poliester	4
+3146	FT Rapariga Algodão-Lycra	4
+315	FT BEBÉ	3
+3151	FT Bebé Algodão	4
+3152	FT Bebé Malha Polar	4
+3153	FT Bebé Acetato	4
+3154	FT Bebé Microfibra	4
+32	CALÇÕES - SHORTS	2
+321	CALÇÕES/SHORTS BANHO	3
+3211	Calções/Shorts Homem Banho Curtos	4
+3212	Calções/Shorts Homem Banho Médios	4
+3213	Calções/Shorts Homem Banho Compridos	4
+3214	Calções/Shorts Senhora Banho Curtos	4
+3215	Calções/Shorts Senhora Banho Médios	4
+3216	Calções/Shorts Senhora Banho Compridos	4
+3217	Calções/Shorts Junior Banho Curtos	4
+3218	Calções/Shorts Junior Banho Médios	4
+3219	Calções/Shorts Junior  Banho Compridos	4
+322	CALÇÕES PASSEIO	3
+3221	Calções Homem Passeio Curtos	4
+3222	Calções Homem Passeio Médios	4
+3223	Calções Homem Passeio Compridos	4
+3224	Calções Senhora Passeio Curtos	4
+3225	Calções Senhora Passeio Médios	4
+3226	Calções Senhora Passeio Compridos	4
+3227	Calções Junior Passeio Curtos	4
+3228	Calções Junior Passeio Médios	4
+3229	Calções Junior Passeio Compridos	4
+323	CALÇÕES ATLÉTISMO	3
+3231	Calções Atlétismo Homem Senhora Prova	4
+3232	Calções Atlétismo Homem Senhora Licra	4
+3233	Calções Atletismo Homem Senhora Treino	4
+3236	Cueca Atletismo Senhora Prova	4
+324	CALÇÕES CICLISMO	3
+3241	Calções Ciclismo Homem com Reforço	4
+3242	Calções Ciclismo Homem Licra sem Reforço	4
+3243	Calções Ciclismo Homem Com Alsas com Reforço	4
+3249	Camisolas Ciclismo	4
+325	CALÇÕES TREINO/GINÁSTICA	3
+3251	Calções Algodão/Licra Treino Senhora	4
+3252	Calções Algodão Treino Homem	4
+3253	Calções Microfibra/Poliester Treino Homem	4
+3254	Calções Algodão Treino Rapariga	4
+3255	Calções Algodão Treino Senhora	4
+3256	Calções Algodão Treino Junior	4
+3257	Calções Algodão/Licra Treino Rapariga	4
+3258	Calções Microfibra/Poliester Treino Junior	4
+3259	Calções Microfibra/Poliester Treino Senhora	4
+326	CALÇÕES DE FUTEBOL	3
+3261	Calções Futebol Treino Homem	4
+3262	Calções Futebol Treino Junior	4
+327	CALÇÕES DE BASQUETEBOL	3
+3271	Calções Basquetebol Simples	4
+3272	Calções Basquetebol Reversiveis	4
+328	CALÇÕES TÉNIS	3
+3281	Calções Ténis Adulto/Homem	4
+3282	Calções Ténis Junior	4
+3283	Saia-Calção Ténis Senhora/Menina	4
+33	TEE-SHIRTS - TOPS	2
+331	T-S HOMEM	3
+3311	T-s Homem Simples	4
+3312	T-s Homem Estampa á Frente	4
+3313	T-s Homem Estampa Atrás	4
+3314	T-s Homem Decote em Bico	4
+3315	T-s Homem de Cavas	4
+3316	T-s Homem Piquet	4
+3317	T-s Homem Licra/Poliester	4
+3318	T-s Homem Estampa na Manga	4
+3319	T-s Homem Estampa de Lado	4
+332	T-S SENHORA	3
+3321	T-s Senhora Simples	4
+3322	T-s Senhora Estampa á Frente	4
+3323	T-s Senhora Estampa Atrás	4
+3324	T-s Senhora Decote em Bico	4
+3325	Top Senhora	4
+3326	T-s Senhora de Cavas	4
+3327	T-s Senhora de Alsas	4
+3328	T-s Senhora Gola Larga	4
+3329	T-s Senhora Licra/Poliester	4
+333	T-S RAPAZ	3
+3331	T-s Rapaz Simples	4
+3332	T-s Rapaz Estampa á Frente	4
+3333	T-s Rapaz Estampa Atrás	4
+3334	T-s Rapaz Decote em Bico	4
+3335	T-s Rapaz de Cavas	4
+3336	T-s Rapaz Poliester/Licra	4
+3339	T-s Rapaz Estampa de Lado	4
+334	T-S RAPARIGA	3
+3341	T-s Rapariga Simples	4
+3342	T-s Rapariga Estampa á Frente	4
+3343	T-s Rapariga Estampa Atrás	4
+3344	T-s Rapariga Decote em Bico	4
+3345	T-s Rapariga de Cavas	4
+3346	Top Rapariga	4
+3347	T-s Rapariga Capuz	4
+3348	T-s Rapariga Alsas	4
+3349	T-s Rapariga Licra/Poliester	4
+335	T-S BEBÉ	3
+3351	T-s Bebé Simples	4
+3352	T-s Bebé Riscas	4
+3353	T-s Bebé Estampada	4
+3354	T-s Bebé Cavas	4
+336	T-S ATLETISMO	3
+3361	T-s Atletismo Homem	4
+3362	T-s Atletismo Senhora	4
+3363	T-s Atletismo Junior	4
+3364	LS/Sweat Atletismo Homem	4
+3365	LS/Sweat Atletismo Senhora	4
+3366	LS/Sweat Atletismo Junior	4
+337	T-S BASQUETEBOL	3
+3371	T-s Basquetebol Homem	4
+3372	T-s Basquetebol Junior	4
+338	T-S / TOP TÉNIS	3
+3381	Polos Ténis Homem	4
+3382	T-s / Tops Ténis Senhora	4
+3383	Polos Ténis Rapaz	4
+3384	T-s / Tops Ténis Rapariga	4
+34	SWEATS - LONG-SLEEVES	2
+341	SWEATS HOMEM	3
+3411	Sweats Homem Algodão Cardadas	4
+3412	Sweats Homem Algodão sem Carda	4
+3413	T-s Homem Algodão LongSleeve	4
+3414	Sweats Homem Algodão c/Capuz Sem Carda	4
+3415	Sweats Homem Malha Polar	4
+3416	Sweats Homem Algodão c/Capuz Cardada	4
+3417	Casaco Homem FullZip Acetato-Microfibra	4
+3418	Casaco Homem FullZip Algodão Sem Carda	4
+3419	Casaco Homem FullZip Algodão Cardado	4
+342	SWEATS SENHORA	3
+3421	Sweats Senhora Algodão Cardadas	4
+3422	Sweats Senhora Algodão sem Carda	4
+3423	T-s Senhora Algodão LongSleeve	4
+3424	Sweats Senhora Algodão c/Capuz Sem Carda	4
+3425	Sweats Senhora Malha Polar	4
+3426	Sweats Senhora Algodão c/Capuz Cardada	4
+3427	Casaco Senhora Fullzip Acetato/Microfibra	4
+3428	Casaco Senhora FullZip Algodão sem Carda	4
+3429	Casaco Senhora FullZip Algodão Cardado	4
+343	SWEATS RAPAZ	3
+3431	Sweats Rapaz Algodão Cardadas	4
+3432	Sweats Rapaz Algodão sem Carda	4
+3433	T-s Rapaz Algodão LongSleeve	4
+3434	Sweats Rapaz Algodão c/Capuz Sem Carda	4
+3435	Sweats Rapaz Algodão c/Capuz Cardada	4
+3436	Sweats Rapaz Polar	4
+3437	Sweats Rapaz Fullzip Acetato	4
+3438	Casaco Rapaz FullZip Algodão Sem Carda	4
+3439	Casaco Rapaz FullZip Algodão Cardado	4
+344	SWEATS RAPARIGA	3
+3441	Sweats Rapariga Algodão Cardadas	4
+3442	Sweats Rapariga Algodão sem Carda	4
+3443	T-s Rapariga Algodão LongSleeve	4
+3444	Sweats Rapariga Algodão c/Capuz Sem Carda	4
+3445	Casaco Rapariga FullZip Acetato	4
+3446	Sweats Rapariga Algodão c/Capuz Cardada	4
+3447	Sweats Rapariga Malha Polar	4
+3448	Casaco Rapariga FullZip Algodão Sem Carda	4
+3449	Casaco Rapariga FullZip Algodão Cardado	4
+345	SWEATS BEBÉ	3
+3451	Sweats Bebé Algodão Cardadas	4
+3452	Sweats Bebé Algodão sem Carda	4
+3453	T-s Bebé Algodão LongSleeve	4
+3454	Sweats Bebé Algodão c/Capuz Sem Carda	4
+3455	Sweats Bebé Malha Polar	4
+3456	Sweats Bebé Algodão c/Capuz Cardada	4
+3458	Casaco Bebé FullZip Algodão Sem Carda	4
+3459	Casaco Bebé FullZip Algodão Cardado	4
+35	CALÇAS - BERMUDAS - VESTIDOS	2
+351	CALÇAS HOMEM	3
+3511	Calças Homem Algodão Cardadas	4
+3512	Calças Homem Algodão sem Carda	4
+3513	Calças Homem Acetato/Poliamida	4
+3514	Calças Homem Poliester/Microfibra	4
+3515	Calças Homem de Passeio (Sarja/Ganga)	4
+3517	Calças Homem Yoga	4
+3518	Calças Homem Hip-Hop	4
+3519	Calças Homem de Licra - Atletismo	4
+352	CALÇAS SENHORA	3
+3521	Calças Senhora Algodão Cardadas	4
+3522	Calças Senhora Algodão sem Carda	4
+3523	Calças Senhora Acetato	4
+3524	Calças Senhora Poliester/Microfibra	4
+3525	Calças Senhora Algodão Licra/Suplex	4
+3526	Calças Senhora de Passeio (Sarja/Ganga)	4
+3527	Calças Senhora Yoga	4
+3528	Calças Senhora Hip-Hop	4
+3529	Calças Senhora de Licra - Atletismo	4
+353	CALÇAS RAPAZ	3
+3531	Calças Rapaz Algodão Cardadas	4
+3532	Calças Rapaz Algodão sem Carda	4
+3533	Calças Rapaz Acetato	4
+3534	Calças Rapaz Poliester/Microfibra	4
+3535	Calças Rapaz de Passeio (Sarja/Ganga)	4
+3536	Calças Rapaz de Licra - Atletismo	4
+354	CALÇAS RAPARIGA	3
+3541	Calças Rapariga Algodão Cardadas	4
+3542	Calças Rapariga Algodão sem Carda	4
+3543	Calças Rapariga Acetato	4
+3544	Calças Rapariga Poliester/Microfibra	4
+3545	Calças Rapariga de Passeio (Sarja/Ganga)	4
+3546	Calças Rapariga Algodão Licra/Suplex	4
+3547	Calças Rapariga de Licra - Atletismo	4
+355	CALÇAS BEBÉ	3
+3551	Calças Bebé Algodão Cardadas	4
+3552	Calças Bebé Algodão sem Carda	4
+3553	Calças Bebé Tecido - p/passeio	4
+3554	Calças Bebé Microfibra	4
+357	BERMUDAS - LEGGINGS	3
+3571	Bermudas Homem	4
+3572	Bermudas Senhora	4
+3573	Bermudas Rapaz	4
+3574	Bermudas Rapariga	4
+3575	Bermudas Bebé	4
+3576	Leggings Senhora	4
+3577	Leggings Rapariga	4
+359	VESTIDOS/SAIAS	3
+3591	Vestidos Senhora	4
+3592	Saias Senhora	4
+3593	Pareo Senhora / Rapariga	4
+3594	Saia-Calção Senhora	4
+3595	Vestidos/Saias de Rapariga	4
+3596	Saia-Calção Rapariga	4
+3597	Vestidos/Saias de Bebé	4
+36	FATOS DE BANHO - BIKINIS NATAÇÃO	2
+361	FATOS DE BANHO HOMEM	3
+3611	Tanga Homem Piscina	4
+3612	Shorts Homem c/Perna Piscina	4
+3613	Sunga Homem Piscina	4
+3614	Jammer Homem Compridos Piscina	4
+3619	Fatos de Banho Homem Competição Piscina	4
+362	FATOS DE BANHO SENHORA	3
+3621	Fatos de Banho Senhora Piscina	4
+3622	Fatos de Banho Senhora Praia	4
+3623	Fatos de Banho Senhora Ajustável	4
+3629	Fatos de Banho Senhora Competição Piscina	4
+363	FATOS DE BANHO RAPAZ	3
+3631	Tanga Rapaz Piscina	4
+3632	Shorts Rapaz c/Perna Piscina	4
+3633	Sunga Rapaz Piscina	4
+3634	Jammer Rapaz Compridos Piscina	4
+364	FATOS DE BANHO RAPARIGA	3
+3641	Fatos de Banho Rapariga Piscina	4
+3642	Fatos de Banho Rapariga Praia	4
+365	BIKINIS PRAIA / PISCINA	3
+3651	Bikini Senhora Top Triângulo	4
+3652	Bikini Senhora Top Armação	4
+3653	Bikini Senhora c/ Calção	4
+3654	Bikini Rapariga Triângulo	4
+3655	Bikini Rapariga Armação	4
+3656	Bikini Rapariga c/ Calção	4
+3657	Bikini Rapariga Top+Cueca	4
+3658	Trikinis Senhora	4
+3659	Bikini Senhora Top Cai-Cai	4
+366	FATOS BANHO BEBÉ	3
+3661	Fraldas Calção Bebé Piscina	4
+3662	Cueca s/ Top Bebé Piscina	4
+3663	T-s UV Banho Piscina	4
+3664	Tanga Bebé Piscina	4
+3665	Shorts Bebé c/ Perna Piscina	4
+3666	Fatos de Banho Bebé Piscina	4
+3667	Bikini Bebé Piscina	4
+37	BLUSÕES - CASACOS	2
+371	BLUSÕES/CASACOS HOMEM	3
+3711	Blusões/Casacos Homem Impermeaveis	4
+3712	Blusões/Casacos Homem Curtos	4
+3713	Blusões/Casacos Homem Compridos-Parkas	4
+3714	Blusões/Casacos Homem Penas	4
+3715	Blusões/Casacos Homem Neve/Técnicos	4
+3716	Blusões/Casacos Homem Polares	4
+3717	Blusões/Casacos Homem Algodão	4
+3718	Blusões/Casacos Homem Malha	4
+3719	Coletes Homem	4
+372	BLUSÕES/CASACOS SENHORA	3
+3721	Blusões/Casacos Senhora Impermeaveis	4
+3722	Blusões/Casacos Senhora Curtos	4
+3723	Blusões/Casacos Senhora Compridos-Parkas	4
+3724	Blusões/Casacos Senhora Penas	4
+3725	Blusões/Casacos Senhora Neve/Técnicos	4
+3726	Blusões/Casacos Senhora Polares	4
+3727	Blusões/Casacos Senhora Algodão	4
+3728	Blusões/Casacos Senhora Malha	4
+3729	Coletes Senhora	4
+373	BLUSÕES/CASACOS RAPAZ	3
+3731	Blusões/Casacos Rapaz Impermeáveis	4
+3732	Blusões/Casacos Rapaz Curtos	4
+3733	Blusões/Casacos Rapaz Compridos-Parkas	4
+3734	Blusões/Casacos Rapaz Penas	4
+3735	Blusões/Casacos Rapaz Neve/Técnicos	4
+3736	Blusões/Casacos Rapaz Polares	4
+3737	Blusões/Casacos Rapaz Algodão	4
+3738	Blusões/Casacos Rapaz Malha	4
+3739	Coletes Rapaz	4
+374	BLUSÕES/CASACOS RAPARIGA	3
+3741	Blusões/Casacos Rapariga Impermeáveis	4
+3742	Blusões/Casacos Rapariga Curtos	4
+3743	Blusões/Casacos Rapariga Compridos-Parkas	4
+3744	Blusões/Casacos Rapariga Penas	4
+3745	Blusões/Casacos Rapariga Neve/Técnicos	4
+3746	Blusões/Casacos Rapariga Polares	4
+3747	Blusões/Casacos Rapariga Algodão	4
+3748	Blusões/Casacos Rapariga Malha	4
+3749	Coletes Rapariga	4
+375	BLUSÕES/CASACOS BEBÉ	3
+3751	Blusões/Casacos Bebé Impermeáveis	4
+3752	Blusões/Casacos Bebé Curtos	4
+3753	Blusões/Casacos Bebé Compridos-Parkas	4
+3756	Blusões/Casacos Bebé Polares	4
+3759	Coletes Bebé	4
+38	POLOS	2
+381	POLOS HOMEM	3
+3811	Polos Homem Algodão	4
+3812	Polos Homem Pique	4
+3813	Polos Homem Algodão com Bolso	4
+3814	Polos Homem Pique com Bolso	4
+3815	Polos Homem Algodão com Fecho	4
+3816	Polos Homem Manga Comprida	4
+3817	Polos Homem Pique com Fecho	4
+3818	Polos Homem Licra/Poliester	4
+382	POLOS SENHORA	3
+3821	Polos Senhora Algodão	4
+3822	Polos Senhora Pique	4
+3826	Polos Senhora Manga Comprida	4
+383	POLOS RAPAZ	3
+3831	Polos Rapaz Algodão	4
+3832	Polos Rapaz Pique	4
+3836	Polos Rapaz Manga Comprida	4
+3838	Polos Rapaz Dri-Fit/Climacool	4
+384	POLOS RAPARIGA	3
+3841	Polos Rapariga Algodão	4
+3842	Polos Rapariga Pique	4
+39	CAMISAS - CAMISOLAS - MALHAS	2
+391	CAMISAS HOMEM	3
+3911	Camisas Homem Manga Curta	4
+3912	Camisas Homem Manga Comprida	4
+392	CAMISAS SENHORA	3
+3921	Camisas Senhora Manga Curta	4
+3922	Camisas Senhora Manga Comprida	4
+3923	Blusas Senhora	4
+3924	Tunicas Senhora	4
+393	CAMISAS RAPAZ	3
+3931	Camisas Rapaz Manga Curta	4
+3932	Camisas Rapaz Manga Comprida	4
+394	CAMISA RAPARIGA	3
+3941	Camisa Rapariga Manga Curta	4
+3942	Camisa Rapariga Manga Comprida	4
+3943	Blusa Rapariga	4
+3944	Tunicas Rapariga	4
+395	CAMISOLAS/MALHAS HOMEM	3
+3951	Camisolas/Malhas Homem Gola Redonda	4
+3952	Camisolas/Malhas Homem Gola em Bico	4
+3953	Camisolas/Malhas Homem Gola Dupla	4
+3954	Camisolas/Malhas Homem Gola Alta	4
+3955	Camisolas/Malhas Homem 1/2 Fecho	4
+3956	Camisolas/Malhas Homem 1/2 Gola	4
+3957	Camisolas/Malhas Homem c/Capuz	4
+396	CAMISOLAS/MALHAS SENHORA	3
+3961	Camisolas/Malhas Senhora Gola Redonda	4
+3962	Camisolas/Malhas Senhora Gola em Bico	4
+3963	Camisolas/Malhas Senhora Gola Dupla	4
+3964	Camisolas/Malhas Senhora Gola Alta	4
+3965	Camisolas/Malhas Senhora 1/2 Fecho	4
+3966	Camisolas/Malhas Senhora 1/2 Gola	4
+3967	Camisolas/Malhas Senhora c/Capuz	4
+397	CAMISOLAS/MALHAS RAPAZ	3
+3971	Camisolas/Malhas Rapaz Gola Redonda	4
+3972	Camisolas/Malhas Rapaz Gola em Bico	4
+3973	Camisolas/Malhas Rapaz Gola Dupla	4
+3974	Camisolas/Malhas Rapaz Gola Alta	4
+3975	Camisolas/Malhas Rapaz 1/2 Fecho	4
+3976	Camisolas/Malhas Rapaz 1/2 Gola	4
+398	CAMISOLAS/MALHAS RAPARIGA	3
+3981	Camisolas/Malhas Rapariga Gola Redonda	4
+3982	Camisolas/Malhas Rapariga Gola em Bico	4
+3983	Camisolas/Malhas Rapariga Gola Dupla	4
+3984	Camisolas/Malhas Rapariga Gola Alta	4
+3985	Camisolas/Malhas Rapariga 1/2 Fecho	4
+3986	Camisolas/Malhas Rapariga 1/2 Gola	4
+399	CAMISOLAS/MALHAS BEBÉ	3
+3991	Camisolas/Malhas Bebé Gola Redonda	4
+5	ELECTRONICA	1
+51	Pulseiras Fitness	2
+52	GPS	2
+59	Acessórios	2
+6	ACESSORIOS TEXTIL	1
+61	MEIAS	2
+611	MEIAS HOMEM	3
+6111	Meias Homem Normais costura por fora	4
+6112	Meias Homem Normais costura dentro	4
+6113	Meias Homem Finas	4
+6114	Meias Homem meio cano	4
+6115	Meias Homem sem cano	4
+6116	Meias Homem Grossas	4
+6117	Meias Homem com Anti-derrapante	4
+6118	Meias Homem Atletismo	4
+6119	Meias Homem Futebol	4
+612	MEIAS SENHORA	3
+6121	Meias Senhora Normais Costura por Fora	4
+6122	Meias Senhora Normais Costura por dentro	4
+6124	Meias Senhora Meio Cano	4
+6125	Meias Senhora sem cano	4
+6126	Meias Senhora Grossas	4
+6128	Meias Senhora Atletismo	4
+6129	Meias Senhora Aérobica Filigrana	4
+613	MEIAS JUNIOR	3
+6131	Meias Junior Normais Costura por Fora	4
+6132	Meias Junior Normais Costura por dentro	4
+6134	Meias Junior Meio Cano	4
+6135	Meias Junior Sem Cano	4
+6136	Meias Junior Grossas	4
+6139	Meias Junior Futebol	4
+614	MEIAS BEBÉ	3
+6141	Meias Bebé Normais Costura por Fora	4
+6142	Meias Bebé Normais Costura por Dentro	4
+6143	Meias Bebé Anti-Derrapante	4
+6144	Meias Bebé Grossas	4
+62	BONÉS - GORROS - CHAPEUS	2
+621	BONÉS/GORROS HOMEM	3
+6211	Bonés Homem Abertos	4
+6212	Bonés Homem Fechados	4
+6213	Bonés Homem Inverno	4
+6215	Gorros Homem	4
+6217	Boina Homem	4
+6218	Chapeu Homem Panamá	4
+622	BONÉS/GORROS SENHORA	3
+6221	Bonés Senhora Abertos	4
+6222	Bonés Senhora Fechados	4
+6225	Gorros Senhora	4
+6227	Boina Senhora	4
+6228	Chapeu Senhora Panamá	4
+623	BONÉS/GORROS RAPAZ	3
+6231	Bonés Rapaz Abertos	4
+6232	Bonés Rapaz Fechados	4
+6235	Gorros Rapaz	4
+6238	Chapéu Rapaz Panamá	4
+624	BONÉS/GORROS RAPARIGA	3
+6241	Bonés Rapariga Abertos	4
+6242	Bonés Rapariga Fechados	4
+6245	Gorros Rapariga	4
+6248	Chapeu Rapariga Panamá	4
+625	BONÉS/GORROS BEBÉ	3
+6251	Bonés Bebé Abertos	4
+6252	Bonés Bebé Fechados	4
+6255	Gorros Bebé	4
+6256	Chapeu Bebé Panamá	4
+63	CACHECOL	2
+631	CACHECOL HOMEM	3
+6311	Cachecol Homem Polar	4
+6312	Cachecol Homem Malha	4
+6313	Gola Homem Polar	4
+6314	Gola Homem Atletismo	4
+632	CACHECOL SENHORA	3
+6321	Cachecol Senhora Polar	4
+6322	Cachecol Senhora Malha	4
+6323	Cachecol/Lenço Senhora Algodão	4
+633	CACHECOL RAPAZ	3
+6331	Cachecol Rapaz Polar	4
+6332	Cachecol Rapaz Malha	4
+634	CACHECOL RAPARIGA	3
+6341	Cachecol Rapariga Polar	4
+6342	Cachecol Rapariga Malha	4
+6343	Cachecol/Lenço Rapariga Algodão	4
+635	CACHECOL UNISEXO	3
+6351	Cachecol Unisexo Criança Polar	4
+6352	Cachecol Unisexo Adulto/Homem Polar	4
+6353	Cachecol Unisexo Adulto/Homem Malha	4
+6354	Cachecol Unisexo Junior/Criança Malha	4
+6355	Cachecol Unisexo Adulto/Homem Tecido/Algodão	4
+64	TOALHAS	2
+641	TOALHAS HOMEM	3
+6411	Toalhas Homem Praia	4
+6412	Toalhas Homem Piscina	4
+6413	Toalhas Homem Ginásio	4
+642	TOALHAS SENHORA	3
+6421	Toalhas Senhora Praia	4
+6422	Toalhas Senhora Piscina	4
+643	TOALHAS JUNIOR	3
+6431	Toalhas Praia Junior	4
+65	LUVAS	2
+651	LUVAS HOMEM	3
+6511	Luvas Homem Algodão/Malha	4
+6512	Luvas Homem Polar	4
+6513	Luvas Homem Neve	4
+6514	Luvas Homem Aquecimento/Treino	4
+652	LUVAS SENHORA	3
+6521	Luvas Senhora Algodão/Malha	4
+6522	Luvas Senhora Polar	4
+6523	Luvas Senhora Neve	4
+653	LUVAS RAPAZ	3
+6531	Luvas Rapaz Algodão/Malha	4
+6532	Luvas Rapaz Polar	4
+654	LUVAS RAPARIGA	3
+6541	Luvas Rapariga Algodão/Malha	4
+6542	Luvas Rapariga Polar	4
+655	LUVAS BEBÉ	3
+6551	Luvas Bebé Algodão/Malha	4
+6552	Luvas Bebé Polar	4
+656	LUVAS UNISEXO	3
+6561	Luvas Unisexo Junior Polar	4
+6562	Luvas Unisexo Adulto/Homem Polar	4
+6563	Luvas Unisexo Junior Algodão/Malha	4
+6564	Luvas Unisexo Adulto/Homem Algodão/Malha	4
+66	LINGERIE - ROUPA INTERIOR	2
+661	LINGERIE HOMEM	3
+6611	Boxer Homem	4
+662	LINGERIE SENHORA	3
+6621	Cueca Senhora	4
+6622	Sotiens Senhora	4
+6623	Leggings Senhora	4
+6624	Leggings Rapariga	4
+663	LINGERIE RAPAZ	3
+6631	Boxer Rapaz	4
+67	BALLET	2
+671	BODY BALLET	3
+6711	Body Ballet Criança/Junior	4
+6712	Body Ballet Adulto/Senhora	4
+672	SAIA BALLET	3
+6721	Saia Ballet Criança/Junior	4
+6722	Saia Ballet Adulto/Senhora	4
+673	COLLANTS BALLET	3
+6731	Collants Ballet Criança/Junior	4
+6732	Collants Ballet Adulto/Senhora	4
+674	SABRINA BALLET	3
+6741	Sabrina Ballet	4
+675	PERNEIRA BALLET	3
+6751	Perneira Ballet	4
+676	CASACO BALLET	3
+6761	Casaco Ballet Criança/Junior	4
+6762	Casaco Ballet Adulto/Senhora	4
+7	CLUBES	1
+71	S.L.B - BENFICA	2
+711	CAMISOLAS BENFICA	3
+7111	Camisolas Benfica Adulto/Homem	4
+7112	Camisolas Benfica Junior	4
+712	CALÇÕES BENFICA	3
+7121	Calções Benfica Adulto/Homem	4
+7122	Calções Benfica Junior	4
+713	KITS BENFICA	3
+7131	Kits Benfica	4
+714	SACOS/MOCHILAS BENFICA	3
+7141	Sacos Benfica	4
+7142	Mochilas Benfica	4
+7143	Sapateira Benfica	4
+7144	Carteiras Benfica	4
+715	BOLAS BENFICA	3
+7151	Bolas Benfica	4
+716	MEIAS BENFICA	3
+7161	Meias Benfica	4
+717	TEXTIL BENFICA	3
+7171	Fatos de Treino Benfica	4
+7172	Sweats Benfica	4
+7173	T-s Benfica	4
+7174	Polos Benfica	4
+718	BONÉS/GORROS/CACHECOL BENFICA	3
+7181	Bonés Benfica	4
+7182	Gorros Benfica	4
+7183	Cachecol Benfica	4
+719	RESTANTES ACESSÓRIOS BENFICA	3
+7191	Caneleira Benfica	4
+7192	Luvas Benfica	4
+7193	Lenços Benfica	4
+7194	Toalhas Benfica	4
+7195	Chaveiros Benfica	4
+72	S.C.P. - SPORTING	2
+721	CAMISOLAS SPORTING	3
+7211	Camisolas Sporting Adulto/Homem	4
+7212	Camisolas Sporting Junior	4
+7213	Camisolas Sporting Senhora	4
+7214	Camisolas Sporting Treino Adulto/Homem	4
+722	CALÇÕES SPORTING	3
+7221	Calções Sporting Adulto/Homem	4
+7222	Calções Sporting Junior	4
+723	KITS SPORTING	3
+7231	Kits Sporting	4
+724	SACOS/MOCHILAS SPORTING	3
+7241	Sacos Sporting	4
+7242	Mochilas Sporting	4
+7243	Sapateiras Sporting	4
+7244	Carteiras Sporting	4
+7245	Estojos Sporting Escolares	4
+7246	Bolsas Toilette Sporting	4
+7247	Bolsas Ombro Sporting	4
+725	BOLAS SPORTING	3
+7251	Bolas Sporting	4
+7252	Bolas Mini Sporting	4
+726	MEIAS SPORTING	3
+7261	Meias Sporting	4
+727	TEXTIL SPORTING	3
+7271	Fatos de Treino Sporting	4
+7272	Sweats Sporting	4
+7273	T-s Sporting	4
+7274	Polos Sporting	4
+7275	Blusões Sporting	4
+728	BONÉS/GORROS/CACHECOL SPORTING	3
+7281	Bonés Sporting	4
+7282	Gorros Sporting	4
+7283	Cachecol Sporting	4
+729	RESTANTES ACESSÓRIOS SPORTING	3
+7291	Caneleiras Sporting	4
+7292	Bolsas Telemóvel Sporting	4
+73	F.C.P. - PORTO	2
+731	CAMISOLAS PORTO	3
+7311	Camisolas Porto Adulto/Homem	4
+7312	Camisolas Porto Junior	4
+732	CALÇÕES PORTO	3
+7321	Calções Porto	4
+733	KITS PORTO	3
+7331	Kits Porto	4
+734	SACOS/MOCHILAS PORTO	3
+7341	Sacos Porto	4
+7342	Mochilas Porto	4
+735	BOLAS PORTO	3
+7351	Bolas Porto	4
+7352	Bolas Mini Porto	4
+736	MEIAS PORTO	3
+7361	Meias Porto	4
+737	TEXTIL PORTO	3
+738	BONÉS/GORROS/CACHECOL PORTO	3
+7381	Bonés Porto	4
+7382	Gorro Porto	4
+7383	Cachecol Porto	4
+739	RESTANTES ACESSÓRIOS PORTO	3
+74	PORTUGAL - SELECÇÃO NACIONAL	2
+741	CAMISOLAS PORTUGAL	3
+7411	Camisolas Portugal Adulto/Homem	4
+7412	Camisolas Portugal Junior	4
+742	CALÇÕES PORTUGAL	3
+7421	Calções Portugal	4
+743	KITS PORTUGAL	3
+7431	Kits Portugal	4
+745	BOLAS PORTUGAL	3
+7451	Bolas Portugal	4
+746	MEIAS PORTUGAL	3
+7461	Meias Portugal	4
+747	TEXTIL PORTUGAL	3
+7471	Fatos de Treino Portugal	4
+7472	Sweats Portugal	4
+7473	T-s Portugal	4
+7474	Polos Portugal	4
+7475	Casacos Portugal Poliester/Algodão	4
+748	BONÉS/GORROS/CACHECOL PORTUGAL	3
+7481	Bonés Portugal	4
+7482	Gorros Portugal	4
+7483	Cachecol Portugal	4
+749	RESTANTES ACESSÓRIOS PORTUGAL	3
+7491	Caneleiras Portugal	4
+7493	Lenços Portugal	4
+7495	Sacos Portugal	4
+7499	Bandeiras Portugal	4
+75	OUTROS CLUBES e PAISES	2
+751	CAMISOLAS	3
+7511	Camisolas Outros Clubes/Paises	4
+752	CALÇÕES	3
+7521	Calções Outros Clubes/Paises	4
+758	BONÉS/GORROS/CACHECOL	3
+7581	Bonés Outros Clubes/Paises	4
+7582	Gorros Outros Clubes/Paises	4
+7583	Cachecol Outros Clubes/Paises	4
+8	ACESSÓRIOS DIVERSOS	1
+81	BOLAS	2
+811	BOLAS	3
+8111	Bolas Futebol	4
+8112	Bolas Futsal	4
+8113	Bolas Basquetebol	4
+8114	Bolas Volley	4
+8115	Bolas Tenis	4
+8116	Bolas Ping-Pong	4
+8117	Bolas Andebol	4
+8118	Bolas Rugby	4
+8119	Bolas MINI	4
+82	SACOS - MOCHILAS - BOLSAS	2
+821	SACOS	3
+8211	Sacos Mini - XS	4
+8212	Sacos Pequenos - S	4
+8213	Sacos Médios - M	4
+8214	Sacos Grandes - L	4
+8215	Sacos Muito Grandes - XL	4
+8216	Sacos Enormes - XXL	4
+8217	Sacos Massagista	4
+8218	Sacos Finos Gymbags	4
+8219	Sacos Viagem Cabine ou Porão	4
+822	MOCHILAS	3
+8221	Mochilas Mini - XS	4
+8222	Mochilas Pequenas - S	4
+8223	Mochilas Médias - M	4
+8224	Mochilas Grandes - L (Escolares)	4
+8225	Mochilas Diagonais	4
+8226	Mochilas linha Montanha - XL	4
+823	BOLSAS/MALAS	3
+8231	Bolsas/Malas Pequenas de Mão	4
+8232	Bolsas/Malas Médias de Mão	4
+8233	Bolsas/Malas Pequenas de Ombro	4
+8234	Bolsas/Malas Médias de Ombro	4
+8235	Bolsas/Malas Grandes de Ombro	4
+8236	Bolsas de Cintura	4
+8237	Bolsas/Malas Grandes de Mão	4
+8239	Malas Computador	4
+824	SAPATEIRAS	3
+8241	Sapateiras Normais	4
+8242	Sapateiras Grandes	4
+825	BOLSAS DIVERSAS	3
+8251	Bolsas Toilette	4
+8252	Estojos Lapis	4
+8253	Bolsas Telemóvel	4
+8254	Dossiers	4
+83	CARTEIRAS - CHAVEIROS - CINTOS	2
+831	CARTEIRAS	3
+8311	Carteiras Homem	4
+8312	Carteiras Senhora	4
+8313	Carteiras Unisexo -(packs várias cores)	4
+832	CHAVEIROS	3
+8321	Chaveiros Borracha	4
+8322	Chaveiros Metal	4
+8323	Chaveiros Pescoço	4
+8324	Chaveiros Madeira	4
+8325	Chaveiros Plástico	4
+833	PORTA-MOEDAS	3
+8331	Porta-Moedas	4
+834	CINTOS	3
+8341	Cintos Homem	4
+8342	Cintos Senhora	4
+8343	Cintos Rapaz	4
+8344	Cintos Rapariga	4
+839	OUTROS ACESSÓRIOS	3
+8391	Colares	4
+8392	Aneis	4
+8393	Pulseiras	4
+8394	Cadeados e fechaduras	4
+84	RELÓGIOS - OCULOS	2
+841	RELOGIO HOMEM	3
+8411	Relógio Homem Digital	4
+8412	Relógio Homem Ponteiros	4
+8413	Relógio Homem Digital+Ponteiros	4
+842	RELOGIO SENHORA	3
+8421	Relógio Senhora Digital	4
+8422	Relógio Senhora Ponteiros	4
+8423	Relógio Senhora Digital+Ponteiros	4
+843	RELOGIO JUNIOR/UNISEXO	3
+8431	Relógio Junior/Unisexo Digital	4
+8432	Relógio Junior/Unisexo Ponteiros	4
+8433	Relógio Junior/Unisexo Digital+Ponteiros	4
+848	OCULOS ESCUROS	3
+8481	Oculos Escuros Homem	4
+8482	Oculos Escuros Senhora	4
+8483	Oculos Escuros Junior	4
+85	JUDO - KARATE	2
+851	CINTOS JUDO	3
+8511	Cintos Judo Homem	4
+8512	Cintos Judo Rapaz	4
+86	CANELEIRAS - JOELHEIRAS - PULSOS - FITAS	2
+861	CANELEIRAS HOMEM	3
+8611	Caneleiras Homem Canela	4
+8612	Caneleiras Homem Canela e Tornozelo	4
+8613	Meias Homem para Caneleiras	4
+862	CANELEIRAS RAPAZ	3
+8621	Caneleiras Rapaz Canela	4
+8622	Caneleiras Rapaz Canela e Tornozelo	4
+863	JOELHEIRAS	3
+8631	Joelho Elástico	4
+8632	Joelheira Neoprene	4
+8633	Joelheira Volley	4
+8634	Joelheira Futebol	4
+864	PÉS	3
+8641	Pés  / Tornozelos Elásticos	4
+8642	Pés / Tornozelos Neoprene	4
+865	PULSOS	3
+8651	Pulsos Elásticos	4
+8652	Pulsos Aperto	4
+8653	Pulsos Neoprene	4
+8659	Protecção Dedos	4
+866	FITAS	3
+8661	Fitas Elásticas	4
+8662	Ligaduras	4
+867	BRAÇADEIRAS	3
+8671	Braçadeiras Refletoras Atletismo	4
+8672	Braçadeiras Capitão	4
+8673	Braçadeiras Delegado	4
+8674	Braçadeiras Treinador	4
+8675	Braçadeiras Massagista	4
+8676	Braçadeiras Director Campo	4
+8677	Braçadeiras Enfermeiro e Médico	4
+8678	Braçadeiras Fisioterapeuta	4
+868	LUVAS ESPECIFICAS	3
+8681	Luvas Guarda Redes Adulto/Homem Futebol	4
+8682	Luvas Guarda Redes Junior/Criança Futebol	4
+8683	Luvas Guarda Redes FUTSAL	4
+8684	Luvas Fitness/Bike/Gym	4
+8685	Luvas Atletismo/Futebol Aquecimento	4
+869	OUTRAS PROTECÇÕES	3
+8691	Ombros Neoprene Treino	4
+8692	Cintas Neoprene Treino	4
+8693	Coxas Elásticas/Neoprene Treino	4
+8694	Cotoveleiras Treino	4
+8695	Calções Neoprene Treino	4
+8698	Dentes protecção Treino	4
+8699	Coquilhas Treino	4
+87	ACESSORIOS NATAÇÃO	2
+871	TOUCAS NATAÇÃO	3
+8711	Toucas Silicone Adulto/Homem Piscina	4
+8712	Toucas Silicone Junior Piscina	4
+8713	Toucas Silicone Senhora Piscina	4
+8714	Toucas Favos Adulto/Senhora Piscina	4
+8715	Toucas Licra Adulto/Homem Piscina	4
+8716	Toucas Licra Junior Piscina	4
+8717	Toucas Poliuretano Piscina	4
+8718	Toucas Poliester Piscina	4
+8719	Toucas Latex Piscina	4
+872	OCULOS NATAÇÃO	3
+8721	Oculos Piscina Adulto/Homem	4
+8722	Oculos Piscina Junior	4
+873	BRAÇADEIRAS	3
+8731	Braçadeiras Junior Piscina	4
+8732	Boias Piscina	4
+8733	Coletes Piscina	4
+879	OUTROS ACESSORIOS NATAÇÃO	3
+8791	Tampões Piscina	4
+8792	Pinças Nariz Piscina	4
+8793	Meias Piscina Latex Piscina	4
+8794	Spray Anti-Embaciante Lentes Oculos Piscina	4
+8795	Conjuntos Pool Pack Piscina	4
+8796	Toalhas de Natação Piscina	4
+8797	Fitas Elasticas p/ Oculos Natação Piscina	4
+8798	Roupões de Natação	4
+8799	Fitas de Proteção Ouvidos Neoprene	4
+88	RAQUETES	2
+881	RAQUETES PING-PONG	3
+8811	Raquetes Ping-Pong 1*	4
+8812	Raquetes Ping-Pong 2*	4
+8813	Raquetes Ping-Pong 3*	4
+8814	Raquetes Ping-Pong 4*	4
+8815	Raquetes Ping-Pong 5*	4
+8818	Rede Ping-Pong	4
+8819	Capas Raquetes Ping-Pong	4
+882	RAQUETES TENIS	3
+8821	Raquetes Ténis Homem	4
+8822	Raquetes Ténis Senhora	4
+8823	Raquetes Ténis Junior	4
+8829	Grips Raquetes Ténis	4
+883	RAQUETES BADMINTON	3
+8831	Raquetes Badminton	4
+8839	Volantes Badminton	4
+884	RAQUETES SQUASH	3
+8841	Raquetes Squash	4
+8849	Bolas Squash	4
+885	RAQUETES PADEL	3
+8851	Raquetes Padel	4
+8859	Bolas Padel	4
+89	OUTROS ACESSÓRIOS	2
+891	ACESSORIOS FUTEBOL	3
+8911	Pitons Futebol	4
+8912	Chaves Pitons Futebol	4
+8913	Sock Stoppers Futebol	4
+8914	Formas Calçado Futebol	4
+8915	Coletes de Treino e Reflectores	4
+8918	Camisolas, Calções e Calças de G-Redes Futebol	4
+8919	Quadro Treinador	4
+892	ACESSÓRIOS GINÁSTICA	3
+8921	Cordas Ginástica	4
+8922	Atacadores	4
+8923	Colchões Ginástica/Yoga/Pilates	4
+8924	Steps Ginástica	4
+8925	Body Ginástica (algodão-licra)	4
+8929	Alteres / Pesos Gym	4
+893	ACESSÓRIOS BASQUETEBOL	3
+8931	Redes para Cesto Basquetebol	4
+8932	Tabelas de Basket	4
+894	ACESSÓRIOS TREINO TÉRMICOS	3
+8941	Camisolas Interiores Treino Térmicas	4
+8942	Calça Interior Treino Térmicas	4
+8943	Lenço/Cachecol Treino Térmico	4
+8944	Manguitos / Perneiras	4
+8945	Calção Interior Treino Térmico	4
+895	PATINS/SKATES	3
+8951	Patins em Linha	4
+8952	Skates	4
+8953	Trotinetes	4
+8959	Protecções Patins/Bike/Skate	4
+898	JOGOS DE DARDOS	3
+8981	Alvos de Dardos	4
+8982	Dardos c/ Ponta Metálica	4
+8983	Dardos c/ Ponta Plástica	4
+8984	Pontas Plásticas para dardos	4
+8985	Voadores para dardos	4
+899	ACESSÓRIOS DIVERSOS	3
+8991	Apitos	4
+8992	Palmilhas	4
+8993	Bombas de Ar	4
+8994	Sacos Rede Bolas	4
+8995	Cronometros	4
+8996	Pipos p/ encher bolas	4
+8997	Marcadores Pontuação Jogo	4
+8998	Reflectores/Luzes	4
+8999	Acessórios Diversos	4
+9	EQUIPAMENTOS	1
+91	Equipamentos Jogo e Treino	2
+911	Camisolas	3
+912	Calções	3
+913	Conjuntos (Camisola+Calção)	3
+914	Basquetebol	3
+92	Equipamentos Guarda-Redes	2
+921	Camisolas GR	3
+922	Calções/Calças GR	3
+923	Conjuntos GR	3
+93	Fatos de Treino	2
+931	FT Acetato	3
+932	FT Microfibra	3
+94	Polos	2
+95	Sweats e Calças	2
+96	Blusões	2
+97	Meias	2
+98	Arbitro	2
+981	Camisolas Arbitro	3
+982	Calções Arbitro	3
+983	Bandeiras Arbitro auxiliar	3
+99	Acessórios Treino	2
+991	Bolas Pilates/Yoga	3
+992	Sacos Bolas	3
+993	Mochilas	3
+994	Caneleiras	3
+995	Cestos Plástico	3
+996	Cones - Pinos - Marcos	3
+997	Escadas treino velocidade	3
+998	Cestos com Garrafas de Agua	3
+999	Coletes	3
