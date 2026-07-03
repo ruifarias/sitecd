@@ -7,13 +7,57 @@ function obterCodigoDaURL() {
   return new URLSearchParams(window.location.search).get('codigo');
 }
 
+function construirURLListagem() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const filtros = new URLSearchParams();
+
+  // Passar todos os filtros que vieram da listagem de volta
+  if (urlParams.get('q')) filtros.set('q', urlParams.get('q'));
+  if (urlParams.get('marcaText')) filtros.set('marcaText', urlParams.get('marcaText'));
+  if (urlParams.get('cor')) filtros.set('cor', urlParams.get('cor'));
+  if (urlParams.get('tamanho')) filtros.set('tamanho', urlParams.get('tamanho'));
+  if (urlParams.get('marca')) filtros.set('marca', urlParams.get('marca'));
+  if (urlParams.get('genero')) filtros.set('genero', urlParams.get('genero'));
+  if (urlParams.get('modalidade')) filtros.set('modalidade', urlParams.get('modalidade'));
+  if (urlParams.get('familiaGrau4')) filtros.set('familiaGrau4', urlParams.get('familiaGrau4'));
+
+  return `index.html${filtros.toString() ? '?' + filtros.toString() : ''}`;
+}
+
 async function renderArtigo(a) {
   const imagemPrincipal = a.imagens[0] || '';
 
-  // Carregar artigos da mesma sub-família
+  // Ler filtros da URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const qParam = urlParams.get('q') || '';
+  const marcaTextParam = urlParams.get('marcaText') || '';
+  const corParam = urlParams.get('cor') || '';
+  const tamanhoParam = urlParams.get('tamanho') || '';
+  const marcaParam = urlParams.get('marca') || '';
+  const generoParam = urlParams.get('genero') || '';
+  const modalidadeParam = urlParams.get('modalidade') || '';
+
+  // Carregar artigos da mesma sub-família com filtros passados da listagem
   let artigosMesmaSub = [];
+  let familiaInfo = null;
   try {
-    artigosMesmaSub = await apiGet(`/artigos/${a.codigo}/mesma-subfamilia`);
+    const params = new URLSearchParams();
+    if (qParam) params.append('q', qParam);
+    if (marcaTextParam) params.append('marcaText', marcaTextParam);
+    if (corParam) params.append('cor', corParam);
+    if (tamanhoParam) params.append('tamanho', tamanhoParam);
+    if (marcaParam) params.append('marca', marcaParam);
+    if (generoParam) params.append('genero', generoParam);
+    if (modalidadeParam) params.append('modalidade', modalidadeParam);
+
+    const resultado = await apiGet(`/artigos/${a.codigo}/mesma-subfamilia${params.toString() ? '?' + params.toString() : ''}`);
+    artigosMesmaSub = resultado.artigos || [];
+    familiaInfo = {
+      grau1: resultado.familiaGrau1,
+      grau2: resultado.familiaGrau2,
+      grau3: resultado.familiaGrau3,
+      grau4: resultado.familiaGrau4,
+    };
   } catch (err) {
     console.error('Erro ao carregar artigos da mesma sub-família:', err);
   }
@@ -23,8 +67,9 @@ async function renderArtigo(a) {
       <img src="${imagemPrincipal}" alt="${a.descricao}" id="imagem-principal" onerror="this.style.opacity=0">
     </div>
     <div class="info-artigo">
+      <a href="${construirURLListagem()}" class="botao-voltar">← Voltar</a>
       ${a.emOutlet ? '<span class="badge-outlet">Outlet</span>' : ''}
-      <div class="marca">${a.marca || ''}</div>
+      <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
       <h1>${a.descricao}</h1>
       <div class="precos">
         <span class="preco-actual">${formatarPreco(a.emOutlet ? a.precoOutlet : a.preco)}</span>
@@ -32,10 +77,13 @@ async function renderArtigo(a) {
       </div>
 
       <div class="selector-variante">
-        <h4>Seleccione uma Cor/Tamanho</h4>
+        <div class="selector-header">
+          <h4>Seleccione uma Cor/Tamanho</h4>
+          ${a.variantes.some(v => v.disponivel <= 0) ? '<button class="botao-mostrar-sem-stock" id="mostrar-sem-stock">Mostrar sem stock</button>' : ''}
+        </div>
         <div class="opcoes-variante" id="opcoes-variante">
           ${a.variantes.map((v) => `
-            <span class="opcao-variante ${v.disponivel <= 0 ? 'esgotada' : ''}" data-lote="${v.codigoLote}" data-disponivel="${v.disponivel}" title="${v.descricao}">
+            <span class="opcao-variante ${v.disponivel <= 0 ? 'esgotada variante-sem-stock' : ''}" data-lote="${v.codigoLote}" data-disponivel="${v.disponivel}" title="${v.descricao}">
               ${v.descricao}${v.disponivel > 0 ? ` <span class="qtd-disponivel-variante">(${v.disponivel} disp.)</span>` : ''}
             </span>
           `).join('')}
@@ -52,32 +100,74 @@ async function renderArtigo(a) {
       <div id="mensagem-carrinho"></div>
       <button class="botao-principal" id="btn-adicionar" disabled>Selecciona uma Cor/Tamanho</button>
 
-      ${a.familiaGrau3 || a.familiaGrau4 ? `
-        <div class="secao-familia">
-          <h4>Artigos da mesma Familia</h4>
-          <div class="familia-info">
-            ${a.familiaGrau3 ? `<div class="familia-linha">${a.familiaGrau3}</div>` : ''}
-            ${a.familiaGrau4 ? `<div class="familia-linha"><strong>${a.familiaGrau4}</strong></div>` : ''}
-          </div>
-          ${artigosMesmaSub.length > 0 ? `
-            <div class="artigos-mesma-sub">
-              ${artigosMesmaSub.slice(0, 5).map((art) => `
-                <a href="artigo.html?codigo=${art.codigo}" class="link-artigo-sub">
+      ${a.descricaoLonga ? `<div class="descricao-longa">${a.descricaoLonga}</div>` : ''}
+    </div>
+    ${familiaInfo && familiaInfo.grau4 ? `
+      <div class="secao-familia">
+        <h4>
+          <a href="index.html?familiaGrau4=${encodeURIComponent(familiaInfo.grau4)}" class="titulo-familia-link">
+            ${[familiaInfo.grau1, familiaInfo.grau2, familiaInfo.grau3, familiaInfo.grau4].filter(g => g).join(' > ')}
+          </a>
+        </h4>
+        ${artigosMesmaSub.length > 0 ? `
+          <div class="carousel-container">
+            <button class="carousel-arrow carousel-arrow-esq" id="carousel-prev">‹</button>
+            <div class="artigos-mesma-sub-scroll" id="artigos-carousel">
+              ${artigosMesmaSub.map((art) => {
+                const urlParams = new URLSearchParams();
+                urlParams.set('codigo', art.codigo);
+                if (qParam) urlParams.set('q', qParam);
+                if (marcaTextParam) urlParams.set('marcaText', marcaTextParam);
+                if (corParam) urlParams.set('cor', corParam);
+                if (tamanhoParam) urlParams.set('tamanho', tamanhoParam);
+                if (marcaParam) urlParams.set('marca', marcaParam);
+                if (generoParam) urlParams.set('genero', generoParam);
+                if (modalidadeParam) urlParams.set('modalidade', modalidadeParam);
+                const urlArtigo = `artigo.html?${urlParams.toString()}`;
+                return `
+                <a href="${urlArtigo}" class="link-artigo-sub-scroll">
+                  <div class="imagem-sub" style="background-image: url('${art.imagem || ''}'); background-size: cover; background-position: center;"></div>
                   <span class="nome-sub">${art.descricao}</span>
                   <span class="preco-sub">${formatarPreco(art.emOutlet ? art.precoOutlet : art.preco)}</span>
                 </a>
-              `).join('')}
+              `;
+              }).join('')}
             </div>
-          ` : ''}
-        </div>
-      ` : ''}
-
-      ${a.descricaoLonga ? `<div class="descricao-longa">${a.descricaoLonga}</div>` : ''}
-    </div>
+            <button class="carousel-arrow carousel-arrow-dir" id="carousel-next">›</button>
+          </div>
+        ` : '<p class="sem-alternativas">Sem alternativas com os filtros seleccionados</p>'}
+      </div>
+    ` : ''}
   `;
 
-  document.querySelectorAll('.opcao-variante:not(.esgotada)').forEach((el) => {
+  // Carousel controls
+  const carouselPrev = document.getElementById('carousel-prev');
+  const carouselNext = document.getElementById('carousel-next');
+  const carouselContainer = document.getElementById('artigos-carousel');
+
+  if (carouselPrev && carouselNext && carouselContainer) {
+    const scrollAmount = 300; // pixels to scroll per click
+    carouselPrev.addEventListener('click', () => {
+      carouselContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    });
+    carouselNext.addEventListener('click', () => {
+      carouselContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    });
+  }
+
+  // Botão para mostrar/ocultar variantes sem stock
+  const botaoMostrarSemStock = document.getElementById('mostrar-sem-stock');
+  const opcoesList = document.getElementById('opcoes-variante');
+  if (botaoMostrarSemStock) {
+    botaoMostrarSemStock.addEventListener('click', () => {
+      opcoesList.classList.toggle('mostrar-sem-stock');
+      botaoMostrarSemStock.textContent = opcoesList.classList.contains('mostrar-sem-stock') ? 'Ocultar sem stock' : 'Mostrar sem stock';
+    });
+  }
+
+  document.querySelectorAll('.opcao-variante').forEach((el) => {
     el.addEventListener('click', () => {
+      if (el.classList.contains('esgotada')) return; // Não permitir selecionar esgotadas
       document.querySelectorAll('.opcao-variante').forEach((o) => o.classList.remove('seleccionada'));
       el.classList.add('seleccionada');
       varianteSeleccionada = el.dataset.lote;

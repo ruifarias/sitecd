@@ -79,3 +79,452 @@ Isto é um teste do módulo de alertas.
 02/07/2026 22:53 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
 02/07/2026 22:53 : Sincronizacao do tipo "Imagens" efectuada com sucesso. 1 registo carregado.
 02/07/2026 22:53 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 21:33 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 21:33 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:33 : Sincronizacao do tipo "Familias" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:33 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 34 registos carregados.
+03/07/2026 21:33 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 282 registos carregados.
+03/07/2026 21:33 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 5 registos carregados.
+03/07/2026 21:33 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:33 : Sincronizacao do tipo "Imagens" efectuada com sucesso. 39 registos carregados.
+03/07/2026 21:33 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 21:42 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 21:42 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:42 : Sincronizacao do tipo "Familias" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:42 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 1 registo carregado.
+03/07/2026 21:42 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 1 registo carregado.
+03/07/2026 21:42 : Sincronizacao do tipo "Artigos" FALHOU. Erro: Invalid column name 'Marca'.
+03/07/2026 21:42 : ALERTA: Falha na sincronização de "Artigos" - Invalid column name 'Marca'.
+03/07/2026 21:42 : [ALERTA - WhatsApp não configurado, só registado] ⚠️ Clássico Desportivo: Falha na sincronização de "Artigos"
+Invalid column name 'Marca'.
+03/07/2026 21:42 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:42 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:42 : Sincronizacao do tipo "Imagens" efectuada com sucesso. 1 registo carregado.
+03/07/2026 21:42 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 21:49 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 21:49 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:49 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:49 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:49 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:49 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:49 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 21:55 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 21:55 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:55 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:55 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:55 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:55 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 21:55 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 22:00 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 22:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:00 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 22:17 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 22:17 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:17 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:17 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:17 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:17 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:17 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 22:29 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 22:29 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:29 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:29 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:29 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:29 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:29 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 22:38 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 22:38 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:38 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:38 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:38 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:38 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:38 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 22:46 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 22:46 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:46 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:46 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:46 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:46 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:46 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 22:52 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 22:52 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:52 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:52 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:52 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:52 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 22:52 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:00 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:00 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:00 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:00 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:00 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:00 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:02 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:02 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:02 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:02 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:02 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:02 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:02 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:08 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:08 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:08 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:08 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:08 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:08 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:08 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:11 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:11 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:11 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:11 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:11 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:11 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:11 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:15 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:15 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:15 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:15 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:15 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:15 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:15 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:19 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:19 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:19 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:19 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:19 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:19 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:19 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:22 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:22 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:22 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:22 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:22 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:22 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:22 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:23 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:23 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:23 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:23 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:23 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:23 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:23 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:27 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:27 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:27 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:27 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:27 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:27 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:27 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:32 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:32 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:32 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:32 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:32 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:32 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:32 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:37 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:37 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:37 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:37 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:37 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:37 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:37 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:39 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:39 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:39 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:39 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:39 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:39 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:39 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:53 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:53 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:53 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:53 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:53 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:53 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:53 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:55 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:55 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:55 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:55 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:55 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:55 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:55 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:58 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:58 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:58 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:58 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:58 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:58 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:58 : **************************** FIM DE SINCRONISMO    ****************************
+03/07/2026 23:59 : **************************** INICIO DE SINCRONISMO ****************************
+03/07/2026 23:59 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:59 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:59 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:59 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:59 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+03/07/2026 23:59 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:00 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:00 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:01 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:01 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:01 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:01 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:01 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:01 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:01 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:03 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:03 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:03 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:03 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:03 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:03 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:03 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:06 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:06 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:06 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:06 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:06 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:06 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:06 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:09 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:09 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:09 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:09 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:09 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:09 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:09 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:11 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:11 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:11 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:11 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:11 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:11 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:11 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:13 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:13 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:13 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:13 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:13 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:13 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:13 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:19 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:19 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:19 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:19 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:19 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:19 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:19 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:21 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:21 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:21 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:21 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:21 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:21 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:21 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:22 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:22 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:22 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:22 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:22 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:22 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:22 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:27 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:27 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:27 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:27 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:27 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:27 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:27 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:30 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:30 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:30 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:30 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:30 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:30 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:30 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:33 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:33 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:33 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:33 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:33 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:33 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:33 : **************************** FIM DE SINCRONISMO    ****************************
+04/07/2026 00:38 : **************************** INICIO DE SINCRONISMO ****************************
+04/07/2026 00:38 : Sincronizacao do tipo "Marcas" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:38 : Sincronizacao do tipo "Artigos" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:38 : Sincronizacao do tipo "ArtigosLotes" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:38 : Sincronizacao do tipo "ArtigosSetNotInternet" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:38 : Sincronizacao do tipo "ArtigosDeleted" efectuada com sucesso. 0 registos carregados.
+04/07/2026 00:38 : **************************** FIM DE SINCRONISMO    ****************************

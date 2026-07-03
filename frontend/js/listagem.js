@@ -26,7 +26,7 @@ function lerParametrosURL() {
   estado.q = params.get('q') || null;
   estado.cor = params.get('cor') || null;
   estado.tamanho = params.get('tamanho') || null;
-  estado.ordenar = params.get('ordenar') || 'descricao';
+  estado.ordenar = params.get('ordenar') || 'preco_desc';
   estado.page = parseInt(params.get('page'), 10) || 1;
   estado.familiaGrau1 = params.get('familiaGrau1') || null;
   estado.familiaGrau2 = params.get('familiaGrau2') || null;
@@ -196,8 +196,10 @@ function renderProdutos(artigos) {
     return;
   }
 
-  // Se a ordenação é por género ou modalidade, agrupar
-  if (estado.ordenar === 'genero') {
+  // Se a ordenação é por família, género ou modalidade, agrupar
+  if (estado.ordenar === 'familia') {
+    renderProdutosAgrupadosPorFamilia(artigos);
+  } else if (estado.ordenar === 'genero') {
     renderProdutosAgrupadosPorGenero(artigos);
   } else if (estado.ordenar === 'modalidade') {
     renderProdutosAgrupadosPorModalidade(artigos);
@@ -206,15 +208,29 @@ function renderProdutos(artigos) {
   }
 }
 
+function construirURLArtigo(codigo) {
+  const params = new URLSearchParams();
+  params.set('codigo', codigo);
+  if (estado.q) params.set('q', estado.q);
+  if (estado.marcaText) params.set('marcaText', estado.marcaText);
+  if (estado.cor) params.set('cor', estado.cor);
+  if (estado.tamanho) params.set('tamanho', estado.tamanho);
+  if (estado.marca) params.set('marca', estado.marca);
+  if (estado.genero) params.set('genero', estado.genero);
+  if (estado.modalidade) params.set('modalidade', estado.modalidade);
+  if (estado.familiaGrau4) params.set('familiaGrau4', estado.familiaGrau4);
+  return `artigo.html?${params.toString()}`;
+}
+
 function renderProdutosSimples(artigos) {
   const grelha = document.getElementById('grelha-produtos');
   grelha.innerHTML = artigos.map((a) => `
-    <a class="cartao-produto" href="artigo.html?codigo=${a.codigo}">
+    <a class="cartao-produto" href="${construirURLArtigo(a.codigo)}">
       <div class="imagem-wrap">
         ${a.emOutlet ? '<span class="tag-outlet">Outlet</span>' : ''}
         <img src="${a.imagem || ''}" alt="${a.descricao}" loading="lazy" onerror="this.style.opacity=0">
       </div>
-      <div class="marca">${a.marca || ''}</div>
+      <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
       <div class="nome">${a.descricao}</div>
       <div class="precos">
         <span class="preco-actual">${formatarPreco(a.emOutlet ? a.precoOutlet : a.preco)}</span>
@@ -242,12 +258,12 @@ function renderProdutosAgrupadosPorGenero(artigos) {
   Object.keys(grupos).forEach((genero) => {
     html += `<div class="grupo-titulo">${genero}</div>`;
     html += grupos[genero].map((a) => `
-      <a class="cartao-produto" href="artigo.html?codigo=${a.codigo}">
+      <a class="cartao-produto" href="${construirURLArtigo(a.codigo)}">
         <div class="imagem-wrap">
           ${a.emOutlet ? '<span class="tag-outlet">Outlet</span>' : ''}
           <img src="${a.imagem || ''}" alt="${a.descricao}" loading="lazy" onerror="this.style.opacity=0">
         </div>
-        <div class="marca">${a.marca || ''}</div>
+        <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
         <div class="nome">${a.descricao}</div>
         <div class="precos">
           <span class="preco-actual">${formatarPreco(a.emOutlet ? a.precoOutlet : a.preco)}</span>
@@ -278,12 +294,59 @@ function renderProdutosAgrupadosPorModalidade(artigos) {
   Object.keys(grupos).forEach((modalidade) => {
     html += `<div class="grupo-titulo">${modalidade}</div>`;
     html += grupos[modalidade].map((a) => `
-      <a class="cartao-produto" href="artigo.html?codigo=${a.codigo}">
+      <a class="cartao-produto" href="${construirURLArtigo(a.codigo)}">
         <div class="imagem-wrap">
           ${a.emOutlet ? '<span class="tag-outlet">Outlet</span>' : ''}
           <img src="${a.imagem || ''}" alt="${a.descricao}" loading="lazy" onerror="this.style.opacity=0">
         </div>
-        <div class="marca">${a.marca || ''}</div>
+        <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
+        <div class="nome">${a.descricao}</div>
+        <div class="precos">
+          <span class="preco-actual">${formatarPreco(a.emOutlet ? a.precoOutlet : a.preco)}</span>
+          ${a.emOutlet ? `<span class="preco-original">${formatarPreco(a.preco)}</span>` : ''}
+        </div>
+      </a>
+    `).join('');
+  });
+
+  grelha.innerHTML = html;
+}
+
+function renderProdutosAgrupadosPorFamilia(artigos) {
+  const grelha = document.getElementById('grelha-produtos');
+
+  // Agrupar artigos por família (Grau1 > Grau2 > Grau3 > Grau4)
+  const grupos = {};
+  artigos.forEach((a) => {
+    const chave = `${a.familiaGrau1 || 'Sem Família'}|${a.familiaGrau2 || ''}|${a.familiaGrau3 || ''}|${a.familiaGrau4 || ''}`;
+    if (!grupos[chave]) {
+      grupos[chave] = {
+        grau1: a.familiaGrau1 || 'Sem Família',
+        grau2: a.familiaGrau2 || '',
+        grau3: a.familiaGrau3 || '',
+        grau4: a.familiaGrau4 || '',
+        artigos: [],
+      };
+    }
+    grupos[chave].artigos.push(a);
+  });
+
+  // Renderizar com cabeçalhos de família
+  let html = '';
+  Object.keys(grupos).forEach((chave) => {
+    const familia = grupos[chave];
+    const familiaLabel = [familia.grau1, familia.grau2, familia.grau3, familia.grau4]
+      .filter(g => g)
+      .join(' > ');
+
+    html += `<div class="grupo-titulo grupo-familia">${familiaLabel}</div>`;
+    html += familia.artigos.map((a) => `
+      <a class="cartao-produto" href="${construirURLArtigo(a.codigo)}">
+        <div class="imagem-wrap">
+          ${a.emOutlet ? '<span class="tag-outlet">Outlet</span>' : ''}
+          <img src="${a.imagem || ''}" alt="${a.descricao}" loading="lazy" onerror="this.style.opacity=0">
+        </div>
+        <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
         <div class="nome">${a.descricao}</div>
         <div class="precos">
           <span class="preco-actual">${formatarPreco(a.emOutlet ? a.precoOutlet : a.preco)}</span>

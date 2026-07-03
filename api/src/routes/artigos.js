@@ -15,9 +15,9 @@ const ORDENACOES = {
   descricao: 'Descritivo_Artigo ASC',
   preco_asc: `${PRECO_EFECTIVO} ASC`,
   preco_desc: `${PRECO_EFECTIVO} DESC`,
-  familia: 'Familia_Grau1 ASC, Familia_Grau3 ASC',
-  genero: 'Genero ASC',
-  modalidade: 'Modalidade ASC',
+  familia: `Familia_Grau1 ASC, Familia_Grau2 ASC, Familia_Grau3 ASC, Familia_Grau4 ASC, ${PRECO_EFECTIVO} DESC`,
+  genero: `Genero ASC, ${PRECO_EFECTIVO} DESC`,
+  modalidade: `Modalidade ASC, ${PRECO_EFECTIVO} DESC`,
 };
 
 // GET /api/artigos?familia=&marca=&modalidade=&genero=&q=&separador=&ordenar=&page=&pageSize=
@@ -62,57 +62,49 @@ router.get('/', async (req, res) => {
       request.input('q', sql.NVarChar(100), `%${req.query.q}%`);
     }
 
-    // Filtros de cor e tamanho - procuram no Descricao_Lote das variantes
+    // Filtros de cor e tamanho - procuram no Descricao_Lote das variantes, exigem que o
+    // MESMO lote tenha cor E tamanho (quando ambos indicados) E stock > 0 (secção 2.3)
     if (req.query.cor || req.query.tamanho) {
-      let condicaoCor = '';
+      const condicoesVariante = [];
+
       if (req.query.cor) {
-        const cor = req.query.cor.trim();
-        // Considerar variações de género da cor (ex: Branco/Branca, Amarelo/Amarela, Preto/Preta)
+        const cor = req.query.cor.trim().toLowerCase();
         const coresVariacoes = {
-          'branco': "Descricao_Lote LIKE N'%branco%' OR Descricao_Lote LIKE N'%branca%'",
-          'branca': "Descricao_Lote LIKE N'%branco%' OR Descricao_Lote LIKE N'%branca%'",
-          'preto': "Descricao_Lote LIKE N'%preto%' OR Descricao_Lote LIKE N'%preta%'",
-          'preta': "Descricao_Lote LIKE N'%preto%' OR Descricao_Lote LIKE N'%preta%'",
-          'amarelo': "Descricao_Lote LIKE N'%amarelo%' OR Descricao_Lote LIKE N'%amarela%'",
-          'amarela': "Descricao_Lote LIKE N'%amarelo%' OR Descricao_Lote LIKE N'%amarela%'",
-          'vermelho': "Descricao_Lote LIKE N'%vermelho%' OR Descricao_Lote LIKE N'%vermelha%'",
-          'vermelha': "Descricao_Lote LIKE N'%vermelho%' OR Descricao_Lote LIKE N'%vermelha%'",
-          'azul': "Descricao_Lote LIKE N'%azul%'",
-          'verde': "Descricao_Lote LIKE N'%verde%'",
-          'rosa': "Descricao_Lote LIKE N'%rosa%'",
-          'cinzento': "Descricao_Lote LIKE N'%cinzent%'",
-          'cinzenta': "Descricao_Lote LIKE N'%cinzent%'",
-          'bege': "Descricao_Lote LIKE N'%bege%'",
-          'marrom': "Descricao_Lote LIKE N'%marrom%' OR Descricao_Lote LIKE N'%castanho%' OR Descricao_Lote LIKE N'%castanha%'",
-          'castanho': "Descricao_Lote LIKE N'%castanho%' OR Descricao_Lote LIKE N'%castanha%' OR Descricao_Lote LIKE N'%marrom%'",
-          'castanha': "Descricao_Lote LIKE N'%castanho%' OR Descricao_Lote LIKE N'%castanha%' OR Descricao_Lote LIKE N'%marrom%'"
+          'branco': "(v.Descricao_Lote LIKE N'%branco%' OR v.Descricao_Lote LIKE N'%branca%')",
+          'branca': "(v.Descricao_Lote LIKE N'%branco%' OR v.Descricao_Lote LIKE N'%branca%')",
+          'preto': "(v.Descricao_Lote LIKE N'%preto%' OR v.Descricao_Lote LIKE N'%preta%')",
+          'preta': "(v.Descricao_Lote LIKE N'%preto%' OR v.Descricao_Lote LIKE N'%preta%')",
+          'amarelo': "(v.Descricao_Lote LIKE N'%amarelo%' OR v.Descricao_Lote LIKE N'%amarela%')",
+          'amarela': "(v.Descricao_Lote LIKE N'%amarelo%' OR v.Descricao_Lote LIKE N'%amarela%')",
+          'vermelho': "(v.Descricao_Lote LIKE N'%vermelho%' OR v.Descricao_Lote LIKE N'%vermelha%')",
+          'vermelha': "(v.Descricao_Lote LIKE N'%vermelho%' OR v.Descricao_Lote LIKE N'%vermelha%')",
+          'azul': "(v.Descricao_Lote LIKE N'%azul%')",
+          'verde': "(v.Descricao_Lote LIKE N'%verde%')",
+          'rosa': "(v.Descricao_Lote LIKE N'%rosa%')",
+          'cinzento': "(v.Descricao_Lote LIKE N'%cinzent%')",
+          'cinzenta': "(v.Descricao_Lote LIKE N'%cinzent%')",
+          'bege': "(v.Descricao_Lote LIKE N'%bege%')",
+          'marrom': "(v.Descricao_Lote LIKE N'%marrom%' OR v.Descricao_Lote LIKE N'%castanho%' OR v.Descricao_Lote LIKE N'%castanha%')",
+          'castanho': "(v.Descricao_Lote LIKE N'%castanho%' OR v.Descricao_Lote LIKE N'%castanha%' OR v.Descricao_Lote LIKE N'%marrom%')",
+          'castanha': "(v.Descricao_Lote LIKE N'%castanho%' OR v.Descricao_Lote LIKE N'%castanha%' OR v.Descricao_Lote LIKE N'%marrom%')",
         };
-        const corLower = cor.toLowerCase();
-        if (coresVariacoes[corLower]) {
-          condicaoCor = coresVariacoes[corLower];
-        } else {
-          condicaoCor = `Descricao_Lote LIKE N'%${cor}%'`;
-        }
+        request.input('corFiltro', sql.NVarChar(100), `%${cor}%`);
+        condicoesVariante.push(coresVariacoes[cor] || `v.Descricao_Lote LIKE @corFiltro`);
       }
 
-      let condicaoTamanho = '';
       if (req.query.tamanho) {
-        // Procurar tamanho com formato "- 44" (hífen + espaço + tamanho)
-        condicaoTamanho = `Descricao_Lote LIKE N'%- ${req.query.tamanho}%'`;
+        request.input('tamanhoFiltro', sql.NVarChar(50), `%- ${req.query.tamanho.trim()}%`);
+        condicoesVariante.push('v.Descricao_Lote LIKE @tamanhoFiltro');
       }
 
-      let condicaoFinal = '';
-      if (condicaoCor && condicaoTamanho) {
-        condicaoFinal = `EXISTS (SELECT 1 FROM dbo.ZAPP_DBSiteCD_Variantes v WHERE v.Codigo_Artigo = ZAPP_DBSiteCD_VCatalogo.Codigo_Artigo AND (${condicaoCor}) AND (${condicaoTamanho}))`;
-      } else if (condicaoCor) {
-        condicaoFinal = `EXISTS (SELECT 1 FROM dbo.ZAPP_DBSiteCD_Variantes v WHERE v.Codigo_Artigo = ZAPP_DBSiteCD_VCatalogo.Codigo_Artigo AND (${condicaoCor}))`;
-      } else if (condicaoTamanho) {
-        condicaoFinal = `EXISTS (SELECT 1 FROM dbo.ZAPP_DBSiteCD_Variantes v WHERE v.Codigo_Artigo = ZAPP_DBSiteCD_VCatalogo.Codigo_Artigo AND (${condicaoTamanho}))`;
-      }
-
-      if (condicaoFinal) {
-        condicoes.push(condicaoFinal);
-      }
+      const condicaoVarianteStr = condicoesVariante.join(' AND ');
+      condicoes.push(`EXISTS (
+        SELECT 1 FROM dbo.ZAPP_DBSiteCD_Variantes v
+        JOIN dbo.ZAPP_DBSiteCD_Stock s ON s.Codigo_Artigo = v.Codigo_Artigo AND s.Codigo_Lote = v.Codigo_Lote AND s.Codigo_Armazem = '001'
+        WHERE v.Codigo_Artigo = ZAPP_DBSiteCD_VCatalogo.Codigo_Artigo
+          AND ${condicaoVarianteStr}
+          AND (s.Qtd_Disponivel - s.Qtd_Reservada) > 0
+      )`);
     }
 
     const separador = req.query.separador;
@@ -138,7 +130,7 @@ router.get('/', async (req, res) => {
     request.input('pageSize', sql.Int, pageSize);
 
     const result = await request.query(`
-      SELECT Codigo_Artigo, Descritivo_Artigo, Slug, Marca, Familia_Grau1, Familia_Grau3,
+      SELECT Codigo_Artigo, Descritivo_Artigo, Slug, Marca, Familia_Grau1, Familia_Grau2, Familia_Grau3, Familia_Grau4,
              Modalidade, Genero, Preco, Percentagem_Desconto, Preco_Outlet, Em_Outlet,
              (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = ZAPP_DBSiteCD_VCatalogo.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal,
              COUNT(*) OVER() AS Total
@@ -159,8 +151,10 @@ router.get('/', async (req, res) => {
         descricao: r.Descritivo_Artigo,
         slug: r.Slug,
         marca: r.Marca,
-        familia: r.Familia_Grau1,
-        subFamilia: r.Familia_Grau3,
+        familiaGrau1: r.Familia_Grau1,
+        familiaGrau2: r.Familia_Grau2,
+        familiaGrau3: r.Familia_Grau3,
+        familiaGrau4: r.Familia_Grau4,
         modalidade: r.Modalidade,
         genero: r.Genero,
         preco: r.Preco,
@@ -248,25 +242,118 @@ router.get('/:codigo/mesma-subfamilia', async (req, res) => {
 
     const codigoFamilia = artigoRes.recordset[0].Codigo_Familia;
 
-    // Depois, buscar todos os artigos da mesma sub-família (máx 10)
-    const result = await pool.request()
-      .input('familia', sql.VarChar(10), codigoFamilia)
-      .query(`
-        SELECT TOP 10 Codigo_Artigo, Descritivo_Artigo, Marca, Preco, Percentagem_Desconto, Preco_Outlet, Em_Outlet
-        FROM dbo.ZAPP_DBSiteCD_VCatalogo
-        WHERE Codigo_Familia = @familia AND Publicado = 1
-        ORDER BY Descritivo_Artigo;
-      `);
+    // Depois, buscar todos os artigos da mesma sub-família (máx 20) com filtros opcionais
+    const request = pool.request();
+    const condicoes = ['a.Codigo_Familia = @familia', 'a.Publicado = 1'];
 
-    res.json(result.recordset.map((r) => ({
-      codigo: r.Codigo_Artigo,
-      descricao: r.Descritivo_Artigo,
-      marca: r.Marca,
-      preco: r.Preco,
-      percentagemDesconto: r.Percentagem_Desconto,
-      precoOutlet: r.Preco_Outlet,
-      emOutlet: !!r.Em_Outlet,
-    })));
+    request.input('familia', sql.VarChar(10), codigoFamilia);
+
+    // Aplicar filtros de cor e tamanho - exigem que o MESMO lote tenha cor E tamanho
+    // (quando ambos indicados) E stock > 0 (Qtd_Disponivel/Qtd_Reservada vêm da tabela Stock)
+    const coresVariacoes = {
+      'branco': "(v.Descricao_Lote LIKE N'%branco%' OR v.Descricao_Lote LIKE N'%branca%')",
+      'branca': "(v.Descricao_Lote LIKE N'%branco%' OR v.Descricao_Lote LIKE N'%branca%')",
+      'preto': "(v.Descricao_Lote LIKE N'%preto%' OR v.Descricao_Lote LIKE N'%preta%')",
+      'preta': "(v.Descricao_Lote LIKE N'%preto%' OR v.Descricao_Lote LIKE N'%preta%')",
+      'amarelo': "(v.Descricao_Lote LIKE N'%amarelo%' OR v.Descricao_Lote LIKE N'%amarela%')",
+      'amarela': "(v.Descricao_Lote LIKE N'%amarelo%' OR v.Descricao_Lote LIKE N'%amarela%')",
+      'vermelho': "(v.Descricao_Lote LIKE N'%vermelho%' OR v.Descricao_Lote LIKE N'%vermelha%')",
+      'vermelha': "(v.Descricao_Lote LIKE N'%vermelho%' OR v.Descricao_Lote LIKE N'%vermelha%')",
+      'azul': "(v.Descricao_Lote LIKE N'%azul%')",
+      'verde': "(v.Descricao_Lote LIKE N'%verde%')",
+      'rosa': "(v.Descricao_Lote LIKE N'%rosa%')",
+      'cinzento': "(v.Descricao_Lote LIKE N'%cinzent%')",
+      'cinzenta': "(v.Descricao_Lote LIKE N'%cinzent%')",
+      'bege': "(v.Descricao_Lote LIKE N'%bege%')",
+      'marrom': "(v.Descricao_Lote LIKE N'%marrom%' OR v.Descricao_Lote LIKE N'%castanho%' OR v.Descricao_Lote LIKE N'%castanha%')",
+      'castanho': "(v.Descricao_Lote LIKE N'%castanho%' OR v.Descricao_Lote LIKE N'%castanha%' OR v.Descricao_Lote LIKE N'%marrom%')",
+      'castanha': "(v.Descricao_Lote LIKE N'%castanho%' OR v.Descricao_Lote LIKE N'%castanha%' OR v.Descricao_Lote LIKE N'%marrom%')",
+    };
+
+    if (req.query.cor || req.query.tamanho) {
+      const condicoesVariante = [];
+
+      if (req.query.cor) {
+        const cor = req.query.cor.trim().toLowerCase();
+        request.input('corFiltroSub', sql.NVarChar(100), `%${cor}%`);
+        condicoesVariante.push(coresVariacoes[cor] || `v.Descricao_Lote LIKE @corFiltroSub`);
+      }
+
+      if (req.query.tamanho) {
+        request.input('tamanhoFiltroSub', sql.NVarChar(50), `%- ${req.query.tamanho.trim()}%`);
+        condicoesVariante.push('v.Descricao_Lote LIKE @tamanhoFiltroSub');
+      }
+
+      const condicaoVarianteStr = condicoesVariante.join(' AND ');
+      condicoes.push(`EXISTS (
+        SELECT 1 FROM dbo.ZAPP_DBSiteCD_Variantes v
+        JOIN dbo.ZAPP_DBSiteCD_Stock s ON s.Codigo_Artigo = v.Codigo_Artigo AND s.Codigo_Lote = v.Codigo_Lote AND s.Codigo_Armazem = '001'
+        WHERE v.Codigo_Artigo = a.Codigo_Artigo
+          AND ${condicaoVarianteStr}
+          AND (s.Qtd_Disponivel - s.Qtd_Reservada) > 0
+      )`);
+    }
+
+    if (req.query.q) {
+      request.input('q', sql.NVarChar(100), `%${req.query.q}%`);
+      condicoes.push('a.Descritivo_Artigo LIKE @q');
+    }
+
+    if (req.query.marcaText) {
+      request.input('marcaText', sql.NVarChar(100), `%${req.query.marcaText}%`);
+      condicoes.push('a.Marca LIKE @marcaText');
+    }
+
+    if (req.query.marca) {
+      request.input('marca', sql.VarChar(100), `%${req.query.marca}%`);
+      condicoes.push('a.Marca LIKE @marca');
+    }
+
+    if (req.query.genero) {
+      request.input('genero', sql.NVarChar(50), req.query.genero);
+      condicoes.push('a.Genero_Tag = @genero');
+    }
+
+    if (req.query.modalidade) {
+      request.input('modalidade', sql.NVarChar(50), req.query.modalidade);
+      condicoes.push('a.Modalidade_Tag = @modalidade');
+    }
+
+    const whereClause = condicoes.join(' AND ');
+
+    // Depois, buscar todos os artigos da mesma sub-família (máx 20)
+    const result = await request.query(`
+      SELECT TOP 20 a.Codigo_Artigo, a.Descritivo_Artigo, a.Marca, a.Preco, a.Percentagem_Desconto, a.Preco_Outlet, a.Em_Outlet,
+             a.Familia_Grau1, a.Familia_Grau2, a.Familia_Grau3, a.Familia_Grau4,
+             (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal
+      FROM dbo.ZAPP_DBSiteCD_VCatalogo a
+      WHERE ${whereClause}
+      ORDER BY a.Descritivo_Artigo;
+    `);
+
+    // Obter info da família do artigo original
+    const artigoFullRes = await pool.request()
+      .input('codigo', sql.VarChar(20), req.params.codigo)
+      .query(`SELECT Familia_Grau1, Familia_Grau2, Familia_Grau3, Familia_Grau4 FROM dbo.ZAPP_DBSiteCD_VCatalogo WHERE Codigo_Artigo = @codigo;`);
+
+    const artigoFull = artigoFullRes.recordset[0] || {};
+
+    res.json({
+      familiaGrau1: artigoFull.Familia_Grau1,
+      familiaGrau2: artigoFull.Familia_Grau2,
+      familiaGrau3: artigoFull.Familia_Grau3,
+      familiaGrau4: artigoFull.Familia_Grau4,
+      artigos: result.recordset.map((r) => ({
+        codigo: r.Codigo_Artigo,
+        descricao: r.Descritivo_Artigo,
+        marca: r.Marca,
+        preco: r.Preco,
+        percentagemDesconto: r.Percentagem_Desconto,
+        precoOutlet: r.Preco_Outlet,
+        emOutlet: !!r.Em_Outlet,
+        imagem: r.Imagem_Principal ? `${process.env.IMAGES_BASE_URL}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+      })),
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao listar artigos da mesma sub-família.' });

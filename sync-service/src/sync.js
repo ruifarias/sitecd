@@ -228,11 +228,11 @@ async function syncArtigos(pool) {
 // nunca deixa um artigo destes visível no site à espera de correcção manual na origem.
 async function validarPrecoZero(pool) {
   const result = await pool.request().query(`
-    DECLARE @ComPrecoZero TABLE (Codigo_Artigo VARCHAR(20), Descritivo_Artigo NVARCHAR(100));
+    DECLARE @ComPrecoZero TABLE (Codigo_Artigo VARCHAR(20), Descritivo_Artigo NVARCHAR(100), Marca NVARCHAR(100), Preco DECIMAL(10,2));
 
     UPDATE a
     SET a.Publicado = 0, a.Data_Sincronizacao = GETDATE()
-    OUTPUT inserted.Codigo_Artigo, inserted.Descritivo_Artigo INTO @ComPrecoZero
+    OUTPUT inserted.Codigo_Artigo, inserted.Descritivo_Artigo, inserted.Marca, p.Preco INTO @ComPrecoZero
     FROM dbo.ZAPP_DBSiteCD_Artigos a
     INNER JOIN dbo.ZAPP_DBSiteCD_Precos p ON p.Codigo_Artigo = a.Codigo_Artigo
     INNER JOIN dbo.ZAPP_DBSiteCD_SyncStaging_ChangedArtigos c ON c.Codigo_Artigo = a.Codigo_Artigo
@@ -242,10 +242,19 @@ async function validarPrecoZero(pool) {
   `);
   const artigos = result.recordset || [];
   if (artigos.length > 0) {
+    const detalhe = artigos.map((a) =>
+      `Código: ${a.Codigo_Artigo}\nNome: ${a.Descritivo_Artigo}\nMarca: ${a.Marca || 'N/A'}\nPreço: €${a.Preco}\nMotivo: Preço de venda configurado a 0€ (inválido para publicação)`
+    ).join('\n' + '='.repeat(60) + '\n');
+
     await alertar(
       'Artigos com preço de venda a 0€ (despublicados automaticamente)',
-      artigos.map((a) => `${a.Codigo_Artigo} - ${a.Descritivo_Artigo}`).join('\n')
+      detalhe
     );
+
+    // Registar em detalhe no log
+    artigos.forEach((a) => {
+      log.writeLine(`[ERRO] Artigo despublicado: ${a.Codigo_Artigo} - ${a.Descritivo_Artigo} (Marca: ${a.Marca}, Preço: €${a.Preco})`);
+    });
   }
   return artigos.length;
 }
