@@ -338,11 +338,18 @@ router.get('/:codigo/mesma-subfamilia', async (req, res) => {
 
     const artigoFull = artigoFullRes.recordset[0] || {};
 
+    // Códigos de família por nível - derivados do código completo (Codigo_Familia)
+    // por prefixo, tal como em /familias/grau2, /grau3, /grau4 (grau1 = 1 carácter,
+    // grau2 = 2, grau3 = 3, grau4 = código completo)
     res.json({
       familiaGrau1: artigoFull.Familia_Grau1,
       familiaGrau2: artigoFull.Familia_Grau2,
       familiaGrau3: artigoFull.Familia_Grau3,
       familiaGrau4: artigoFull.Familia_Grau4,
+      codigoFamiliaGrau1: codigoFamilia.substring(0, 1),
+      codigoFamiliaGrau2: codigoFamilia.substring(0, 2),
+      codigoFamiliaGrau3: codigoFamilia.substring(0, 3),
+      codigoFamiliaGrau4: codigoFamilia,
       artigos: result.recordset.map((r) => ({
         codigo: r.Codigo_Artigo,
         descricao: r.Descritivo_Artigo,

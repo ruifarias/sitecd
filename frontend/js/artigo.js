@@ -57,6 +57,10 @@ async function renderArtigo(a) {
       grau2: resultado.familiaGrau2,
       grau3: resultado.familiaGrau3,
       grau4: resultado.familiaGrau4,
+      codigoGrau1: resultado.codigoFamiliaGrau1,
+      codigoGrau2: resultado.codigoFamiliaGrau2,
+      codigoGrau3: resultado.codigoFamiliaGrau3,
+      codigoGrau4: resultado.codigoFamiliaGrau4,
     };
   } catch (err) {
     console.error('Erro ao carregar artigos da mesma sub-família:', err);
@@ -105,7 +109,7 @@ async function renderArtigo(a) {
     ${familiaInfo && familiaInfo.grau4 ? `
       <div class="secao-familia">
         <h4>
-          <a href="index.html?familiaGrau4=${encodeURIComponent(familiaInfo.grau4)}" class="titulo-familia-link">
+          Ver todos: <a href="index.html?familiaGrau1=${encodeURIComponent(familiaInfo.codigoGrau1)}&familiaGrau2=${encodeURIComponent(familiaInfo.codigoGrau2)}&familiaGrau3=${encodeURIComponent(familiaInfo.codigoGrau3)}&familiaGrau4=${encodeURIComponent(familiaInfo.codigoGrau4)}" class="titulo-familia-link">
             ${[familiaInfo.grau1, familiaInfo.grau2, familiaInfo.grau3, familiaInfo.grau4].filter(g => g).join(' > ')}
           </a>
         </h4>

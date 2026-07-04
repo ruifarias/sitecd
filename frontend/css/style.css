@@ -354,12 +354,11 @@ header.topo {
 /* ---------- Ficha de artigo ---------- */
 .layout-artigo {
   display: grid;
-  grid-template-columns: 400px 1fr;
+  grid-template-columns: 380px 1fr;
   gap: 48px;
   max-width: 1400px;
   margin: 0 auto;
   padding: 32px 24px;
-  min-height: 100vh;
 }
 .galeria-principal {
   background: var(--cinza-claro);
@@ -369,7 +368,6 @@ header.topo {
   justify-content: center;
   overflow: hidden;
   width: 100%;
-  height: 550px;
   border-radius: 4px;
   position: sticky;
   top: 80px;
@@ -511,7 +509,7 @@ header.topo {
   align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: 100%;
+  max-width: calc(6 * 140px + 5 * 16px + 2 * 52px);
   margin: 12px 0;
   overflow: hidden;
 }
@@ -544,7 +542,7 @@ header.topo {
   flex: 1;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
-  max-width: calc(100vw - 100px);
+  max-width: calc(6 * 140px + 5 * 16px);
 }
 
 .artigos-mesma-sub-scroll::-webkit-scrollbar {

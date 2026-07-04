@@ -656,18 +656,22 @@ document.getElementById('pesquisa-marca').addEventListener('input', (e) => {
 
   if (estado.familiaGrau1) {
     document.getElementById('familia-grau1').value = estado.familiaGrau1;
+    estado.familia = estado.familiaGrau1;
     await carregarFamiliasGrau2(estado.familiaGrau1);
 
     if (estado.familiaGrau2) {
       document.getElementById('familia-grau2').value = estado.familiaGrau2;
+      estado.familia = estado.familiaGrau2;
       await carregarFamiliasGrau3(estado.familiaGrau2);
 
       if (estado.familiaGrau3) {
         document.getElementById('familia-grau3').value = estado.familiaGrau3;
+        estado.familia = estado.familiaGrau3;
         await carregarFamiliasGrau4(estado.familiaGrau3);
 
         if (estado.familiaGrau4) {
           document.getElementById('familia-grau4').value = estado.familiaGrau4;
+          estado.familia = estado.familiaGrau4;
         }
       }
     }
