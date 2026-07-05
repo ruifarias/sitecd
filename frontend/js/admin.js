@@ -130,9 +130,9 @@ async function carregarEncomendas() {
     }
     tbody.innerHTML = encomendas.map((e) => `
       <tr>
+        <td>${new Date(e.data).toLocaleDateString('pt-PT')}</td>
         <td>${e.numero}</td>
         <td>${e.clienteNome || '-'}<br><small>${e.clienteEmail || ''}</small></td>
-        <td>${new Date(e.data).toLocaleDateString('pt-PT')}</td>
         <td>${formatarPreco(e.total)}</td>
         <td><span class="badge-estado ${e.estado}">${e.estadoLabel}</span></td>
         <td>
@@ -208,7 +208,7 @@ async function verDetalheEncomendaAdmin(numero, focarDevolucao = false) {
           ${e.valeDesconto > 0 ? `<div><span>Vale aplicado (${e.valeCodigo})</span><span>-${formatarPreco(e.valeDesconto)}</span></div>` : ''}
           <div class="resumo-total-final"><span>Total</span><span>${formatarPreco(e.total)}</span></div>
         </div>
-        <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === 'Enviada' ? '(atribuídos)' : '(pendentes até envio)'}</p>
+        <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === 'Enviada' ? '(atribuídos)' : e.estado === 'Devolvida' ? '(estornados)' : '(pendentes até envio)'}</p>
         <button class="botao-secundario" id="btn-pdf-encomenda-admin">Exportar PDF</button>
 
         ${devolucoes.length > 0 ? `

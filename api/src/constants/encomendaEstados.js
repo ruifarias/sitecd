@@ -6,6 +6,7 @@
 const SEQUENCIA_ESTADOS = ['AguardarPagamento', 'PagamentoEfectuado', 'EmPreparacao', 'Enviada'];
 
 const ESTADO_ANULADA = 'Anulada';
+const ESTADO_DEVOLVIDA = 'Devolvida';
 
 const ESTADOS_LABELS = {
   AguardarPagamento: 'Confirmação e a Aguardar Pagamento',
@@ -13,6 +14,7 @@ const ESTADOS_LABELS = {
   EmPreparacao: 'Encomenda em Preparação',
   Enviada: 'Encomenda Enviada',
   Anulada: 'Encomenda Anulada',
+  Devolvida: 'Nota de Devolução',
 };
 
 function proximoEstado(estadoActual) {
@@ -21,4 +23,4 @@ function proximoEstado(estadoActual) {
   return SEQUENCIA_ESTADOS[indice + 1];
 }
 
-module.exports = { SEQUENCIA_ESTADOS, ESTADO_ANULADA, ESTADOS_LABELS, proximoEstado };
+module.exports = { SEQUENCIA_ESTADOS, ESTADO_ANULADA, ESTADO_DEVOLVIDA, ESTADOS_LABELS, proximoEstado };

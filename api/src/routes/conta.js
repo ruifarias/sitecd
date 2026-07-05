@@ -7,6 +7,7 @@ const { requireAuth } = require('../middleware/auth');
 const { ESTADOS_LABELS } = require('../constants/encomendaEstados');
 const { gerarPdfEncomenda } = require('../services/pdf');
 const { separarNomeVariante } = require('../services/email');
+const { registarDevolucao } = require('../services/devolucaoService');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -92,6 +93,7 @@ router.get('/encomendas', async (req, res) => {
       pontosGanhos: e.Pontos_Ganhos,
       metodoPagamento: e.Metodo_Pagamento,
       data: e.Data_Criacao,
+      podeDevolver: e.Estado === 'Enviada',
     })));
   } catch (err) {
     console.error(err);
@@ -119,9 +121,20 @@ router.get('/encomendas/:numero', async (req, res) => {
 
     const linhas = await pool.request()
       .input('encomendaId', sql.Int, e.Id)
-      .query('SELECT Codigo_Artigo, Codigo_Lote, Descricao, Quantidade, Preco_Unitario, Preco_Venda, Desconto FROM dbo.ZAPP_DBSiteCD_EncomendasLinhas WHERE Encomenda_Id = @encomendaId;');
+      .query(`
+        SELECT l.Codigo_Artigo, l.Codigo_Lote, l.Descricao, l.Quantidade, l.Preco_Unitario, l.Preco_Venda, l.Desconto,
+               ISNULL((
+                 SELECT SUM(dl.Quantidade)
+                 FROM dbo.ZAPP_DBSiteCD_DevolucoesLinhas dl
+                 JOIN dbo.ZAPP_DBSiteCD_Devolucoes d ON d.Id = dl.Devolucao_Id
+                 WHERE d.Encomenda_Id = l.Encomenda_Id AND dl.Codigo_Artigo = l.Codigo_Artigo AND dl.Codigo_Lote = l.Codigo_Lote
+               ), 0) AS Quantidade_Devolvida
+        FROM dbo.ZAPP_DBSiteCD_EncomendasLinhas l
+        WHERE l.Encomenda_Id = @encomendaId;
+      `);
 
     const totalProdutos = linhas.recordset.reduce((s, l) => s + l.Preco_Unitario * l.Quantidade, 0);
+    const podeDevolver = e.Estado === 'Enviada';
 
     res.json({
       numero: e.Numero,
@@ -136,6 +149,7 @@ router.get('/encomendas/:numero', async (req, res) => {
       metodoPagamento: e.Metodo_Pagamento,
       data: e.Data_Criacao,
       motivoAnulacao: e.Motivo_Anulacao,
+      podeDevolver,
       linhas: linhas.recordset.map((l) => {
         const { nome, variante } = separarNomeVariante(l.Descricao);
         return {
@@ -150,12 +164,93 @@ router.get('/encomendas/:numero', async (req, res) => {
           desconto: l.Desconto,
           descontoPercentagem: l.Preco_Venda > 0 ? Math.round((l.Desconto / l.Preco_Venda) * 100) : 0,
           valorLiquido: Math.round(l.Preco_Unitario * l.Quantidade * 100) / 100,
+          quantidadeDevolvida: l.Quantidade_Devolvida,
+          quantidadeDevolvivel: l.Quantidade - l.Quantidade_Devolvida,
         };
       }),
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao obter encomenda.' });
+  }
+});
+
+// GET /api/conta/encomendas/:numero/devolucoes - histórico de devoluções desta
+// encomenda, só se pertencer ao cliente autenticado
+router.get('/encomendas/:numero/devolucoes', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const encomendaRes = await pool.request()
+      .input('numero', sql.VarChar(30), req.params.numero)
+      .input('clienteId', sql.Int, req.cliente.id)
+      .query('SELECT Id FROM dbo.ZAPP_DBSiteCD_Encomendas WHERE Numero = @numero AND Cliente_Id = @clienteId;');
+
+    if (encomendaRes.recordset.length === 0) {
+      return res.status(404).json({ erro: 'Encomenda não encontrada.' });
+    }
+    const encomendaId = encomendaRes.recordset[0].Id;
+
+    const devolucoes = await pool.request()
+      .input('encomendaId', sql.Int, encomendaId)
+      .query(`
+        SELECT Id, Valor_Devolvido, Pontos_Estornados, Data_Criacao
+        FROM dbo.ZAPP_DBSiteCD_Devolucoes
+        WHERE Encomenda_Id = @encomendaId
+        ORDER BY Data_Criacao DESC;
+      `);
+
+    const resultado = [];
+    for (const d of devolucoes.recordset) {
+      const linhas = await pool.request()
+        .input('devolucaoId', sql.Int, d.Id)
+        .query('SELECT Codigo_Artigo, Codigo_Lote, Descricao, Quantidade, Preco_Unitario FROM dbo.ZAPP_DBSiteCD_DevolucoesLinhas WHERE Devolucao_Id = @devolucaoId;');
+
+      resultado.push({
+        id: d.Id,
+        valorDevolvido: d.Valor_Devolvido,
+        pontosEstornados: d.Pontos_Estornados,
+        data: d.Data_Criacao,
+        linhas: linhas.recordset.map((l) => ({
+          codigoArtigo: l.Codigo_Artigo,
+          codigoLote: l.Codigo_Lote,
+          descricao: l.Descricao,
+          quantidade: l.Quantidade,
+          precoUnitario: l.Preco_Unitario,
+        })),
+      });
+    }
+
+    res.json(resultado);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter devoluções.' });
+  }
+});
+
+// POST /api/conta/encomendas/:numero/devolucao - o próprio cliente regista a
+// devolução de artigos de uma encomenda já enviada (os portes nunca são
+// devolvidos). Gera de imediato uma Nota de Devolução (DEV+número) e estorna
+// os pontos proporcionalmente - ver services/devolucaoService.js.
+router.post('/encomendas/:numero/devolucao', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const dono = await pool.request()
+      .input('numero', sql.VarChar(30), req.params.numero)
+      .input('clienteId', sql.Int, req.cliente.id)
+      .query('SELECT Id FROM dbo.ZAPP_DBSiteCD_Encomendas WHERE Numero = @numero AND Cliente_Id = @clienteId;');
+
+    if (dono.recordset.length === 0) {
+      return res.status(404).json({ erro: 'Encomenda não encontrada.' });
+    }
+
+    const resultado = await registarDevolucao(req.params.numero, req.body.linhas);
+    if (resultado.erro) {
+      return res.status(resultado.status || 500).json({ erro: resultado.erro });
+    }
+    res.status(201).json(resultado);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao registar devolução.' });
   }
 });
 

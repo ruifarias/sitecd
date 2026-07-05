@@ -4,9 +4,10 @@
 // Acesso restrito a clientes com IsAdmin = 1 (ver migração 016 e middleware/auth.js).
 const express = require('express');
 const { getPool, sql } = require('../db');
-const { SEQUENCIA_ESTADOS, ESTADO_ANULADA, ESTADOS_LABELS, proximoEstado } = require('../constants/encomendaEstados');
+const { SEQUENCIA_ESTADOS, ESTADO_ANULADA, ESTADO_DEVOLVIDA, ESTADOS_LABELS, proximoEstado } = require('../constants/encomendaEstados');
 const { enviarEmailEncomenda, separarNomeVariante } = require('../services/email');
 const { gerarPdfEncomenda } = require('../services/pdf');
+const { registarDevolucao } = require('../services/devolucaoService');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -438,7 +439,7 @@ router.get('/encomendas', async (req, res) => {
       clienteEmail: e.Cliente_Email,
       proximoEstado: proximoEstado(e.Estado),
       proximoEstadoLabel: ESTADOS_LABELS[proximoEstado(e.Estado)] || null,
-      podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada',
+      podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada' && e.Estado !== ESTADO_DEVOLVIDA,
       podeDevolver: e.Estado === 'Enviada',
     })));
   } catch (err) {
@@ -500,7 +501,7 @@ router.get('/encomendas/:numero', async (req, res) => {
       clienteNome: e.Cliente_Nome,
       clienteEmail: e.Cliente_Email,
       proximoEstado: proximoEstado(e.Estado),
-      podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada',
+      podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada' && e.Estado !== ESTADO_DEVOLVIDA,
       podeDevolver: e.Estado === 'Enviada',
       linhas: linhas.recordset.map((l) => {
         const { nome, variante } = separarNomeVariante(l.Descricao);
@@ -578,130 +579,14 @@ router.get('/encomendas/:numero/devolucoes', async (req, res) => {
 });
 
 // POST /admin/encomendas/:numero/devolucao - regista uma devolução parcial ou
-// total de artigos já enviados. Estorna proporcionalmente os pontos já
-// atribuídos (mesma proporção pontos/valor da encomenda original), registados
-// no livro-razão do cliente (Tipo = 'Devolucao').
+// total de artigos já enviados (também disponível para o próprio cliente em
+// /api/conta/encomendas/:numero/devolucao - ver services/devolucaoService.js).
 router.post('/encomendas/:numero/devolucao', async (req, res) => {
-  const { linhas: linhasDevolucao } = req.body;
-  if (!Array.isArray(linhasDevolucao) || linhasDevolucao.length === 0) {
-    return res.status(400).json({ erro: 'Indique pelo menos um artigo a devolver.' });
+  const resultado = await registarDevolucao(req.params.numero, req.body.linhas);
+  if (resultado.erro) {
+    return res.status(resultado.status || 500).json({ erro: resultado.erro });
   }
-
-  const pool = await getPool();
-  const transaction = new sql.Transaction(pool);
-
-  try {
-    await transaction.begin();
-
-    const encReq = new sql.Request(transaction);
-    const encRes = await encReq
-      .input('numero', sql.VarChar(30), req.params.numero)
-      .query('SELECT Id, Estado, Cliente_Id, Pontos_Ganhos FROM dbo.ZAPP_DBSiteCD_Encomendas WITH (UPDLOCK, HOLDLOCK) WHERE Numero = @numero;');
-
-    if (encRes.recordset.length === 0) {
-      await transaction.rollback();
-      return res.status(404).json({ erro: 'Encomenda não encontrada.' });
-    }
-    const encomenda = encRes.recordset[0];
-
-    if (encomenda.Estado !== 'Enviada') {
-      await transaction.rollback();
-      return res.status(400).json({ erro: 'Só é possível devolver artigos de encomendas já enviadas.' });
-    }
-
-    const linhasOriginaisReq = new sql.Request(transaction);
-    const linhasOriginaisRes = await linhasOriginaisReq
-      .input('encomendaId', sql.Int, encomenda.Id)
-      .query(`
-        SELECT l.Codigo_Artigo, l.Codigo_Lote, l.Descricao, l.Quantidade, l.Preco_Unitario,
-               ISNULL((
-                 SELECT SUM(dl.Quantidade)
-                 FROM dbo.ZAPP_DBSiteCD_DevolucoesLinhas dl
-                 JOIN dbo.ZAPP_DBSiteCD_Devolucoes d ON d.Id = dl.Devolucao_Id
-                 WHERE d.Encomenda_Id = l.Encomenda_Id AND dl.Codigo_Artigo = l.Codigo_Artigo AND dl.Codigo_Lote = l.Codigo_Lote
-               ), 0) AS Quantidade_Devolvida
-        FROM dbo.ZAPP_DBSiteCD_EncomendasLinhas l
-        WHERE l.Encomenda_Id = @encomendaId;
-      `);
-
-    const totalProdutosOriginal = linhasOriginaisRes.recordset.reduce((s, l) => s + l.Quantidade * l.Preco_Unitario, 0);
-
-    // Validar cada linha pedida contra a linha original e o que já foi devolvido antes
-    const linhasParaDevolver = [];
-    for (const pedido of linhasDevolucao) {
-      const original = linhasOriginaisRes.recordset.find(
-        (l) => l.Codigo_Artigo === pedido.codigoArtigo && l.Codigo_Lote === pedido.codigoLote
-      );
-      if (!original) {
-        await transaction.rollback();
-        return res.status(400).json({ erro: `Artigo ${pedido.codigoArtigo} | ${pedido.codigoLote} não pertence a esta encomenda.` });
-      }
-      const quantidade = parseInt(pedido.quantidade, 10) || 0;
-      const disponivelParaDevolver = original.Quantidade - original.Quantidade_Devolvida;
-      if (quantidade <= 0) continue;
-      if (quantidade > disponivelParaDevolver) {
-        await transaction.rollback();
-        return res.status(400).json({ erro: `Quantidade a devolver de "${original.Descricao}" excede o disponível (${disponivelParaDevolver}).` });
-      }
-      linhasParaDevolver.push({ ...original, QuantidadeDevolver: quantidade });
-    }
-
-    if (linhasParaDevolver.length === 0) {
-      await transaction.rollback();
-      return res.status(400).json({ erro: 'Nenhuma quantidade válida a devolver.' });
-    }
-
-    const valorDevolvido = linhasParaDevolver.reduce((s, l) => s + l.QuantidadeDevolver * l.Preco_Unitario, 0);
-    const rateioPontos = totalProdutosOriginal > 0 ? encomenda.Pontos_Ganhos / totalProdutosOriginal : 0;
-    const pontosEstornados = Math.round(valorDevolvido * rateioPontos);
-
-    const devolucaoReq = new sql.Request(transaction);
-    const devolucaoRes = await devolucaoReq
-      .input('encomendaId', sql.Int, encomenda.Id)
-      .input('valorDevolvido', sql.Money, valorDevolvido)
-      .input('pontosEstornados', sql.Int, pontosEstornados)
-      .query(`
-        INSERT INTO dbo.ZAPP_DBSiteCD_Devolucoes (Encomenda_Id, Valor_Devolvido, Pontos_Estornados)
-        OUTPUT inserted.Id
-        VALUES (@encomendaId, @valorDevolvido, @pontosEstornados);
-      `);
-    const devolucaoId = devolucaoRes.recordset[0].Id;
-
-    for (const linha of linhasParaDevolver) {
-      const linhaReq = new sql.Request(transaction);
-      await linhaReq
-        .input('devolucaoId', sql.Int, devolucaoId)
-        .input('codigoArtigo', sql.VarChar(20), linha.Codigo_Artigo)
-        .input('codigoLote', sql.VarChar(50), linha.Codigo_Lote)
-        .input('descricao', sql.NVarChar(200), linha.Descricao)
-        .input('quantidade', sql.Int, linha.QuantidadeDevolver)
-        .input('precoUnitario', sql.Money, linha.Preco_Unitario)
-        .query(`
-          INSERT INTO dbo.ZAPP_DBSiteCD_DevolucoesLinhas (Devolucao_Id, Codigo_Artigo, Codigo_Lote, Descricao, Quantidade, Preco_Unitario)
-          VALUES (@devolucaoId, @codigoArtigo, @codigoLote, @descricao, @quantidade, @precoUnitario);
-        `);
-    }
-
-    if (pontosEstornados > 0) {
-      const pontosReq = new sql.Request(transaction);
-      await pontosReq
-        .input('clienteId', sql.Int, encomenda.Cliente_Id)
-        .input('pontos', sql.Int, -pontosEstornados)
-        .input('encomendaId', sql.Int, encomenda.Id)
-        .input('descricao', sql.NVarChar(200), `Devolução de artigos da encomenda ${req.params.numero}`)
-        .query(`
-          INSERT INTO dbo.ZAPP_DBSiteCD_PontosLedger (Cliente_Id, Tipo, Pontos, Encomenda_Id, Descricao)
-          VALUES (@clienteId, 'Devolucao', @pontos, @encomendaId, @descricao);
-        `);
-    }
-
-    await transaction.commit();
-    res.status(201).json({ ok: true, valorDevolvido, pontosEstornados });
-  } catch (err) {
-    console.error(err);
-    try { await transaction.rollback(); } catch (_) { /* já pode ter sido revertida */ }
-    res.status(500).json({ erro: 'Falha ao registar devolução.' });
-  }
+  res.status(201).json(resultado);
 });
 
 // GET /admin/encomendas/:numero/pdf - exportação da encomenda em PDF

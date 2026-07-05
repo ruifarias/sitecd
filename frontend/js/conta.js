@@ -77,17 +77,22 @@ async function carregarEncomendas() {
     container.innerHTML = `
       <table class="sync-table">
         <thead>
-          <tr><th>Número</th><th>Data</th><th>Estado</th><th>Total</th><th>Pontos</th><th></th></tr>
+          <tr><th>Data</th><th>Número</th><th>Estado</th><th>Total</th><th>Pontos</th><th>Acções</th></tr>
         </thead>
         <tbody>
           ${encomendas.map((e) => `
             <tr>
-              <td>${e.numero}</td>
               <td>${new Date(e.data).toLocaleDateString('pt-PT')}</td>
+              <td>${e.numero}</td>
               <td><span class="badge-estado ${e.estado}">${e.estadoLabel}</span></td>
               <td>${formatarPreco(e.total)}</td>
-              <td>${e.pontosGanhos} ${e.estado !== 'Enviada' ? '<small>(pendente)</small>' : ''}</td>
-              <td><button class="botao-secundario btn-ver-encomenda" data-numero="${e.numero}">Ver detalhe</button></td>
+              <td>${e.pontosGanhos} ${e.estado !== 'Enviada' && e.estado !== 'Devolvida' ? '<small>(pendente)</small>' : ''}</td>
+              <td>
+                <div class="acoes-encomenda">
+                  <button class="botao-secundario btn-ver-encomenda" data-numero="${e.numero}">Ver detalhe</button>
+                  ${e.podeDevolver ? `<button class="botao-secundario btn-devolver-encomenda" data-numero="${e.numero}">Devolução</button>` : ''}
+                </div>
+              </td>
             </tr>
           `).join('')}
         </tbody>
@@ -96,15 +101,19 @@ async function carregarEncomendas() {
     container.querySelectorAll('.btn-ver-encomenda').forEach((btn) => {
       btn.addEventListener('click', () => verDetalheEncomenda(btn.dataset.numero));
     });
+    container.querySelectorAll('.btn-devolver-encomenda').forEach((btn) => {
+      btn.addEventListener('click', () => verDetalheEncomenda(btn.dataset.numero, true));
+    });
   } catch (err) {
     container.innerHTML = `<div class="mensagem-erro">${err.message}</div>`;
   }
 }
 
-async function verDetalheEncomenda(numero) {
+async function verDetalheEncomenda(numero, focarDevolucao = false) {
   const container = document.getElementById('detalhe-encomenda');
   try {
     const e = await apiGet(`/conta/encomendas/${numero}`);
+    const devolucoes = await apiGet(`/conta/encomendas/${numero}/devolucoes`);
     container.innerHTML = `
       <div class="form-group" style="margin-top:20px;border-top:1px solid #ddd;padding-top:16px">
         <h3>Encomenda ${e.numero} — <span class="badge-estado ${e.estado}">${e.estadoLabel}</span></h3>
@@ -139,15 +148,99 @@ async function verDetalheEncomenda(numero) {
           ${e.valeDesconto > 0 ? `<div><span>Vale aplicado (${e.valeCodigo})</span><span>-${formatarPreco(e.valeDesconto)}</span></div>` : ''}
           <div class="resumo-total-final"><span>Total</span><span>${formatarPreco(e.total)}</span></div>
         </div>
-        <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === 'Enviada' ? '(já atribuídos)' : e.estado === 'Anulada' ? '(anulados)' : '(pendentes até a encomenda ser enviada)'}</p>
+        <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === 'Enviada' ? '(já atribuídos)' : e.estado === 'Anulada' ? '(anulados)' : e.estado === 'Devolvida' ? '(estornados)' : '(pendentes até a encomenda ser enviada)'}</p>
         <button class="botao-secundario" id="btn-pdf-encomenda">Exportar PDF</button>
+
+        ${devolucoes.length > 0 ? `
+          <h4 style="margin-top:20px">Devoluções Registadas</h4>
+          <table class="sync-table">
+            <thead><tr><th>Data</th><th>Artigos</th><th>Valor</th><th>Pontos Estornados</th></tr></thead>
+            <tbody>
+              ${devolucoes.map((d) => `
+                <tr>
+                  <td>${new Date(d.data).toLocaleDateString('pt-PT')}</td>
+                  <td>${d.linhas.map((l) => `${l.quantidade}× ${l.descricao}`).join('<br>')}</td>
+                  <td>${formatarPreco(d.valorDevolvido)}</td>
+                  <td>-${d.pontosEstornados}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        ` : ''}
+
+        ${e.podeDevolver ? `
+          <h4 id="secao-form-devolucao" style="margin-top:20px">Registar Devolução</h4>
+          <p class="descricao">Indique a quantidade a devolver de cada artigo (0 = não devolver este artigo). Os portes de envio nunca são devolvidos.</p>
+          <table class="sync-table">
+            <thead><tr><th>Artigo</th><th>Já devolvida</th><th>Disponível p/ devolver</th><th>Qtd. a devolver</th></tr></thead>
+            <tbody>
+              ${e.linhas.map((l, i) => `
+                <tr>
+                  <td>${l.descricao}</td>
+                  <td>${l.quantidadeDevolvida}</td>
+                  <td>${l.quantidadeDevolvivel}</td>
+                  <td><input type="number" class="input-qtd-devolver-cliente" data-codigo-artigo="${l.codigoArtigo}" data-codigo-lote="${l.codigoLote}" min="0" max="${l.quantidadeDevolvivel}" value="0" style="width:70px" ${l.quantidadeDevolvivel === 0 ? 'disabled' : ''}></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="acoes">
+            <button id="btn-confirmar-devolucao-cliente" class="botao-principal">Confirmar Devolução</button>
+            <span id="msg-devolucao-cliente" class="mensagem"></span>
+          </div>
+        ` : ''}
       </div>
     `;
     document.getElementById('btn-pdf-encomenda').addEventListener('click', () => {
       apiDownload(`/conta/encomendas/${numero}/pdf`, `${numero}.pdf`).catch((err) => alert('Erro ao gerar PDF: ' + err.message));
     });
+
+    const btnDevolucao = document.getElementById('btn-confirmar-devolucao-cliente');
+    if (btnDevolucao) {
+      btnDevolucao.addEventListener('click', () => submeterDevolucaoCliente(numero));
+    }
+    if (focarDevolucao) {
+      document.getElementById('secao-form-devolucao')?.scrollIntoView({ behavior: 'smooth' });
+    }
   } catch (err) {
     container.innerHTML = `<div class="mensagem-erro">${err.message}</div>`;
+  }
+}
+
+async function submeterDevolucaoCliente(numero) {
+  const inputs = document.querySelectorAll('.input-qtd-devolver-cliente');
+  const linhas = [];
+  inputs.forEach((input) => {
+    const quantidade = parseInt(input.value, 10) || 0;
+    if (quantidade > 0) {
+      linhas.push({ codigoArtigo: input.dataset.codigoArtigo, codigoLote: input.dataset.codigoLote, quantidade });
+    }
+  });
+
+  const msg = document.getElementById('msg-devolucao-cliente');
+  if (linhas.length === 0) {
+    msg.textContent = '✗ Indique pelo menos um artigo a devolver';
+    msg.className = 'mensagem erro';
+    return;
+  }
+
+  if (!confirm(`Confirma a devolução de ${linhas.length} artigo(s) da encomenda ${numero}?`)) return;
+
+  const btn = document.getElementById('btn-confirmar-devolucao-cliente');
+  btn.disabled = true;
+  msg.textContent = 'A processar...';
+  msg.className = 'mensagem';
+
+  try {
+    const resultado = await apiPost(`/conta/encomendas/${numero}/devolucao`, { linhas });
+    msg.textContent = `✓ Devolução registada (${resultado.numeroDevolucao})! Valor: ${formatarPreco(resultado.valorDevolvido)}, Pontos estornados: ${resultado.pontosEstornados}`;
+    msg.className = 'mensagem sucesso';
+    await carregarEncomendas();
+    await verDetalheEncomenda(numero);
+  } catch (err) {
+    msg.textContent = '✗ Erro: ' + err.message;
+    msg.className = 'mensagem erro';
+    btn.disabled = false;
   }
 }
 
