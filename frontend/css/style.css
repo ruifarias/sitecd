@@ -66,6 +66,18 @@ header.topo {
   cursor: not-allowed;
   opacity: 0.6;
 }
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icone {
+  height: 34px;
+  width: auto;
+  display: block;
+}
+
 .topo-linha1 .logo {
   font-weight: 800;
   font-size: 22px;
@@ -130,6 +142,10 @@ header.topo {
   position: relative;
   font-size: 20px;
 }
+.carrinho-icone-grande {
+  font-size: 30px;
+  margin-left: 4px;
+}
 .carrinho-badge {
   position: absolute;
   top: -8px;
@@ -142,6 +158,12 @@ header.topo {
   padding: 1px 6px;
   min-width: 16px;
   text-align: center;
+}
+.carrinho-icone-grande .carrinho-badge {
+  top: -6px;
+  right: -12px;
+  font-size: 12px;
+  padding: 2px 7px;
 }
 
 /* ---------- Layout de listagem ---------- */
@@ -369,8 +391,6 @@ header.topo {
   overflow: hidden;
   width: 100%;
   border-radius: 4px;
-  position: sticky;
-  top: 80px;
 }
 .galeria-principal img {
   width: 100%;
@@ -699,6 +719,15 @@ header.topo {
 }
 .pagina-central h1 { font-size: 24px; margin-bottom: 24px; text-transform: uppercase; }
 
+.pagina-conteudo { min-height: 50vh; }
+.pagina-conteudo h2 { font-size: 18px; margin: 28px 0 10px; }
+.pagina-conteudo h3 { font-size: 15px; margin: 20px 0 8px; }
+.pagina-conteudo p { font-size: 14px; line-height: 1.7; color: #333; margin-bottom: 12px; }
+.pagina-conteudo ul, .pagina-conteudo ol { margin: 0 0 12px 20px; font-size: 14px; line-height: 1.7; color: #333; }
+.pagina-conteudo li { margin-bottom: 4px; }
+.pagina-conteudo .actualizado { font-size: 12px; color: var(--cinza-texto); margin-bottom: 24px; }
+.pagina-conteudo a { color: var(--vermelho); text-decoration: underline; }
+
 .linha-carrinho {
   display: grid;
   grid-template-columns: 90px 1fr auto auto;
@@ -747,11 +776,75 @@ form.checkout input, form.checkout select {
 .mensagem-erro { background: #ffe9e9; color: var(--vermelho); padding: 12px; font-size: 13px; margin-bottom: 12px; }
 .mensagem-sucesso { background: #eafbea; color: #1a7d1a; padding: 24px; font-size: 15px; text-align: center; }
 
+.auth-caixa { max-width: 420px; margin: 0 auto; }
+.auth-tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid var(--cinza-medio); }
+.auth-tab {
+  flex: 1;
+  padding: 12px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--cinza-texto);
+  border-bottom: 2px solid transparent;
+}
+.auth-tab.activa { color: var(--preto); border-bottom-color: var(--preto); }
+
 .vazio { text-align: center; padding: 60px 0; color: var(--cinza-texto); }
+
+/* ---------- Rodapé ---------- */
+footer.rodape {
+  background: var(--preto);
+  color: #ccc;
+  margin-top: 48px;
+}
+
+.rodape-principal {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  display: grid;
+  grid-template-columns: 1.2fr 0.9fr 0.9fr 1fr;
+  gap: 32px;
+}
+
+.rodape-marca .logo-icone { height: 40px; margin-bottom: 12px; }
+.rodape-marca p { font-size: 13px; color: #999; line-height: 1.6; max-width: 320px; }
+
+.rodape-coluna h4 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--branco);
+  margin-bottom: 12px;
+}
+.rodape-coluna p, .rodape-coluna a {
+  font-size: 13px;
+  color: #ccc;
+  line-height: 1.8;
+  display: block;
+}
+.rodape-coluna a:hover { color: var(--vermelho); }
+
+.rodape-legal {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.rodape-legal p {
+  font-size: 11px;
+  color: #777;
+  line-height: 1.7;
+  text-align: center;
+}
 
 @media (max-width: 800px) {
   .layout-listagem { grid-template-columns: 1fr; }
   .filtros { border-right: none; border-bottom: 1px solid var(--cinza-medio); padding-bottom: 16px; }
   .layout-artigo { grid-template-columns: 1fr; }
   header.topo nav { display: none; }
+  .rodape-principal { grid-template-columns: 1fr; }
 }

@@ -1,3 +1,14 @@
+let portesEnvio = 0;
+
+async function obterPortesEnvio() {
+  try {
+    const config = await apiGet('/config-publico');
+    return parseFloat(config.PortesEnvio) || 0;
+  } catch (_) {
+    return 0;
+  }
+}
+
 async function renderResumo() {
   const { linhas, total } = await apiGet(`/carrinho/${obterSessaoId()}`);
   if (linhas.length === 0) {
@@ -5,6 +16,10 @@ async function renderResumo() {
     document.getElementById('conteudo-checkout').innerHTML = '<div class="vazio">O carrinho está vazio. <a href="index.html" style="text-decoration:underline">Continuar a comprar</a>.</div>';
     return false;
   }
+
+  portesEnvio = await obterPortesEnvio();
+  const totalComPortes = total + portesEnvio;
+
   document.getElementById('resumo-checkout').innerHTML = `
     <fieldset style="margin-bottom:16px">
       <legend>Resumo (${linhas.length} artigo${linhas.length === 1 ? '' : 's'})</legend>
@@ -14,7 +29,12 @@ async function renderResumo() {
           <span>${formatarPreco(l.subtotal)}</span>
         </div>
       `).join('')}
-      <div class="resumo-total"><span>Total</span><span>${formatarPreco(total)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:#555">
+        <span>Portes de envio</span>
+        <span>${formatarPreco(portesEnvio)}</span>
+      </div>
+      <div class="resumo-total"><span>Total</span><span id="valor-total-resumo">${formatarPreco(totalComPortes)}</span></div>
+      <p style="font-size:11px;color:#999;margin-top:6px">Se aplicar um vale, o desconto é calculado ao confirmar a encomenda.</p>
     </fieldset>
   `;
   return true;
@@ -26,16 +46,6 @@ function renderFormulario() {
       <div id="erro-checkout"></div>
 
       <fieldset>
-        <legend>Dados do Cliente</legend>
-        <label>Nome *</label>
-        <input type="text" name="nome" required>
-        <label>Email *</label>
-        <input type="email" name="email" required>
-        <label>Telefone</label>
-        <input type="tel" name="telefone">
-      </fieldset>
-
-      <fieldset>
         <legend>Morada de Entrega</legend>
         <label>Morada *</label>
         <input type="text" name="morada" required>
@@ -43,6 +53,12 @@ function renderFormulario() {
         <input type="text" name="localidade" required>
         <label>Código Postal *</label>
         <input type="text" name="codigoPostal" placeholder="0000-000" required>
+      </fieldset>
+
+      <fieldset>
+        <legend>Vale de Desconto</legend>
+        <label>Código do vale (opcional)</label>
+        <input type="text" name="valeCodigo" placeholder="VALE-XXXXXXXX">
       </fieldset>
 
       <fieldset>
@@ -79,17 +95,13 @@ async function submeterEncomenda(e) {
 
   const dados = {
     sessaoId: obterSessaoId(),
-    cliente: {
-      nome: form.nome.value,
-      email: form.email.value,
-      telefone: form.telefone.value || undefined,
-    },
     morada: {
       morada: form.morada.value,
       localidade: form.localidade.value,
       codigoPostal: form.codigoPostal.value,
     },
     metodoPagamento: form.metodoPagamento.value,
+    valeCodigo: form.valeCodigo.value.trim() || undefined,
   };
 
   try {
@@ -99,9 +111,13 @@ async function submeterEncomenda(e) {
       <div class="mensagem-sucesso">
         <h2 style="margin-bottom:10px">Encomenda confirmada!</h2>
         <p><strong>Número:</strong> ${encomenda.numero}</p>
+        <p><strong>Portes:</strong> ${formatarPreco(encomenda.portes)}</p>
+        ${encomenda.valeDesconto > 0 ? `<p><strong>Desconto de vale:</strong> -${formatarPreco(encomenda.valeDesconto)}</p>` : ''}
         <p><strong>Total:</strong> ${formatarPreco(encomenda.total)}</p>
+        <p><strong>Pontos ganhos:</strong> ${encomenda.pontosGanhos}</p>
         <p style="margin-top:10px">${encomenda.mensagemPagamento}</p>
-        <a href="index.html" style="display:inline-block;margin-top:16px;text-decoration:underline">Continuar a comprar</a>
+        <a href="conta.html" style="display:inline-block;margin-top:16px;text-decoration:underline">Ver as minhas encomendas</a><br>
+        <a href="index.html" style="display:inline-block;margin-top:8px;text-decoration:underline">Continuar a comprar</a>
       </div>
     `;
     actualizarBadgeCarrinho();
@@ -112,7 +128,17 @@ async function submeterEncomenda(e) {
   }
 }
 
-(async function init() {
+async function iniciarCheckout() {
   const temItens = await renderResumo();
   if (temItens) renderFormulario();
+}
+
+(async function init() {
+  if (!estaAutenticado()) {
+    document.getElementById('resumo-checkout').innerHTML = '';
+    document.getElementById('conteudo-checkout').innerHTML = '<p class="descricao" style="text-align:center;margin-bottom:16px">Inicie sessão ou crie uma conta para finalizar a compra.</p><div id="auth-checkout"></div>';
+    renderFormularioAuth(document.getElementById('auth-checkout'), iniciarCheckout);
+    return;
+  }
+  await iniciarCheckout();
 })();

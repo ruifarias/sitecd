@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Carrinho – Clássico Desportivo</title>
+<title>Localização — Clássico Desportivo</title>
 <link rel="icon" type="image/png" href="imagens/logo-transparente.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -28,10 +28,8 @@
   </div>
 </header>
 
-<div class="pagina-central">
-  <h1>Carrinho</h1>
-  <div id="linhas-carrinho"><div class="vazio">A carregar...</div></div>
-  <div id="resumo"></div>
+<div class="pagina-central pagina-conteudo" id="conteudo-pagina">
+  <p>A carregar...</p>
 </div>
 
 <footer class="rodape">
@@ -52,7 +50,7 @@
       <p>Segunda a Sábado: 10h00 – 19h00<br>(Encerra 13h00 – 15h00)</p>
       <p>Domingos e Feriados: Encerrado</p>
     </div>
-        <div class="rodape-coluna">
+    <div class="rodape-coluna">
       <h4>Links Úteis</h4>
       <a href="sobre-nos.html">Sobre nós</a>
       <a href="termos-condicoes.html">Termos e Condições</a>
@@ -71,6 +69,16 @@
 </footer>
 
 <script src="js/api.js"></script>
-<script src="js/carrinho.js"></script>
+<script>
+(async function () {
+  try {
+    const pagina = await apiGet('/paginas/localizacao');
+    document.title = pagina.titulo + ' — Clássico Desportivo';
+    document.getElementById('conteudo-pagina').innerHTML = pagina.conteudo;
+  } catch (err) {
+    document.getElementById('conteudo-pagina').innerHTML = '<p>Não foi possível carregar o conteúdo desta página.</p>';
+  }
+})();
+</script>
 </body>
 </html>

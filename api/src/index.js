@@ -7,6 +7,8 @@ const carrinhoRouter = require('./routes/carrinho');
 const encomendasRouter = require('./routes/encomendas');
 const filtrosRouter = require('./routes/filtros');
 const adminRouter = require('./routes/admin');
+const authRouter = require('./routes/auth');
+const contaRouter = require('./routes/conta');
 
 // rede de segurança: regista e mantém o processo vivo em vez de rebentar
 // silenciosamente (mesma causa suspeita da queda de 2026-07-02 - ver db.js)
@@ -29,6 +31,8 @@ app.use('/api/carrinho', carrinhoRouter);
 app.use('/api/encomendas', encomendasRouter);
 app.use('/api', filtrosRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/conta', contaRouter);
 
 app.use((req, res) => res.status(404).json({ erro: 'Rota não encontrada.' }));
 

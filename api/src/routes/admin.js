@@ -1,12 +1,16 @@
 // Endpoints do Backoffice: configuração, gestão de artigos (publicar/despublicar,
 // Novidade manual), famílias por classificar, e consulta ao log de sincronização.
 // Ver PLANO_PROJETO.md secção 3 Fase 3.
-// NOTA: sem autenticação por agora (ambiente de testes local) - a acrescentar
-// antes de ir para produção (Fase 4/5).
+// Acesso restrito a clientes com IsAdmin = 1 (ver migração 016 e middleware/auth.js).
 const express = require('express');
 const { getPool, sql } = require('../db');
+const { SEQUENCIA_ESTADOS, ESTADO_ANULADA, ESTADOS_LABELS, proximoEstado } = require('../constants/encomendaEstados');
+const { enviarEmailEncomenda } = require('../services/email');
+const { gerarPdfEncomenda } = require('../services/pdf');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+router.use(requireAuth, requireAdmin);
 
 // ---- Configuração ----
 router.get('/config', async (req, res) => {
@@ -289,13 +293,47 @@ router.put('/familia/:codigo/classificacao', async (req, res) => {
   }
 });
 
+// GET /admin/marcas/:codigo/artigos - artigos publicados desta marca (imagem,
+// código, nome, existência), usado para avisar o operador antes de desactivar
+// uma marca (ver secção "Marcas Principais").
+router.get('/marcas/:codigo/artigos', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request()
+      .input('codigoMarca', sql.VarChar(3), req.params.codigo)
+      .query(`
+        SELECT a.Codigo_Artigo, a.Descritivo_Artigo,
+               (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal,
+               ISNULL((
+                 SELECT SUM(s.Qtd_Disponivel - s.Qtd_Reservada)
+                 FROM dbo.ZAPP_DBSiteCD_Stock s
+                 WHERE s.Codigo_Artigo = a.Codigo_Artigo AND s.Codigo_Armazem = '001'
+               ), 0) AS Existencia
+        FROM dbo.ZAPP_DBSiteCD_Artigos a
+        WHERE a.Codigo_Marca = @codigoMarca AND a.Publicado = 1
+        ORDER BY a.Descritivo_Artigo;
+      `);
+
+    res.json(result.recordset.map((r) => ({
+      codigo: r.Codigo_Artigo,
+      descricao: r.Descritivo_Artigo,
+      imagem: r.Imagem_Principal ? `${process.env.IMAGES_BASE_URL}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+      existencia: r.Existencia,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao listar artigos da marca.' });
+  }
+});
+
 // ---- Gestão de Marcas Principais ----
 router.get('/marcas-principais', async (req, res) => {
   try {
     const pool = await getPool();
-    // Obter todas as marcas
+    // Obter todas as marcas (Situacao não é afectado pela sincronização - fica
+    // reservado para o Backoffice marcar marcas como já não transaccionadas)
     const marcasRes = await pool.request().query(`
-      SELECT DISTINCT m.Codigo_Marca, m.Marca
+      SELECT DISTINCT m.Codigo_Marca, m.Marca, m.Situacao
       FROM dbo.ZAPP_DBSiteCD_Marcas m
       INNER JOIN dbo.ZAPP_DBSiteCD_Artigos a ON a.Codigo_Marca = m.Codigo_Marca
       WHERE a.Publicado = 1
@@ -315,6 +353,7 @@ router.get('/marcas-principais', async (req, res) => {
       codigo: r.Codigo_Marca,
       nome: r.Marca,
       principal: marcasPrincipais.has(r.Marca.toUpperCase()),
+      activa: !!r.Situacao,
     }));
 
     res.json(todas);
@@ -325,7 +364,7 @@ router.get('/marcas-principais', async (req, res) => {
 });
 
 router.put('/marcas-principais', async (req, res) => {
-  const { marcas } = req.body; // array com nomes das marcas principais
+  const { marcas, inactivas } = req.body; // marcas: nomes principais; inactivas: códigos a desactivar
   if (!Array.isArray(marcas)) return res.status(400).json({ erro: 'marcas deve ser um array.' });
 
   try {
@@ -342,10 +381,587 @@ router.put('/marcas-principais', async (req, res) => {
         WHEN NOT MATCHED THEN INSERT (Chave, Valor) VALUES (@chave, @valor);
       `);
 
+    if (Array.isArray(inactivas)) {
+      // Substitui sempre a lista completa (mesma lógica das marcas principais):
+      // reactiva tudo e depois desactiva só as indicadas nesta gravação.
+      await pool.request().query('UPDATE dbo.ZAPP_DBSiteCD_Marcas SET Situacao = 1;');
+      for (const codigo of inactivas) {
+        await pool.request()
+          .input('codigo', sql.VarChar(3), codigo)
+          .query('UPDATE dbo.ZAPP_DBSiteCD_Marcas SET Situacao = 0 WHERE Codigo_Marca = @codigo;');
+      }
+    }
+
     res.json({ ok: true, marcas: valor });
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao actualizar marcas principais.' });
+  }
+});
+
+// ---- Gestão de Encomendas (seguimento de estado, Backoffice) ----
+
+// GET /admin/encomendas - lista todas as encomendas com dados do cliente
+router.get('/encomendas', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const request = pool.request();
+    const condicoes = [];
+
+    if (req.query.estado) {
+      request.input('estado', sql.VarChar(30), req.query.estado);
+      condicoes.push('e.Estado = @estado');
+    }
+
+    const whereClause = condicoes.length > 0 ? `WHERE ${condicoes.join(' AND ')}` : '';
+
+    const resultado = await request.query(`
+      SELECT e.Numero, e.Estado, e.Total, e.Portes, e.Pontos_Ganhos, e.Metodo_Pagamento, e.Data_Criacao, e.Data_Actualizacao,
+             c.Nome AS Cliente_Nome, c.Email AS Cliente_Email
+      FROM dbo.ZAPP_DBSiteCD_Encomendas e
+      LEFT JOIN dbo.ZAPP_DBSiteCD_Clientes c ON c.Id = e.Cliente_Id
+      ${whereClause}
+      ORDER BY e.Data_Criacao DESC;
+    `);
+
+    res.json(resultado.recordset.map((e) => ({
+      numero: e.Numero,
+      estado: e.Estado,
+      estadoLabel: ESTADOS_LABELS[e.Estado] || e.Estado,
+      total: e.Total,
+      portes: e.Portes,
+      pontosGanhos: e.Pontos_Ganhos,
+      metodoPagamento: e.Metodo_Pagamento,
+      data: e.Data_Criacao,
+      dataActualizacao: e.Data_Actualizacao,
+      clienteNome: e.Cliente_Nome,
+      clienteEmail: e.Cliente_Email,
+      proximoEstado: proximoEstado(e.Estado),
+      podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada',
+      podeDevolver: e.Estado === 'Enviada',
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao listar encomendas.' });
+  }
+});
+
+// GET /admin/encomendas/:numero - detalhe (linhas incluídas)
+router.get('/encomendas/:numero', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const encomenda = await pool.request()
+      .input('numero', sql.VarChar(30), req.params.numero)
+      .query(`
+        SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
+               e.Metodo_Pagamento, e.Data_Criacao, e.Data_Actualizacao, e.Motivo_Anulacao,
+               c.Nome AS Cliente_Nome, c.Email AS Cliente_Email
+        FROM dbo.ZAPP_DBSiteCD_Encomendas e
+        LEFT JOIN dbo.ZAPP_DBSiteCD_Clientes c ON c.Id = e.Cliente_Id
+        WHERE e.Numero = @numero;
+      `);
+
+    if (encomenda.recordset.length === 0) {
+      return res.status(404).json({ erro: 'Encomenda não encontrada.' });
+    }
+    const e = encomenda.recordset[0];
+
+    const linhas = await pool.request()
+      .input('encomendaId', sql.Int, e.Id)
+      .query(`
+        SELECT l.Codigo_Artigo, l.Codigo_Lote, l.Descricao, l.Quantidade, l.Preco_Unitario,
+               ISNULL((
+                 SELECT SUM(dl.Quantidade)
+                 FROM dbo.ZAPP_DBSiteCD_DevolucoesLinhas dl
+                 JOIN dbo.ZAPP_DBSiteCD_Devolucoes d ON d.Id = dl.Devolucao_Id
+                 WHERE d.Encomenda_Id = l.Encomenda_Id AND dl.Codigo_Artigo = l.Codigo_Artigo AND dl.Codigo_Lote = l.Codigo_Lote
+               ), 0) AS Quantidade_Devolvida
+        FROM dbo.ZAPP_DBSiteCD_EncomendasLinhas l
+        WHERE l.Encomenda_Id = @encomendaId;
+      `);
+
+    res.json({
+      numero: e.Numero,
+      estado: e.Estado,
+      estadoLabel: ESTADOS_LABELS[e.Estado] || e.Estado,
+      total: e.Total,
+      portes: e.Portes,
+      valeCodigo: e.Vale_Codigo,
+      valeDesconto: e.Vale_Desconto,
+      pontosGanhos: e.Pontos_Ganhos,
+      metodoPagamento: e.Metodo_Pagamento,
+      data: e.Data_Criacao,
+      dataActualizacao: e.Data_Actualizacao,
+      motivoAnulacao: e.Motivo_Anulacao,
+      clienteNome: e.Cliente_Nome,
+      clienteEmail: e.Cliente_Email,
+      proximoEstado: proximoEstado(e.Estado),
+      podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada',
+      podeDevolver: e.Estado === 'Enviada',
+      linhas: linhas.recordset.map((l) => ({
+        codigoArtigo: l.Codigo_Artigo,
+        codigoLote: l.Codigo_Lote,
+        descricao: l.Descricao,
+        quantidade: l.Quantidade,
+        precoUnitario: l.Preco_Unitario,
+        quantidadeDevolvida: l.Quantidade_Devolvida,
+        quantidadeDevolvivel: l.Quantidade - l.Quantidade_Devolvida,
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter encomenda.' });
+  }
+});
+
+// GET /admin/encomendas/:numero/devolucoes - histórico de devoluções da encomenda
+router.get('/encomendas/:numero/devolucoes', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const encomendaRes = await pool.request()
+      .input('numero', sql.VarChar(30), req.params.numero)
+      .query('SELECT Id FROM dbo.ZAPP_DBSiteCD_Encomendas WHERE Numero = @numero;');
+
+    if (encomendaRes.recordset.length === 0) {
+      return res.status(404).json({ erro: 'Encomenda não encontrada.' });
+    }
+    const encomendaId = encomendaRes.recordset[0].Id;
+
+    const devolucoes = await pool.request()
+      .input('encomendaId', sql.Int, encomendaId)
+      .query(`
+        SELECT Id, Valor_Devolvido, Pontos_Estornados, Data_Criacao
+        FROM dbo.ZAPP_DBSiteCD_Devolucoes
+        WHERE Encomenda_Id = @encomendaId
+        ORDER BY Data_Criacao DESC;
+      `);
+
+    const resultado = [];
+    for (const d of devolucoes.recordset) {
+      const linhas = await pool.request()
+        .input('devolucaoId', sql.Int, d.Id)
+        .query('SELECT Codigo_Artigo, Codigo_Lote, Descricao, Quantidade, Preco_Unitario FROM dbo.ZAPP_DBSiteCD_DevolucoesLinhas WHERE Devolucao_Id = @devolucaoId;');
+
+      resultado.push({
+        id: d.Id,
+        valorDevolvido: d.Valor_Devolvido,
+        pontosEstornados: d.Pontos_Estornados,
+        data: d.Data_Criacao,
+        linhas: linhas.recordset.map((l) => ({
+          codigoArtigo: l.Codigo_Artigo,
+          codigoLote: l.Codigo_Lote,
+          descricao: l.Descricao,
+          quantidade: l.Quantidade,
+          precoUnitario: l.Preco_Unitario,
+        })),
+      });
+    }
+
+    res.json(resultado);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter devoluções.' });
+  }
+});
+
+// POST /admin/encomendas/:numero/devolucao - regista uma devolução parcial ou
+// total de artigos já enviados. Estorna proporcionalmente os pontos já
+// atribuídos (mesma proporção pontos/valor da encomenda original), registados
+// no livro-razão do cliente (Tipo = 'Devolucao').
+router.post('/encomendas/:numero/devolucao', async (req, res) => {
+  const { linhas: linhasDevolucao } = req.body;
+  if (!Array.isArray(linhasDevolucao) || linhasDevolucao.length === 0) {
+    return res.status(400).json({ erro: 'Indique pelo menos um artigo a devolver.' });
+  }
+
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+
+  try {
+    await transaction.begin();
+
+    const encReq = new sql.Request(transaction);
+    const encRes = await encReq
+      .input('numero', sql.VarChar(30), req.params.numero)
+      .query('SELECT Id, Estado, Cliente_Id, Pontos_Ganhos FROM dbo.ZAPP_DBSiteCD_Encomendas WITH (UPDLOCK, HOLDLOCK) WHERE Numero = @numero;');
+
+    if (encRes.recordset.length === 0) {
+      await transaction.rollback();
+      return res.status(404).json({ erro: 'Encomenda não encontrada.' });
+    }
+    const encomenda = encRes.recordset[0];
+
+    if (encomenda.Estado !== 'Enviada') {
+      await transaction.rollback();
+      return res.status(400).json({ erro: 'Só é possível devolver artigos de encomendas já enviadas.' });
+    }
+
+    const linhasOriginaisReq = new sql.Request(transaction);
+    const linhasOriginaisRes = await linhasOriginaisReq
+      .input('encomendaId', sql.Int, encomenda.Id)
+      .query(`
+        SELECT l.Codigo_Artigo, l.Codigo_Lote, l.Descricao, l.Quantidade, l.Preco_Unitario,
+               ISNULL((
+                 SELECT SUM(dl.Quantidade)
+                 FROM dbo.ZAPP_DBSiteCD_DevolucoesLinhas dl
+                 JOIN dbo.ZAPP_DBSiteCD_Devolucoes d ON d.Id = dl.Devolucao_Id
+                 WHERE d.Encomenda_Id = l.Encomenda_Id AND dl.Codigo_Artigo = l.Codigo_Artigo AND dl.Codigo_Lote = l.Codigo_Lote
+               ), 0) AS Quantidade_Devolvida
+        FROM dbo.ZAPP_DBSiteCD_EncomendasLinhas l
+        WHERE l.Encomenda_Id = @encomendaId;
+      `);
+
+    const totalProdutosOriginal = linhasOriginaisRes.recordset.reduce((s, l) => s + l.Quantidade * l.Preco_Unitario, 0);
+
+    // Validar cada linha pedida contra a linha original e o que já foi devolvido antes
+    const linhasParaDevolver = [];
+    for (const pedido of linhasDevolucao) {
+      const original = linhasOriginaisRes.recordset.find(
+        (l) => l.Codigo_Artigo === pedido.codigoArtigo && l.Codigo_Lote === pedido.codigoLote
+      );
+      if (!original) {
+        await transaction.rollback();
+        return res.status(400).json({ erro: `Artigo ${pedido.codigoArtigo} | ${pedido.codigoLote} não pertence a esta encomenda.` });
+      }
+      const quantidade = parseInt(pedido.quantidade, 10) || 0;
+      const disponivelParaDevolver = original.Quantidade - original.Quantidade_Devolvida;
+      if (quantidade <= 0) continue;
+      if (quantidade > disponivelParaDevolver) {
+        await transaction.rollback();
+        return res.status(400).json({ erro: `Quantidade a devolver de "${original.Descricao}" excede o disponível (${disponivelParaDevolver}).` });
+      }
+      linhasParaDevolver.push({ ...original, QuantidadeDevolver: quantidade });
+    }
+
+    if (linhasParaDevolver.length === 0) {
+      await transaction.rollback();
+      return res.status(400).json({ erro: 'Nenhuma quantidade válida a devolver.' });
+    }
+
+    const valorDevolvido = linhasParaDevolver.reduce((s, l) => s + l.QuantidadeDevolver * l.Preco_Unitario, 0);
+    const rateioPontos = totalProdutosOriginal > 0 ? encomenda.Pontos_Ganhos / totalProdutosOriginal : 0;
+    const pontosEstornados = Math.round(valorDevolvido * rateioPontos);
+
+    const devolucaoReq = new sql.Request(transaction);
+    const devolucaoRes = await devolucaoReq
+      .input('encomendaId', sql.Int, encomenda.Id)
+      .input('valorDevolvido', sql.Money, valorDevolvido)
+      .input('pontosEstornados', sql.Int, pontosEstornados)
+      .query(`
+        INSERT INTO dbo.ZAPP_DBSiteCD_Devolucoes (Encomenda_Id, Valor_Devolvido, Pontos_Estornados)
+        OUTPUT inserted.Id
+        VALUES (@encomendaId, @valorDevolvido, @pontosEstornados);
+      `);
+    const devolucaoId = devolucaoRes.recordset[0].Id;
+
+    for (const linha of linhasParaDevolver) {
+      const linhaReq = new sql.Request(transaction);
+      await linhaReq
+        .input('devolucaoId', sql.Int, devolucaoId)
+        .input('codigoArtigo', sql.VarChar(20), linha.Codigo_Artigo)
+        .input('codigoLote', sql.VarChar(50), linha.Codigo_Lote)
+        .input('descricao', sql.NVarChar(200), linha.Descricao)
+        .input('quantidade', sql.Int, linha.QuantidadeDevolver)
+        .input('precoUnitario', sql.Money, linha.Preco_Unitario)
+        .query(`
+          INSERT INTO dbo.ZAPP_DBSiteCD_DevolucoesLinhas (Devolucao_Id, Codigo_Artigo, Codigo_Lote, Descricao, Quantidade, Preco_Unitario)
+          VALUES (@devolucaoId, @codigoArtigo, @codigoLote, @descricao, @quantidade, @precoUnitario);
+        `);
+    }
+
+    if (pontosEstornados > 0) {
+      const pontosReq = new sql.Request(transaction);
+      await pontosReq
+        .input('clienteId', sql.Int, encomenda.Cliente_Id)
+        .input('pontos', sql.Int, -pontosEstornados)
+        .input('encomendaId', sql.Int, encomenda.Id)
+        .input('descricao', sql.NVarChar(200), `Devolução de artigos da encomenda ${req.params.numero}`)
+        .query(`
+          INSERT INTO dbo.ZAPP_DBSiteCD_PontosLedger (Cliente_Id, Tipo, Pontos, Encomenda_Id, Descricao)
+          VALUES (@clienteId, 'Devolucao', @pontos, @encomendaId, @descricao);
+        `);
+    }
+
+    await transaction.commit();
+    res.status(201).json({ ok: true, valorDevolvido, pontosEstornados });
+  } catch (err) {
+    console.error(err);
+    try { await transaction.rollback(); } catch (_) { /* já pode ter sido revertida */ }
+    res.status(500).json({ erro: 'Falha ao registar devolução.' });
+  }
+});
+
+// GET /admin/encomendas/:numero/pdf - exportação da encomenda em PDF
+router.get('/encomendas/:numero/pdf', async (req, res) => {
+  try {
+    const pdfBuffer = await gerarPdfEncomenda(req.params.numero);
+    if (!pdfBuffer) {
+      return res.status(404).json({ erro: 'Encomenda não encontrada.' });
+    }
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${req.params.numero}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao gerar PDF da encomenda.' });
+  }
+});
+
+// PUT /admin/encomendas/:numero/avancar - avança para o próximo estado da
+// sequência; ao chegar a "Enviada", atribui definitivamente os pontos (entram
+// no livro-razão e passam a poder ser usados em encomendas seguintes).
+router.put('/encomendas/:numero/avancar', async (req, res) => {
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+
+  try {
+    await transaction.begin();
+
+    const encReq = new sql.Request(transaction);
+    const encRes = await encReq
+      .input('numero', sql.VarChar(30), req.params.numero)
+      .query('SELECT Id, Estado, Cliente_Id, Pontos_Ganhos FROM dbo.ZAPP_DBSiteCD_Encomendas WITH (UPDLOCK, HOLDLOCK) WHERE Numero = @numero;');
+
+    if (encRes.recordset.length === 0) {
+      await transaction.rollback();
+      return res.status(404).json({ erro: 'Encomenda não encontrada.' });
+    }
+    const encomenda = encRes.recordset[0];
+    const novoEstado = proximoEstado(encomenda.Estado);
+
+    if (!novoEstado) {
+      await transaction.rollback();
+      return res.status(400).json({ erro: `A encomenda já está em "${ESTADOS_LABELS[encomenda.Estado] || encomenda.Estado}" e não pode avançar mais.` });
+    }
+
+    const updReq = new sql.Request(transaction);
+    await updReq
+      .input('id', sql.Int, encomenda.Id)
+      .input('estado', sql.VarChar(30), novoEstado)
+      .query('UPDATE dbo.ZAPP_DBSiteCD_Encomendas SET Estado = @estado, Data_Actualizacao = GETDATE() WHERE Id = @id;');
+
+    if (novoEstado === 'Enviada') {
+      // A encomenda já foi facturada no sistema central e o stock real já foi
+      // deduzido lá - a reserva local (Qtd_Reservada) deixa de fazer sentido e
+      // é libertada, para não ficar contabilizada em duplicado.
+      const linhasStockReq = new sql.Request(transaction);
+      const linhasStockRes = await linhasStockReq
+        .input('encomendaId', sql.Int, encomenda.Id)
+        .query('SELECT Codigo_Artigo, Codigo_Lote, Quantidade FROM dbo.ZAPP_DBSiteCD_EncomendasLinhas WHERE Encomenda_Id = @encomendaId;');
+
+      for (const linha of linhasStockRes.recordset) {
+        const libertarReq = new sql.Request(transaction);
+        await libertarReq
+          .input('codigoArtigo', sql.VarChar(20), linha.Codigo_Artigo)
+          .input('codigoLote', sql.VarChar(50), linha.Codigo_Lote)
+          .input('quantidade', sql.Int, linha.Quantidade)
+          .query(`
+            UPDATE dbo.ZAPP_DBSiteCD_Stock
+            SET Qtd_Reservada = Qtd_Reservada - @quantidade
+            WHERE Codigo_Artigo = @codigoArtigo AND Codigo_Lote = @codigoLote AND Codigo_Armazem = '001';
+          `);
+      }
+    }
+
+    if (novoEstado === 'Enviada' && encomenda.Pontos_Ganhos > 0) {
+      // idempotente: só atribui se ainda não houver um "Ganho" para esta encomenda
+      const jaAtribuidoReq = new sql.Request(transaction);
+      const jaAtribuidoRes = await jaAtribuidoReq
+        .input('encomendaId', sql.Int, encomenda.Id)
+        .query(`SELECT COUNT(*) AS Total FROM dbo.ZAPP_DBSiteCD_PontosLedger WHERE Encomenda_Id = @encomendaId AND Tipo = 'Ganho';`);
+
+      if (jaAtribuidoRes.recordset[0].Total === 0) {
+        const pontosReq = new sql.Request(transaction);
+        await pontosReq
+          .input('clienteId', sql.Int, encomenda.Cliente_Id)
+          .input('pontos', sql.Int, encomenda.Pontos_Ganhos)
+          .input('encomendaId', sql.Int, encomenda.Id)
+          .input('descricao', sql.NVarChar(200), `Compra ${req.params.numero} (encomenda enviada)`)
+          .query(`
+            INSERT INTO dbo.ZAPP_DBSiteCD_PontosLedger (Cliente_Id, Tipo, Pontos, Encomenda_Id, Descricao)
+            VALUES (@clienteId, 'Ganho', @pontos, @encomendaId, @descricao);
+          `);
+      }
+    }
+
+    await transaction.commit();
+
+    const estadoLabel = ESTADOS_LABELS[novoEstado] || novoEstado;
+    enviarEmailEncomenda(req.params.numero, {
+      assunto: `Encomenda ${req.params.numero} — ${estadoLabel}`,
+      tituloEvento: `Estado actualizado: ${estadoLabel}`,
+      notaEvento: novoEstado === 'Enviada'
+        ? 'A sua encomenda foi enviada! Os pontos desta compra já foram atribuídos e podem ser usados numa próxima encomenda.'
+        : 'O estado da sua encomenda foi actualizado.',
+    }).catch((emailErr) => console.error('[email] Erro ao enviar notificação de estado:', emailErr.message));
+
+    res.json({ ok: true, estado: novoEstado, estadoLabel });
+  } catch (err) {
+    console.error(err);
+    try { await transaction.rollback(); } catch (_) { /* já pode ter sido revertida */ }
+    res.status(500).json({ erro: 'Falha ao avançar estado da encomenda.' });
+  }
+});
+
+// PUT /admin/encomendas/:numero/anular - anula a encomenda, liberta o stock
+// reservado e estorna os pontos caso já tivessem sido atribuídos (encomenda já
+// enviada e depois anulada).
+router.put('/encomendas/:numero/anular', async (req, res) => {
+  const motivo = (req.body?.motivo || '').trim();
+  if (!motivo) {
+    return res.status(400).json({ erro: 'É obrigatório indicar o motivo da anulação.' });
+  }
+
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+
+  try {
+    await transaction.begin();
+
+    const encReq = new sql.Request(transaction);
+    const encRes = await encReq
+      .input('numero', sql.VarChar(30), req.params.numero)
+      .query('SELECT Id, Estado, Cliente_Id FROM dbo.ZAPP_DBSiteCD_Encomendas WITH (UPDLOCK, HOLDLOCK) WHERE Numero = @numero;');
+
+    if (encRes.recordset.length === 0) {
+      await transaction.rollback();
+      return res.status(404).json({ erro: 'Encomenda não encontrada.' });
+    }
+    const encomenda = encRes.recordset[0];
+
+    if (encomenda.Estado === ESTADO_ANULADA) {
+      await transaction.rollback();
+      return res.status(400).json({ erro: 'Esta encomenda já está anulada.' });
+    }
+
+    if (encomenda.Estado === 'Enviada') {
+      await transaction.rollback();
+      return res.status(400).json({ erro: 'Uma encomenda já enviada não pode ser anulada - utilize a Devolução.' });
+    }
+
+    const updReq = new sql.Request(transaction);
+    await updReq
+      .input('id', sql.Int, encomenda.Id)
+      .input('estado', sql.VarChar(30), ESTADO_ANULADA)
+      .input('motivo', sql.NVarChar(500), motivo)
+      .query('UPDATE dbo.ZAPP_DBSiteCD_Encomendas SET Estado = @estado, Motivo_Anulacao = @motivo, Data_Actualizacao = GETDATE() WHERE Id = @id;');
+
+    // Libertar o stock reservado por esta encomenda
+    const linhasReq = new sql.Request(transaction);
+    const linhasRes = await linhasReq
+      .input('encomendaId', sql.Int, encomenda.Id)
+      .query('SELECT Codigo_Artigo, Codigo_Lote, Quantidade FROM dbo.ZAPP_DBSiteCD_EncomendasLinhas WHERE Encomenda_Id = @encomendaId;');
+
+    for (const linha of linhasRes.recordset) {
+      const stockReq = new sql.Request(transaction);
+      await stockReq
+        .input('codigoArtigo', sql.VarChar(20), linha.Codigo_Artigo)
+        .input('codigoLote', sql.VarChar(50), linha.Codigo_Lote)
+        .input('quantidade', sql.Int, linha.Quantidade)
+        .query(`
+          UPDATE dbo.ZAPP_DBSiteCD_Stock
+          SET Qtd_Reservada = Qtd_Reservada - @quantidade
+          WHERE Codigo_Artigo = @codigoArtigo AND Codigo_Lote = @codigoLote AND Codigo_Armazem = '001';
+        `);
+    }
+
+    // Regista sempre uma linha na conta-corrente de pontos a assinalar a
+    // anulação - se a encomenda já tivesse pontos atribuídos (Tipo='Ganho'),
+    // são creditados de volta (valor negativo); caso contrário fica a 0, só
+    // para dar visibilidade ao cliente/Backoffice de que a encomenda foi anulada.
+    const ganhoReq = new sql.Request(transaction);
+    const ganhoRes = await ganhoReq
+      .input('encomendaId', sql.Int, encomenda.Id)
+      .query(`SELECT ISNULL(SUM(Pontos), 0) AS Total FROM dbo.ZAPP_DBSiteCD_PontosLedger WHERE Encomenda_Id = @encomendaId AND Tipo = 'Ganho';`);
+    const pontosJaGanhos = ganhoRes.recordset[0].Total;
+
+    const anulacaoReq = new sql.Request(transaction);
+    await anulacaoReq
+      .input('clienteId', sql.Int, encomenda.Cliente_Id)
+      .input('pontos', sql.Int, -pontosJaGanhos)
+      .input('encomendaId', sql.Int, encomenda.Id)
+      .input('descricao', sql.NVarChar(200), `Encomenda nº ${req.params.numero} Anulada`)
+      .query(`
+        INSERT INTO dbo.ZAPP_DBSiteCD_PontosLedger (Cliente_Id, Tipo, Pontos, Encomenda_Id, Descricao)
+        VALUES (@clienteId, 'Anulacao', @pontos, @encomendaId, @descricao);
+      `);
+
+    await transaction.commit();
+
+    enviarEmailEncomenda(req.params.numero, {
+      assunto: `Encomenda ${req.params.numero} — Anulada`,
+      tituloEvento: 'Encomenda Anulada',
+      notaEvento: 'A sua encomenda foi anulada. Detalhes abaixo.',
+    }).catch((emailErr) => console.error('[email] Erro ao enviar notificação de anulação:', emailErr.message));
+
+    res.json({ ok: true, estado: ESTADO_ANULADA, estadoLabel: ESTADOS_LABELS[ESTADO_ANULADA] });
+  } catch (err) {
+    console.error(err);
+    try { await transaction.rollback(); } catch (_) { /* já pode ter sido revertida */ }
+    res.status(500).json({ erro: 'Falha ao anular encomenda.' });
+  }
+});
+
+// ---- Links Úteis (páginas de conteúdo do rodapé) ----
+
+// GET /admin/paginas - lista todas (chave/título) para o sub-menu do Backoffice
+router.get('/paginas', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .query('SELECT Chave, Titulo, Data_Actualizacao FROM dbo.ZAPP_DBSiteCD_PaginasConteudo ORDER BY Titulo;');
+    res.json(resultado.recordset.map((p) => ({ chave: p.Chave, titulo: p.Titulo, dataActualizacao: p.Data_Actualizacao })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao listar páginas.' });
+  }
+});
+
+// GET /admin/paginas/:chave - conteúdo completo para edição
+router.get('/paginas/:chave', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('chave', sql.VarChar(50), req.params.chave)
+      .query('SELECT Chave, Titulo, Conteudo FROM dbo.ZAPP_DBSiteCD_PaginasConteudo WHERE Chave = @chave;');
+
+    if (resultado.recordset.length === 0) {
+      return res.status(404).json({ erro: 'Página não encontrada.' });
+    }
+    const p = resultado.recordset[0];
+    res.json({ chave: p.Chave, titulo: p.Titulo, conteudo: p.Conteudo });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter página.' });
+  }
+});
+
+// PUT /admin/paginas/:chave - guarda título/conteúdo editados
+router.put('/paginas/:chave', async (req, res) => {
+  const { titulo, conteudo } = req.body;
+  if (!titulo || !conteudo) {
+    return res.status(400).json({ erro: 'Título e conteúdo são obrigatórios.' });
+  }
+
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('chave', sql.VarChar(50), req.params.chave)
+      .input('titulo', sql.NVarChar(200), titulo)
+      .input('conteudo', sql.NVarChar(sql.MAX), conteudo)
+      .query(`
+        UPDATE dbo.ZAPP_DBSiteCD_PaginasConteudo
+        SET Titulo = @titulo, Conteudo = @conteudo, Data_Actualizacao = GETDATE()
+        WHERE Chave = @chave;
+      `);
+
+    if (resultado.rowsAffected[0] === 0) {
+      return res.status(404).json({ erro: 'Página não encontrada.' });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao guardar página.' });
   }
 });
 

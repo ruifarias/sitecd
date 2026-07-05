@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Clássico Desportivo</title>
+<link rel="icon" type="image/png" href="imagens/logo-transparente.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <header class="topo">
   <div class="topo-linha1">
-    <a href="index.html" class="logo">Clássico Desportivo</a>
+    <a href="index.html" class="logo"><img src="imagens/logo-transparente.png" alt="Clássico Desportivo" class="logo-icone">Clássico Desportivo</a>
     <div class="pesquisas-centro">
       <div class="pesquisa-topo">
         <input type="text" id="pesquisa-input" placeholder="Pesquisar artigos...">
@@ -28,7 +29,8 @@
     <div class="acoes">
       <button id="limpar-filtros-header" class="botao-limpar-filtros">Limpar Filtros</button>
       <a href="admin.html" class="carrinho-icone" title="Admin">⚙️</a>
-      <a href="carrinho.html" class="carrinho-icone">
+      <a href="conta.html" class="carrinho-icone" title="A Minha Conta">👤</a>
+      <a href="carrinho.html" class="carrinho-icone carrinho-icone-grande">
         🛒
         <span id="carrinho-badge" class="carrinho-badge" style="display:none">0</span>
       </a>
@@ -86,6 +88,42 @@
     <div class="paginacao" id="paginacao"></div>
   </main>
 </div>
+
+<footer class="rodape">
+  <div class="rodape-principal">
+    <div class="rodape-marca">
+      <img src="imagens/logo-transparente.png" alt="Clássico Desportivo" class="logo-icone">
+      <p>Loja de artigos de desporto desde 1989, em Marinha Grande. Qualidade e experiência ao seu serviço.</p>
+    </div>
+    <div class="rodape-coluna">
+      <h4>Contactos</h4>
+      <p>Rua Tenente Cabeleira Filipe, 1-A<br>2430-306 Marinha Grande</p>
+      <a href="tel:+351244566945">244 566 945</a>
+      <a href="mailto:geral@classicodesportivo.pt">geral@classicodesportivo.pt</a>
+      <a href="localizacao.html">📍 Ver localização no mapa</a>
+    </div>
+    <div class="rodape-coluna">
+      <h4>Horário</h4>
+      <p>Segunda a Sábado: 10h00 – 19h00<br>(Encerra 13h00 – 15h00)</p>
+      <p>Domingos e Feriados: Encerrado</p>
+    </div>
+        <div class="rodape-coluna">
+      <h4>Links Úteis</h4>
+      <a href="sobre-nos.html">Sobre nós</a>
+      <a href="termos-condicoes.html">Termos e Condições</a>
+      <a href="entregas.html">Entregas</a>
+      <a href="devolucoes-trocas.html">Devoluções e Trocas</a>
+      <a href="pagamentos.html">Pagamentos Permitidos</a>
+      <a href="privacidade.html">Política de Privacidade</a>
+      <a href="rgpd.html">RGPD</a>
+      <a href="cookies.html">Política de Cookies</a>
+      <a href="livro-reclamacoes.html">Livro de Reclamações Online</a>
+    </div>
+  </div>
+  <div class="rodape-legal">
+    <p>Clássico Desportivo, Comércio de Artigos de Desporto, Lda. · NIF/NIPC PT 505 794 268 · Registada na Conservatória do Registo Comercial de Marinha Grande sob o nº 2178 · © 2026 Clássico Desportivo. Todos os direitos reservados.</p>
+  </div>
+</footer>
 
 <script src="js/api.js"></script>
 <script src="js/listagem.js"></script>

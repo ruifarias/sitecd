@@ -1,16 +1,41 @@
 const API_BASE = 'http://localhost:3001/api';
 
+// Header Authorization: Bearer <token> em todos os pedidos quando existe uma
+// sessão de cliente (localStorage 'clienteToken' - ver auth.js). Rotas públicas
+// ignoram o header, por isso não há necessidade de o omitir condicionalmente.
+function headersAuth(extra = {}) {
+  const token = localStorage.getItem('clienteToken');
+  return token ? { ...extra, Authorization: `Bearer ${token}` } : extra;
+}
+
 async function apiGet(caminho, noCache = false) {
   const url = noCache ? `${API_BASE}${caminho}${caminho.includes('?') ? '&' : '?'}_t=${Date.now()}` : `${API_BASE}${caminho}`;
-  const res = await fetch(url, { cache: 'no-store' });
+  const res = await fetch(url, { cache: 'no-store', headers: headersAuth() });
   if (!res.ok) throw new Error((await res.json()).erro || 'Erro na API');
   return res.json();
+}
+
+// Descarrega um ficheiro (ex: PDF) enviando o header Authorization - um <a href>
+// simples não envia esse header, por isso é preciso ir buscar via fetch e criar
+// um URL temporário para o browser descarregar.
+async function apiDownload(caminho, nomeFicheiro) {
+  const res = await fetch(`${API_BASE}${caminho}`, { headers: headersAuth() });
+  if (!res.ok) throw new Error((await res.json()).erro || 'Erro na API');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nomeFicheiro;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 async function apiPost(caminho, corpo) {
   const res = await fetch(`${API_BASE}${caminho}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: headersAuth({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(corpo),
   });
   const dados = await res.json();
@@ -21,7 +46,7 @@ async function apiPost(caminho, corpo) {
 async function apiPut(caminho, corpo) {
   const res = await fetch(`${API_BASE}${caminho}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: headersAuth({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(corpo),
   });
   if (!res.ok) throw new Error((await res.json()).erro || 'Erro na API');
@@ -29,7 +54,7 @@ async function apiPut(caminho, corpo) {
 }
 
 async function apiDelete(caminho) {
-  const res = await fetch(`${API_BASE}${caminho}`, { method: 'DELETE' });
+  const res = await fetch(`${API_BASE}${caminho}`, { method: 'DELETE', headers: headersAuth() });
   if (!res.ok) throw new Error((await res.json()).erro || 'Erro na API');
   return res.json();
 }

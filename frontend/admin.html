@@ -4,11 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin - Clássico Desportivo</title>
+<link rel="icon" type="image/png" href="imagens/logo-transparente.png">
 <link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<div class="backoffice-container">
+<div id="auth-gate-admin" style="max-width:480px;margin:60px auto"></div>
+
+<div class="backoffice-container" id="backoffice-container" style="display:none">
   <!-- Menu Lateral -->
   <aside class="menu-lateral">
     <div class="menu-header">
@@ -16,11 +20,20 @@
       <h2>Backoffice</h2>
     </div>
     <nav class="menu-opcoes">
-      <button class="menu-item activo" data-secao="marcas-principais">
+      <button class="menu-item activo" data-secao="encomendas">
+        Encomendas
+      </button>
+      <button class="menu-item" data-secao="marcas-principais">
         Marcas Principais
       </button>
       <button class="menu-item" data-secao="config-novidades">
         Configuração Novidades
+      </button>
+      <button class="menu-item" data-secao="portes-envio">
+        Portes de Envio
+      </button>
+      <button class="menu-item" data-secao="pontos-vales">
+        Pontos e Vales
       </button>
       <button class="menu-item" data-secao="visibilidade-familias">
         Visibilidade de Famílias
@@ -31,13 +44,41 @@
       <button class="menu-item" data-secao="sync-log">
         Log de Sincronização
       </button>
+      <button class="menu-item" data-secao="links-uteis">
+        Links Úteis
+      </button>
     </nav>
+    <button class="menu-item-logout" id="btn-logout-admin">Terminar Sessão</button>
   </aside>
 
   <!-- Conteúdo Principal -->
   <main class="conteudo-principal">
+    <!-- Encomendas -->
+    <section id="secao-encomendas" class="secao activa">
+      <h1>Encomendas</h1>
+      <p class="descricao">Seguimento do estado das encomendas: Confirmação e a Aguardar Pagamento → Pagamento Efectuado → Encomenda em Preparação → Encomenda Enviada. Os pontos de fidelização só são atribuídos ao cliente quando a encomenda é marcada como Enviada.</p>
+
+      <div class="loader" id="loader-encomendas" style="display:none;">A carregar encomendas...</div>
+
+      <table id="encomendas-table" class="sync-table">
+        <thead>
+          <tr>
+            <th>Número</th>
+            <th>Cliente</th>
+            <th>Data</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Acções</th>
+          </tr>
+        </thead>
+        <tbody id="encomendas-tbody"></tbody>
+      </table>
+
+      <div id="detalhe-encomenda-admin"></div>
+    </section>
+
     <!-- Marcas Principais -->
-    <section id="secao-marcas-principais" class="secao activa">
+    <section id="secao-marcas-principais" class="secao">
       <h1>Marcas Principais</h1>
       <p class="descricao">Seleccione as marcas que aparecem no topo do filtro lateral. As restantes ficarão sob "Outras Marcas".</p>
 
@@ -65,6 +106,49 @@
       <div class="acoes">
         <button id="btn-guardar-novidades" class="botao-principal">Guardar</button>
         <span id="msg-novidades" class="mensagem"></span>
+      </div>
+    </section>
+
+    <!-- Portes de Envio -->
+    <section id="secao-portes-envio" class="secao">
+      <h1>Portes de Envio</h1>
+      <p class="descricao">Valor fixo cobrado pelo envio, aplicado a todas as encomendas.</p>
+
+      <div class="form-group">
+        <label for="valor-portes">Valor dos portes (€):</label>
+        <input type="number" id="valor-portes" min="0" step="0.01" value="9.90">
+        <small>Aplicado a todas as encomendas no checkout, além do total dos produtos.</small>
+      </div>
+
+      <div class="acoes">
+        <button id="btn-guardar-portes" class="botao-principal">Guardar</button>
+        <span id="msg-portes" class="mensagem"></span>
+      </div>
+    </section>
+
+    <!-- Pontos e Vales -->
+    <section id="secao-pontos-vales" class="secao">
+      <h1>Pontos e Vales</h1>
+      <p class="descricao">Regras do programa de fidelização: pontos ganhos por compra e conversão em vales de desconto.</p>
+
+      <div class="form-group">
+        <label for="pontos-por-euro">Pontos ganhos por cada 1€ gasto (produtos, sem portes):</label>
+        <input type="number" id="pontos-por-euro" min="0" step="0.1" value="1">
+      </div>
+
+      <div class="form-group">
+        <label for="pontos-para-vale">Pontos necessários para trocar por um vale:</label>
+        <input type="number" id="pontos-para-vale" min="1" step="1" value="100">
+      </div>
+
+      <div class="form-group">
+        <label for="valor-vale">Valor do vale gerado na troca (€):</label>
+        <input type="number" id="valor-vale" min="0" step="0.01" value="5.00">
+      </div>
+
+      <div class="acoes">
+        <button id="btn-guardar-pontos" class="botao-principal">Guardar</button>
+        <span id="msg-pontos" class="mensagem"></span>
       </div>
     </section>
 
@@ -148,10 +232,38 @@
         </table>
       </div>
     </section>
+
+    <!-- Links Úteis (páginas do rodapé) -->
+    <section id="secao-links-uteis" class="secao">
+      <h1>Links Úteis</h1>
+      <p class="descricao">Conteúdo das páginas informativas apresentadas no rodapé do site.</p>
+
+      <div class="menu-opcoes" id="sub-menu-links-uteis" style="flex-direction:row;flex-wrap:wrap;background:#f5f5f5;border-radius:4px;padding:4px;margin-bottom:20px">
+      </div>
+
+      <div class="loader" id="loader-pagina-conteudo" style="display:none;">A carregar...</div>
+
+      <div class="form-group">
+        <label for="pagina-titulo">Título:</label>
+        <input type="text" id="pagina-titulo">
+      </div>
+
+      <div class="form-group">
+        <label for="pagina-conteudo">Conteúdo (HTML):</label>
+        <textarea id="pagina-conteudo" rows="18" style="width:100%;font-family:monospace;font-size:12px;padding:10px"></textarea>
+        <small>Editar directamente em HTML (títulos &lt;h2&gt;, parágrafos &lt;p&gt;, listas &lt;ul&gt;&lt;li&gt;, etc.). Esta é a mesma estrutura usada na página pública.</small>
+      </div>
+
+      <div class="acoes">
+        <button id="btn-guardar-pagina" class="botao-principal">Guardar</button>
+        <span id="msg-pagina" class="mensagem"></span>
+      </div>
+    </section>
   </main>
 </div>
 
 <script src="js/api.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>

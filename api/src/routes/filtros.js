@@ -11,7 +11,7 @@ router.get('/marcas', async (req, res) => {
       SELECT DISTINCT m.Codigo_Marca, m.Marca
       FROM dbo.ZAPP_DBSiteCD_Marcas m
       INNER JOIN dbo.ZAPP_DBSiteCD_Artigos a ON a.Codigo_Marca = m.Codigo_Marca
-      WHERE a.Publicado = 1
+      WHERE a.Publicado = 1 AND m.Situacao = 1
       ORDER BY m.Marca;
     `);
 
@@ -170,6 +170,41 @@ router.get('/familias/grau4', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao listar famílias Grau 4.' });
+  }
+});
+
+// GET /api/config-publico - só os valores de Config necessários no checkout
+// (não expõe as restantes definições, que ficam reservadas ao Backoffice).
+router.get('/config-publico', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const result = await pool.request()
+      .query(`SELECT Chave, Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave IN ('PortesEnvio', 'PontosPorEuro', 'PontosParaVale', 'ValorVale');`);
+    const config = {};
+    result.recordset.forEach((r) => { config[r.Chave] = r.Valor; });
+    res.json(config);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter configuração.' });
+  }
+});
+
+// GET /api/paginas/:chave - conteúdo público de uma página informativa
+// (rodapé "Links Úteis"), editável no Backoffice.
+router.get('/paginas/:chave', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('chave', sql.VarChar(50), req.params.chave)
+      .query('SELECT Titulo, Conteudo FROM dbo.ZAPP_DBSiteCD_PaginasConteudo WHERE Chave = @chave;');
+
+    if (resultado.recordset.length === 0) {
+      return res.status(404).json({ erro: 'Página não encontrada.' });
+    }
+    res.json({ titulo: resultado.recordset[0].Titulo, conteudo: resultado.recordset[0].Conteudo });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter página.' });
   }
 });
 

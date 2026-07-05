@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Minha Conta - Clássico Desportivo</title>
+<link rel="icon" type="image/png" href="imagens/logo-transparente.png">
+<link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="backoffice-container">
+  <aside class="menu-lateral">
+    <div class="menu-header">
+      <a href="index.html" class="btn-voltar" title="Voltar à página">← Voltar</a>
+      <h2>A Minha Conta</h2>
+    </div>
+    <nav class="menu-opcoes">
+      <button class="menu-item activo" data-secao="dados">Os Meus Dados</button>
+      <button class="menu-item" data-secao="encomendas">As Minhas Encomendas</button>
+      <button class="menu-item" data-secao="pontos">Pontos e Vales</button>
+      <button class="menu-item-logout" id="btn-terminar-sessao">Terminar Sessão</button>
+    </nav>
+  </aside>
+
+  <main class="conteudo-principal">
+    <div id="auth-conta"></div>
+
+    <div id="conteudo-autenticado" style="display:none">
+      <section id="secao-dados" class="secao activa">
+        <h1>Os Meus Dados</h1>
+        <div id="dados-perfil"></div>
+      </section>
+
+      <section id="secao-encomendas" class="secao">
+        <h1>As Minhas Encomendas</h1>
+        <div id="lista-encomendas"></div>
+        <div id="detalhe-encomenda"></div>
+      </section>
+
+      <section id="secao-pontos" class="secao">
+        <h1>Pontos e Vales</h1>
+        <div id="saldo-pontos"></div>
+
+        <h3 style="margin-top:24px">Histórico de Pontos</h3>
+        <div id="historico-pontos"></div>
+
+        <h3 style="margin-top:24px">Os Meus Vales</h3>
+        <div id="lista-vales"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/conta.js"></script>
+</body>
+</html>

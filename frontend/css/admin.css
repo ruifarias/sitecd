@@ -100,6 +100,24 @@ body {
   border-left: 4px solid var(--vermelho);
 }
 
+.menu-item-logout {
+  background: transparent;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--cinza-texto);
+  padding: 16px 24px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: auto;
+}
+
+.menu-item-logout:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--branco);
+}
+
 /* Conteúdo Principal */
 .conteudo-principal {
   flex: 1;
@@ -140,6 +158,7 @@ body {
 }
 
 .marca-card {
+  position: relative;
   border: 2px solid var(--cinza-medio);
   border-radius: 6px;
   padding: 12px;
@@ -159,8 +178,35 @@ body {
   border-color: var(--vermelho);
 }
 
+.marca-card.inactiva {
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+  opacity: 0.65;
+}
+
 .marca-card input[type="checkbox"] {
   display: none;
+}
+
+.btn-toggle-activa {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  line-height: 16px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  background: var(--branco);
+  color: var(--verde);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.marca-card.inactiva .btn-toggle-activa {
+  color: #999;
 }
 
 .marca-nome {
@@ -338,6 +384,32 @@ body {
   font-weight: 500;
 }
 
+/* Badges de estado da encomenda */
+.badge-estado {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge-estado.AguardarPagamento { background: #fff3cd; color: #856404; }
+.badge-estado.PagamentoEfectuado { background: #cce5ff; color: #004085; }
+.badge-estado.EmPreparacao { background: #e2d9f3; color: #4b2e83; }
+.badge-estado.Enviada { background: #d4edda; color: #155724; }
+.badge-estado.Anulada { background: #f8d7da; color: #721c24; }
+
+.acoes-encomenda {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.acoes-encomenda button {
+  font-size: 11px;
+  padding: 5px 10px;
+}
+
 /* Tabelas de Famílias */
 .familias-table,
 .classificar-table {
@@ -463,6 +535,64 @@ body {
   color: var(--cinza-texto);
   padding: 24px;
   font-size: 14px;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-caixa {
+  background: var(--branco);
+  border-radius: 8px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.modal-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--cinza-medio);
+}
+
+.modal-cabecalho h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--preto);
+}
+
+.modal-fechar {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--cinza-texto);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.modal-fechar:hover {
+  color: var(--vermelho);
+}
+
+.modal-corpo {
+  padding: 16px 24px;
+  overflow-y: auto;
 }
 
 /* Responsivo */
