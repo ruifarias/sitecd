@@ -14,7 +14,7 @@ function assinarToken(cliente) {
 
 // POST /api/auth/registo
 router.post('/registo', async (req, res) => {
-  const { nome, email, password, telefone, nif } = req.body;
+  const { nome, email, password, telefone, nif, morada, localidade, codigoPostal } = req.body;
 
   if (!nome || !email || !password) {
     return res.status(400).json({ erro: 'Nome, email e password são obrigatórios.' });
@@ -45,9 +45,13 @@ router.post('/registo', async (req, res) => {
         .input('passwordHash', sql.NVarChar(255), passwordHash)
         .input('telefone', sql.NVarChar(30), telefone || null)
         .input('nif', sql.VarChar(20), nif || null)
+        .input('morada', sql.NVarChar(200), morada || null)
+        .input('localidade', sql.NVarChar(100), localidade || null)
+        .input('codigoPostal', sql.VarChar(10), codigoPostal || null)
         .query(`
           UPDATE dbo.ZAPP_DBSiteCD_Clientes
-          SET Nome = @nome, Password_Hash = @passwordHash, Telefone = @telefone, NIF = @nif
+          SET Nome = @nome, Password_Hash = @passwordHash, Telefone = @telefone, NIF = @nif,
+              Morada = @morada, Localidade = @localidade, Codigo_Postal = @codigoPostal
           OUTPUT inserted.Id, inserted.Nome, inserted.Email
           WHERE Id = @id;
         `);
@@ -59,10 +63,13 @@ router.post('/registo', async (req, res) => {
         .input('passwordHash', sql.NVarChar(255), passwordHash)
         .input('telefone', sql.NVarChar(30), telefone || null)
         .input('nif', sql.VarChar(20), nif || null)
+        .input('morada', sql.NVarChar(200), morada || null)
+        .input('localidade', sql.NVarChar(100), localidade || null)
+        .input('codigoPostal', sql.VarChar(10), codigoPostal || null)
         .query(`
-          INSERT INTO dbo.ZAPP_DBSiteCD_Clientes (Nome, Email, Password_Hash, Telefone, NIF)
+          INSERT INTO dbo.ZAPP_DBSiteCD_Clientes (Nome, Email, Password_Hash, Telefone, NIF, Morada, Localidade, Codigo_Postal)
           OUTPUT inserted.Id, inserted.Nome, inserted.Email
-          VALUES (@nome, @email, @passwordHash, @telefone, @nif);
+          VALUES (@nome, @email, @passwordHash, @telefone, @nif, @morada, @localidade, @codigoPostal);
         `);
       cliente = criado.recordset[0];
     }
@@ -114,13 +121,22 @@ router.get('/perfil', requireAuth, async (req, res) => {
     const pool = await getPool();
     const resultado = await pool.request()
       .input('id', sql.Int, req.cliente.id)
-      .query('SELECT Nome, Email, Telefone, NIF, IsAdmin FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Id = @id;');
+      .query('SELECT Nome, Email, Telefone, NIF, IsAdmin, Morada, Localidade, Codigo_Postal FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Id = @id;');
 
     if (resultado.recordset.length === 0) {
       return res.status(404).json({ erro: 'Cliente não encontrado.' });
     }
     const c = resultado.recordset[0];
-    res.json({ nome: c.Nome, email: c.Email, telefone: c.Telefone, nif: c.NIF, isAdmin: !!c.IsAdmin });
+    res.json({
+      nome: c.Nome,
+      email: c.Email,
+      telefone: c.Telefone,
+      nif: c.NIF,
+      isAdmin: !!c.IsAdmin,
+      morada: c.Morada,
+      localidade: c.Localidade,
+      codigoPostal: c.Codigo_Postal,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao obter perfil.' });

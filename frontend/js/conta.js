@@ -4,13 +4,63 @@ async function carregarPerfil() {
   try {
     const perfil = await apiGet('/conta/perfil');
     container.innerHTML = `
-      <div class="form-group"><label>Nome:</label><p>${perfil.nome}</p></div>
-      <div class="form-group"><label>Email:</label><p>${perfil.email}</p></div>
-      <div class="form-group"><label>Telefone:</label><p>${perfil.telefone || '-'}</p></div>
-      <div class="form-group"><label>NIF:</label><p>${perfil.nif || '-'}</p></div>
+      <form class="checkout" id="form-perfil">
+        <fieldset>
+          <legend>Os Meus Dados</legend>
+          <label>Nome *</label>
+          <input type="text" name="nome" value="${perfil.nome || ''}" required>
+          <label>Email</label>
+          <input type="email" value="${perfil.email || ''}" disabled>
+          <label>Telefone</label>
+          <input type="tel" name="telefone" value="${perfil.telefone || ''}">
+          <label>NIF</label>
+          <input type="text" name="nif" value="${perfil.nif || ''}">
+        </fieldset>
+        <fieldset>
+          <legend>Morada de Entrega</legend>
+          <label>Morada</label>
+          <input type="text" name="morada" value="${perfil.morada || ''}">
+          <label>Localidade</label>
+          <input type="text" name="localidade" value="${perfil.localidade || ''}">
+          <label>Código Postal</label>
+          <input type="text" name="codigoPostal" placeholder="0000-000" value="${perfil.codigoPostal || ''}">
+        </fieldset>
+        <button type="submit" class="botao-principal">Guardar Alterações</button>
+        <span id="msg-perfil" class="mensagem"></span>
+      </form>
     `;
+    document.getElementById('form-perfil').addEventListener('submit', guardarPerfil);
   } catch (err) {
     container.innerHTML = `<div class="mensagem-erro">${err.message}</div>`;
+  }
+}
+
+async function guardarPerfil(e) {
+  e.preventDefault();
+  const form = e.target;
+  const botao = form.querySelector('button[type="submit"]');
+  const msg = document.getElementById('msg-perfil');
+  botao.disabled = true;
+  msg.textContent = 'A guardar...';
+  msg.className = 'mensagem';
+
+  try {
+    await apiPut('/conta/perfil', {
+      nome: form.nome.value,
+      telefone: form.telefone.value || undefined,
+      nif: form.nif.value || undefined,
+      morada: form.morada.value || undefined,
+      localidade: form.localidade.value || undefined,
+      codigoPostal: form.codigoPostal.value || undefined,
+    });
+    msg.textContent = '✓ Guardado com sucesso!';
+    msg.className = 'mensagem sucesso';
+  } catch (err) {
+    msg.textContent = '✗ ' + err.message;
+    msg.className = 'mensagem erro';
+  } finally {
+    botao.disabled = false;
+    setTimeout(() => { msg.textContent = ''; }, 3000);
   }
 }
 
@@ -60,14 +110,35 @@ async function verDetalheEncomenda(numero) {
         <h3>Encomenda ${e.numero} — <span class="badge-estado ${e.estado}">${e.estadoLabel}</span></h3>
         ${e.estado === 'Anulada' && e.motivoAnulacao ? `<p class="mensagem-erro">Motivo da anulação: ${e.motivoAnulacao}</p>` : ''}
         <table class="sync-table">
-          <thead><tr><th>Artigo</th><th>Qtd.</th><th>Preço Unit.</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Artigo</th>
+              <th>Qtd.</th>
+              <th style="text-align:right">Preço Venda</th>
+              <th style="text-align:right">Desconto</th>
+              <th style="text-align:right">Valor Líquido</th>
+            </tr>
+          </thead>
           <tbody>
-            ${e.linhas.map((l) => `<tr><td>${l.descricao}</td><td>${l.quantidade}</td><td>${formatarPreco(l.precoUnitario)}</td></tr>`).join('')}
+            ${e.linhas.map((l) => `
+              <tr>
+                <td>${l.codigoArtigo}</td>
+                <td>${l.nome}${l.variante ? `<br><span class="texto-variante">${l.variante}</span>` : ''}</td>
+                <td>${l.quantidade}</td>
+                <td style="text-align:right">${formatarPreco(l.precoVenda)}</td>
+                <td style="text-align:right">${l.descontoPercentagem > 0 ? '-' + l.descontoPercentagem + '%' : '0%'}</td>
+                <td style="text-align:right">${formatarPreco(l.valorLiquido)}</td>
+              </tr>
+            `).join('')}
           </tbody>
         </table>
-        <p style="margin-top:8px">Portes: ${formatarPreco(e.portes)}</p>
-        ${e.valeDesconto > 0 ? `<p>Vale aplicado (${e.valeCodigo}): -${formatarPreco(e.valeDesconto)}</p>` : ''}
-        <p><strong>Total: ${formatarPreco(e.total)}</strong></p>
+        <div class="resumo-encomenda-totais">
+          <div><span>Sub-total dos Artigos</span><span>${formatarPreco(e.totalProdutos)}</span></div>
+          <div><span>Portes</span><span>${formatarPreco(e.portes)}</span></div>
+          ${e.valeDesconto > 0 ? `<div><span>Vale aplicado (${e.valeCodigo})</span><span>-${formatarPreco(e.valeDesconto)}</span></div>` : ''}
+          <div class="resumo-total-final"><span>Total</span><span>${formatarPreco(e.total)}</span></div>
+        </div>
         <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === 'Enviada' ? '(já atribuídos)' : e.estado === 'Anulada' ? '(anulados)' : '(pendentes até a encomenda ser enviada)'}</p>
         <button class="botao-secundario" id="btn-pdf-encomenda">Exportar PDF</button>
       </div>
@@ -179,7 +250,7 @@ function mostrarAreaAutenticada() {
   document.getElementById('auth-conta').style.display = 'none';
   document.getElementById('conteudo-autenticado').style.display = 'block';
   inicializarMenu();
-  carregarPerfil();
+  carregarEncomendas();
 }
 
 (async function init() {

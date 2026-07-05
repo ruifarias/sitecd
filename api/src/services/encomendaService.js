@@ -29,7 +29,7 @@ async function obterEncomendaCompleta(numero) {
   const linhasRes = await pool.request()
     .input('encomendaId', sql.Int, e.Id)
     .query(`
-      SELECT l.Codigo_Artigo, l.Codigo_Lote, l.Descricao, l.Quantidade, l.Preco_Unitario,
+      SELECT l.Codigo_Artigo, l.Codigo_Lote, l.Descricao, l.Quantidade, l.Preco_Unitario, l.Preco_Venda, l.Desconto,
              (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = l.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Path
       FROM dbo.ZAPP_DBSiteCD_EncomendasLinhas l
       WHERE l.Encomenda_Id = @encomendaId;
@@ -71,6 +71,9 @@ async function obterEncomendaCompleta(numero) {
       descricao: l.Descricao,
       quantidade: l.Quantidade,
       precoUnitario: l.Preco_Unitario,
+      precoVenda: l.Preco_Venda,
+      desconto: l.Desconto,
+      descontoPercentagem: l.Preco_Venda > 0 ? Math.round((l.Desconto / l.Preco_Venda) * 100) : 0,
       precoTotal: Math.round(l.Preco_Unitario * l.Quantidade * 100) / 100,
       imagem: l.Imagem_Path ? `${process.env.IMAGES_BASE_URL}/${l.Imagem_Path.replace(/^imagens\//, '')}` : null,
     })),

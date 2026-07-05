@@ -6,6 +6,7 @@ const { getPool, sql } = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { ESTADOS_LABELS } = require('../constants/encomendaEstados');
 const { gerarPdfEncomenda } = require('../services/pdf');
+const { separarNomeVariante } = require('../services/email');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -16,16 +17,56 @@ router.get('/perfil', async (req, res) => {
     const pool = await getPool();
     const resultado = await pool.request()
       .input('id', sql.Int, req.cliente.id)
-      .query('SELECT Nome, Email, Telefone, NIF FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Id = @id;');
+      .query('SELECT Nome, Email, Telefone, NIF, Morada, Localidade, Codigo_Postal FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Id = @id;');
 
     if (resultado.recordset.length === 0) {
       return res.status(404).json({ erro: 'Cliente não encontrado.' });
     }
     const c = resultado.recordset[0];
-    res.json({ nome: c.Nome, email: c.Email, telefone: c.Telefone, nif: c.NIF });
+    res.json({
+      nome: c.Nome,
+      email: c.Email,
+      telefone: c.Telefone,
+      nif: c.NIF,
+      morada: c.Morada,
+      localidade: c.Localidade,
+      codigoPostal: c.Codigo_Postal,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao obter perfil.' });
+  }
+});
+
+// PUT /api/conta/perfil - o cliente edita os seus próprios dados, incluindo a
+// morada de entrega por omissão (pré-preenchida no checkout, mas alterável
+// por encomenda).
+router.put('/perfil', async (req, res) => {
+  const { nome, telefone, nif, morada, localidade, codigoPostal } = req.body;
+  if (!nome || !nome.trim()) {
+    return res.status(400).json({ erro: 'O nome é obrigatório.' });
+  }
+
+  try {
+    const pool = await getPool();
+    await pool.request()
+      .input('id', sql.Int, req.cliente.id)
+      .input('nome', sql.NVarChar(150), nome.trim())
+      .input('telefone', sql.NVarChar(30), telefone || null)
+      .input('nif', sql.VarChar(20), nif || null)
+      .input('morada', sql.NVarChar(200), morada || null)
+      .input('localidade', sql.NVarChar(100), localidade || null)
+      .input('codigoPostal', sql.VarChar(10), codigoPostal || null)
+      .query(`
+        UPDATE dbo.ZAPP_DBSiteCD_Clientes
+        SET Nome = @nome, Telefone = @telefone, NIF = @nif,
+            Morada = @morada, Localidade = @localidade, Codigo_Postal = @codigoPostal
+        WHERE Id = @id;
+      `);
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao guardar os dados.' });
   }
 });
 
@@ -78,13 +119,16 @@ router.get('/encomendas/:numero', async (req, res) => {
 
     const linhas = await pool.request()
       .input('encomendaId', sql.Int, e.Id)
-      .query('SELECT Codigo_Artigo, Codigo_Lote, Descricao, Quantidade, Preco_Unitario FROM dbo.ZAPP_DBSiteCD_EncomendasLinhas WHERE Encomenda_Id = @encomendaId;');
+      .query('SELECT Codigo_Artigo, Codigo_Lote, Descricao, Quantidade, Preco_Unitario, Preco_Venda, Desconto FROM dbo.ZAPP_DBSiteCD_EncomendasLinhas WHERE Encomenda_Id = @encomendaId;');
+
+    const totalProdutos = linhas.recordset.reduce((s, l) => s + l.Preco_Unitario * l.Quantidade, 0);
 
     res.json({
       numero: e.Numero,
       estado: e.Estado,
       estadoLabel: ESTADOS_LABELS[e.Estado] || e.Estado,
       total: e.Total,
+      totalProdutos,
       portes: e.Portes,
       valeCodigo: e.Vale_Codigo,
       valeDesconto: e.Vale_Desconto,
@@ -92,13 +136,22 @@ router.get('/encomendas/:numero', async (req, res) => {
       metodoPagamento: e.Metodo_Pagamento,
       data: e.Data_Criacao,
       motivoAnulacao: e.Motivo_Anulacao,
-      linhas: linhas.recordset.map((l) => ({
-        codigoArtigo: l.Codigo_Artigo,
-        codigoLote: l.Codigo_Lote,
-        descricao: l.Descricao,
-        quantidade: l.Quantidade,
-        precoUnitario: l.Preco_Unitario,
-      })),
+      linhas: linhas.recordset.map((l) => {
+        const { nome, variante } = separarNomeVariante(l.Descricao);
+        return {
+          codigoArtigo: l.Codigo_Artigo,
+          codigoLote: l.Codigo_Lote,
+          descricao: l.Descricao,
+          nome,
+          variante,
+          quantidade: l.Quantidade,
+          precoUnitario: l.Preco_Unitario,
+          precoVenda: l.Preco_Venda,
+          desconto: l.Desconto,
+          descontoPercentagem: l.Preco_Venda > 0 ? Math.round((l.Desconto / l.Preco_Venda) * 100) : 0,
+          valorLiquido: Math.round(l.Preco_Unitario * l.Quantidade * 100) / 100,
+        };
+      }),
     });
   } catch (err) {
     console.error(err);

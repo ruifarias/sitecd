@@ -138,7 +138,7 @@ async function carregarEncomendas() {
         <td>
           <div class="acoes-encomenda">
             <button class="botao-secundario btn-ver-detalhe-admin" data-numero="${e.numero}">Ver</button>
-            ${e.proximoEstado ? `<button class="botao-principal btn-avancar-estado" data-numero="${e.numero}">Avançar</button>` : ''}
+            ${e.proximoEstado ? `<button class="botao-principal btn-avancar-estado" data-numero="${e.numero}" data-proximo-estado-label="${e.proximoEstadoLabel || ''}">Avançar</button>` : ''}
             ${e.podeAnular ? `<button class="botao-secundario btn-anular-encomenda" data-numero="${e.numero}">Anular</button>` : ''}
             ${e.podeDevolver ? `<button class="botao-secundario btn-devolver-encomenda" data-numero="${e.numero}">Devolução</button>` : ''}
           </div>
@@ -150,7 +150,7 @@ async function carregarEncomendas() {
       btn.addEventListener('click', () => verDetalheEncomendaAdmin(btn.dataset.numero));
     });
     tbody.querySelectorAll('.btn-avancar-estado').forEach((btn) => {
-      btn.addEventListener('click', () => avancarEstadoEncomenda(btn.dataset.numero));
+      btn.addEventListener('click', () => avancarEstadoEncomenda(btn.dataset.numero, btn.dataset.proximoEstadoLabel));
     });
     tbody.querySelectorAll('.btn-anular-encomenda').forEach((btn) => {
       btn.addEventListener('click', () => anularEncomendaAdmin(btn.dataset.numero));
@@ -177,14 +177,37 @@ async function verDetalheEncomendaAdmin(numero, focarDevolucao = false) {
         <p>Cliente: ${e.clienteNome} (${e.clienteEmail})</p>
         ${e.estado === 'Anulada' && e.motivoAnulacao ? `<p class="mensagem-erro">Motivo da anulação: ${e.motivoAnulacao}</p>` : ''}
         <table class="sync-table">
-          <thead><tr><th>Artigo</th><th>Qtd.</th><th>Preço Unit.</th>${e.podeDevolver ? '<th>Devolvida</th>' : ''}</tr></thead>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Artigo</th>
+              <th>Qtd.</th>
+              <th style="text-align:right">Preço Venda</th>
+              <th style="text-align:right">Desconto</th>
+              <th style="text-align:right">Valor Líquido</th>
+              ${e.podeDevolver ? '<th>Devolvida</th>' : ''}
+            </tr>
+          </thead>
           <tbody>
-            ${e.linhas.map((l) => `<tr><td>${l.descricao}</td><td>${l.quantidade}</td><td>${formatarPreco(l.precoUnitario)}</td>${e.podeDevolver ? `<td>${l.quantidadeDevolvida}</td>` : ''}</tr>`).join('')}
+            ${e.linhas.map((l) => `
+              <tr>
+                <td>${l.codigoArtigo}</td>
+                <td>${l.nome}${l.variante ? `<br><span class="texto-variante">${l.variante}</span>` : ''}</td>
+                <td>${l.quantidade}</td>
+                <td style="text-align:right">${formatarPreco(l.precoVenda)}</td>
+                <td style="text-align:right">${l.descontoPercentagem > 0 ? '-' + l.descontoPercentagem + '%' : '0%'}</td>
+                <td style="text-align:right">${formatarPreco(l.valorLiquido)}</td>
+                ${e.podeDevolver ? `<td>${l.quantidadeDevolvida}</td>` : ''}
+              </tr>
+            `).join('')}
           </tbody>
         </table>
-        <p style="margin-top:8px">Portes: ${formatarPreco(e.portes)}</p>
-        ${e.valeDesconto > 0 ? `<p>Vale aplicado (${e.valeCodigo}): -${formatarPreco(e.valeDesconto)}</p>` : ''}
-        <p><strong>Total: ${formatarPreco(e.total)}</strong></p>
+        <div class="resumo-encomenda-totais">
+          <div><span>Sub-total dos Artigos</span><span>${formatarPreco(e.totalProdutos)}</span></div>
+          <div><span>Portes</span><span>${formatarPreco(e.portes)}</span></div>
+          ${e.valeDesconto > 0 ? `<div><span>Vale aplicado (${e.valeCodigo})</span><span>-${formatarPreco(e.valeDesconto)}</span></div>` : ''}
+          <div class="resumo-total-final"><span>Total</span><span>${formatarPreco(e.total)}</span></div>
+        </div>
         <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === 'Enviada' ? '(atribuídos)' : '(pendentes até envio)'}</p>
         <button class="botao-secundario" id="btn-pdf-encomenda-admin">Exportar PDF</button>
 
@@ -280,8 +303,8 @@ async function submeterDevolucao(numero) {
   }
 }
 
-async function avancarEstadoEncomenda(numero) {
-  if (!confirm(`Avançar a encomenda ${numero} para o estado seguinte?`)) return;
+async function avancarEstadoEncomenda(numero, proximoEstadoLabel) {
+  if (!confirm(`Avançar a Encomenda nº ${numero} para o Estado "${proximoEstadoLabel || 'seguinte'}"?`)) return;
   try {
     await apiPut(`/admin/encomendas/${numero}/avancar`, {});
     await carregarEncomendas();

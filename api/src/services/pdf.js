@@ -38,7 +38,7 @@ async function gerarPdfEncomenda(numero) {
   doc.fontSize(10).font('Helvetica-Bold').text('Data', 350, 80, { width: 200, align: 'right' });
   doc.fontSize(10).font('Helvetica').text(formatarData(encomenda.data), 350, 94, { width: 200, align: 'right' });
 
-  let y = 175;
+  let y = 115;
 
   // Empresa (esquerda) / Cliente (direita)
   doc.fontSize(9).font('Helvetica-Bold').text(EMPRESA.nome, 40, y, { width: 260 });
@@ -59,17 +59,18 @@ async function gerarPdfEncomenda(numero) {
   doc.text(`Email: ${encomenda.cliente.email}`, 320, doc.y, { width: 235 });
 
   // Tabela de artigos
-  y = 260;
+  y = 200;
   const colunas = [
-    { titulo: 'Descrição', largura: 210 },
-    { titulo: 'Código', largura: 80 },
-    { titulo: 'Pr. Unit.', largura: 75, alinhar: 'right' },
-    { titulo: 'Qtd', largura: 40, alinhar: 'center' },
-    { titulo: 'Pr. Total', largura: 80, alinhar: 'right' },
+    { titulo: 'Código', largura: 50 },
+    { titulo: 'Artigo', largura: 248 },
+    { titulo: 'Qtd', largura: 25, alinhar: 'center' },
+    { titulo: 'Preço Venda', largura: 62, alinhar: 'right' },
+    { titulo: 'Desc.', largura: 60, alinhar: 'right' },
+    { titulo: 'Valor Líquido', largura: 70, alinhar: 'right' },
   ];
 
   doc.rect(40, y, larguraUtil, 20).fill('#f5f5f5');
-  doc.fillColor('#000').fontSize(9).font('Helvetica-Bold');
+  doc.fillColor('#000').fontSize(9).font('Helvetica');
   let x = 40;
   colunas.forEach((col) => {
     doc.text(col.titulo, x + 4, y + 6, { width: col.largura - 8, align: col.alinhar || 'left' });
@@ -87,24 +88,31 @@ async function gerarPdfEncomenda(numero) {
 
     const imagemLocal = caminhoLocalImagem(linha.imagem);
     if (imagemLocal) {
-      try { doc.image(imagemLocal, 40, y + 4, { width: 28, height: 28 }); } catch (_) { /* imagem inválida, ignora */ }
+      try { doc.image(imagemLocal, 40, y + 1, { width: 20, height: 20 }); } catch (_) { /* imagem inválida, ignora */ }
     }
 
-    const { nome, variante } = separarNomeVariante(linha.descricao);
     x = 40;
-    doc.fillColor('#000').text(nome, x + 34, y + 6, { width: colunas[0].largura - 38 });
+    doc.fillColor('#000').fontSize(8).text(linha.codigoArtigo, x, y + 26, { width: colunas[0].largura - 4 });
+    x += colunas[0].largura;
+
+    const { nome, variante } = separarNomeVariante(linha.descricao);
+    doc.fontSize(9).fillColor('#000').text(nome, x + 4, y + 6, { width: colunas[1].largura - 8 });
     if (variante) {
-      doc.fillColor('#777').text(variante, x + 34, doc.y, { width: colunas[0].largura - 38 });
+      doc.fillColor('#1a5fb4').text(variante, x + 4, doc.y, { width: colunas[1].largura - 8 });
       doc.fillColor('#000');
     }
-    x += colunas[0].largura;
-    doc.text(`${linha.codigoArtigo} | ${linha.codigoLote}`, x + 4, y + 8, { width: colunas[1].largura - 8 });
     x += colunas[1].largura;
-    doc.text(formatarPreco(linha.precoUnitario), x, y + 8, { width: colunas[2].largura - 4, align: 'right' });
+
+    doc.text(String(linha.quantidade), x, y + 8, { width: colunas[2].largura, align: 'center' });
     x += colunas[2].largura;
-    doc.text(String(linha.quantidade), x, y + 8, { width: colunas[3].largura, align: 'center' });
+
+    doc.text(formatarPreco(linha.precoVenda), x, y + 8, { width: colunas[3].largura - 4, align: 'right' });
     x += colunas[3].largura;
-    doc.text(formatarPreco(linha.precoTotal), x, y + 8, { width: colunas[4].largura - 4, align: 'right' });
+
+    doc.text(linha.descontoPercentagem > 0 ? `-${linha.descontoPercentagem}%` : '0%', x, y + 8, { width: colunas[4].largura - 4, align: 'right' });
+    x += colunas[4].largura;
+
+    doc.text(formatarPreco(linha.precoTotal), x, y + 8, { width: colunas[5].largura - 4, align: 'right' });
 
     doc.moveTo(40, y + alturaLinha).lineTo(40 + larguraUtil, y + alturaLinha).strokeColor('#eee').stroke();
     y += alturaLinha;
@@ -113,28 +121,35 @@ async function gerarPdfEncomenda(numero) {
   y += 16;
   const totalProdutos = encomenda.linhas.reduce((s, l) => s + l.precoTotal, 0);
 
-  // IVA (esquerda) / Totais (direita)
-  doc.fontSize(9).font('Helvetica-Bold').text('Taxa de IVA', 40, y);
-  doc.font('Helvetica').text(`${encomenda.taxaIva.toFixed(2)} %`, 150, y);
-  doc.font('Helvetica-Bold').text('Base de Incidência', 40, y + 14);
-  doc.font('Helvetica').text(formatarPreco(encomenda.baseIncidencia), 150, y + 14);
-  doc.font('Helvetica-Bold').text('Valor IVA', 40, y + 28);
+  // IVA (esquerda) / Totais (direita) - "Sub-total dos Artigos"/"Portes"/"Total"
+  // usam exactamente a mesma posição/largura da coluna "Valor Líquido" da
+  // tabela acima, para ficarem alinhados com os valores de cada artigo.
+  const xValorTotais = 40 + colunas.slice(0, 5).reduce((s, c) => s + c.largura, 0);
+  const larguraValorTotais = colunas[5].largura - 4;
+  const xLabelTotais = 320;
+  const larguraLabelTotais = xValorTotais - xLabelTotais - 10;
+
+  doc.fontSize(9).font('Helvetica-Bold').text('Base de Incidência', 40, y);
+  doc.font('Helvetica').text(formatarPreco(encomenda.baseIncidencia), 150, y);
+  doc.font('Helvetica-Bold').text('Taxa de IVA', 40, y + 14);
+  doc.font('Helvetica').text(`${encomenda.taxaIva.toFixed(2)} %`, 150, y + 14);
+  doc.font('Helvetica-Bold').text('Valor do IVA', 40, y + 28);
   doc.font('Helvetica').text(formatarPreco(encomenda.valorIva), 150, y + 28);
 
-  doc.font('Helvetica').fontSize(9).text('Total de Compras', 320, y, { width: 150, align: 'left' });
-  doc.text(formatarPreco(totalProdutos), 460, y, { width: 95, align: 'right' });
+  doc.font('Helvetica').fontSize(9).text('Sub-total dos Artigos', xLabelTotais, y, { width: larguraLabelTotais, align: 'left' });
+  doc.text(formatarPreco(totalProdutos), xValorTotais, y, { width: larguraValorTotais, align: 'right' });
   let yDireita = y + 14;
   if (encomenda.valeDesconto > 0) {
-    doc.text(`Desconto (vale ${encomenda.valeCodigo})`, 320, yDireita, { width: 150 });
-    doc.text(`-${formatarPreco(encomenda.valeDesconto)}`, 460, yDireita, { width: 95, align: 'right' });
+    doc.text(`Desconto (vale ${encomenda.valeCodigo})`, xLabelTotais, yDireita, { width: larguraLabelTotais });
+    doc.text(`-${formatarPreco(encomenda.valeDesconto)}`, xValorTotais, yDireita, { width: larguraValorTotais, align: 'right' });
     yDireita += 14;
   }
-  doc.text('Embalagem e Envio', 320, yDireita, { width: 150 });
-  doc.text(formatarPreco(encomenda.portes), 460, yDireita, { width: 95, align: 'right' });
+  doc.text('Portes', xLabelTotais, yDireita, { width: larguraLabelTotais });
+  doc.text(formatarPreco(encomenda.portes), xValorTotais, yDireita, { width: larguraValorTotais, align: 'right' });
   yDireita += 18;
-  doc.fontSize(11).font('Helvetica-Bold').text('Valor a Pagar', 320, yDireita, { width: 150 });
-  doc.text(formatarPreco(encomenda.total), 460, yDireita, { width: 95, align: 'right' });
-  doc.fontSize(9).font('Helvetica').fillColor('#777').text('IVA incluído', 320, yDireita + 16);
+  doc.fontSize(11).font('Helvetica-Bold').text('Total', xLabelTotais, yDireita, { width: larguraLabelTotais });
+  doc.text(formatarPreco(encomenda.total), xValorTotais, yDireita, { width: larguraValorTotais, align: 'right' });
+  doc.fontSize(9).font('Helvetica').fillColor('#777').text('IVA incluído nos preços', xLabelTotais, yDireita + 16);
   doc.fillColor('#000');
 
   y += 80;

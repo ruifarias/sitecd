@@ -17,9 +17,9 @@
       <h2>A Minha Conta</h2>
     </div>
     <nav class="menu-opcoes">
-      <button class="menu-item activo" data-secao="dados">Os Meus Dados</button>
-      <button class="menu-item" data-secao="encomendas">As Minhas Encomendas</button>
+      <button class="menu-item activo" data-secao="encomendas">As Minhas Encomendas</button>
       <button class="menu-item" data-secao="pontos">Pontos e Vales</button>
+      <button class="menu-item" data-secao="dados">Os Meus Dados</button>
       <button class="menu-item-logout" id="btn-terminar-sessao">Terminar Sessão</button>
     </nav>
   </aside>
@@ -28,12 +28,7 @@
     <div id="auth-conta"></div>
 
     <div id="conteudo-autenticado" style="display:none">
-      <section id="secao-dados" class="secao activa">
-        <h1>Os Meus Dados</h1>
-        <div id="dados-perfil"></div>
-      </section>
-
-      <section id="secao-encomendas" class="secao">
+      <section id="secao-encomendas" class="secao activa">
         <h1>As Minhas Encomendas</h1>
         <div id="lista-encomendas"></div>
         <div id="detalhe-encomenda"></div>
@@ -48,6 +43,11 @@
 
         <h3 style="margin-top:24px">Os Meus Vales</h3>
         <div id="lista-vales"></div>
+      </section>
+
+      <section id="secao-dados" class="secao">
+        <h1>Os Meus Dados</h1>
+        <div id="dados-perfil"></div>
       </section>
     </div>
   </main>

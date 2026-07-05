@@ -59,13 +59,14 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
       <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">
         ${l.imagem ? `<img src="${l.imagem}" width="48" height="48" style="object-fit:contain;border:1px solid #eee" alt="">` : ''}
       </td>
+      <td style="padding:8px;border-bottom:1px solid #eee">${l.codigoArtigo}</td>
       <td style="padding:8px;border-bottom:1px solid #eee">
         ${nome}
-        ${variante ? `<br><span style="color:#777;font-size:12px">${variante}</span>` : ''}
+        ${variante ? `<br><span style="color:#1a5fb4;font-size:12px">${variante}</span>` : ''}
       </td>
-      <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${l.codigoArtigo} | ${l.codigoLote}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">${formatarPreco(l.precoUnitario)}</td>
       <td style="padding:8px;border-bottom:1px solid #eee;text-align:center">${l.quantidade}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">${formatarPreco(l.precoVenda)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">${l.descontoPercentagem > 0 ? '-' + l.descontoPercentagem + '%' : '0%'}</td>
       <td style="padding:8px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">${formatarPreco(l.precoTotal)}</td>
     </tr>
   `;
@@ -84,15 +85,15 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
 
     ${notaEvento ? `<p style="margin-bottom:16px">${notaEvento}</p>` : ''}
 
-    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+    <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
       <tr>
         <td style="vertical-align:top;width:55%">
           <img src="cid:logo-empresa" width="70" alt="Clássico Desportivo">
         </td>
         <td style="vertical-align:top;text-align:right">
           <strong style="font-size:15px">Nº Encomenda</strong><br>
-          <span style="font-size:18px;font-weight:700">${encomenda.numero}</span><br><br>
-          <strong>Data</strong><br>${formatarData(encomenda.data)}
+          <span style="font-size:18px;font-weight:700">${encomenda.numero}</span><br>
+          <strong>Data</strong> ${formatarData(encomenda.data)}
         </td>
       </tr>
     </table>
@@ -124,11 +125,12 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
       <thead>
         <tr style="background:#f5f5f5">
           <th style="padding:8px;text-align:center">Imagem</th>
-          <th style="padding:8px;text-align:left">Descrição</th>
-          <th style="padding:8px;text-align:center">Código</th>
-          <th style="padding:8px 10px;text-align:right;white-space:nowrap">Pr. Unit.</th>
+          <th style="padding:8px;text-align:left">Código</th>
+          <th style="padding:8px;text-align:left">Artigo</th>
           <th style="padding:8px;text-align:center">Qtd</th>
-          <th style="padding:8px 10px;text-align:right;white-space:nowrap">Pr. Total</th>
+          <th style="padding:8px 10px;text-align:right;white-space:nowrap">Preço Venda</th>
+          <th style="padding:8px 10px;text-align:right;white-space:nowrap">Desconto</th>
+          <th style="padding:8px 10px;text-align:right;white-space:nowrap">Valor Líquido</th>
         </tr>
       </thead>
       <tbody>${linhasHtml}</tbody>
@@ -141,12 +143,30 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
           <strong>Base de Incidência</strong> ${formatarPreco(encomenda.baseIncidencia)}<br>
           <strong>Valor IVA</strong> ${formatarPreco(encomenda.valorIva)}
         </td>
-        <td style="vertical-align:top;width:50%;text-align:right">
-          Total de Compras: ${formatarPreco(totalProdutos)}<br>
-          ${encomenda.valeDesconto > 0 ? `Desconto (vale ${encomenda.valeCodigo}): -${formatarPreco(encomenda.valeDesconto)}<br>` : ''}
-          Embalagem e Envio: ${formatarPreco(encomenda.portes)}<br>
-          <strong style="font-size:15px">Valor a Pagar: ${formatarPreco(encomenda.total)}</strong><br>
-          <span style="color:#777;font-size:12px">IVA incluído</span>
+        <td style="vertical-align:top;width:50%">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <tr>
+              <td style="text-align:left;padding:2px 0">Sub-total dos Artigos</td>
+              <td style="text-align:right;padding:2px 0;white-space:nowrap">${formatarPreco(totalProdutos)}</td>
+            </tr>
+            ${encomenda.valeDesconto > 0 ? `
+            <tr>
+              <td style="text-align:left;padding:2px 0">Desconto (vale ${encomenda.valeCodigo})</td>
+              <td style="text-align:right;padding:2px 0;white-space:nowrap">-${formatarPreco(encomenda.valeDesconto)}</td>
+            </tr>` : ''}
+            <tr>
+              <td style="text-align:left;padding:2px 0">Portes</td>
+              <td style="text-align:right;padding:2px 0;white-space:nowrap">${formatarPreco(encomenda.portes)}</td>
+            </tr>
+            <tr>
+              <td style="text-align:left;padding-top:6px;border-top:1px solid #ddd;font-weight:700;font-size:15px">Total</td>
+              <td style="text-align:right;padding-top:6px;border-top:1px solid #ddd;font-weight:700;font-size:15px;white-space:nowrap">${formatarPreco(encomenda.total)}</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td style="text-align:right;color:#777;font-size:12px">IVA incluído</td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>

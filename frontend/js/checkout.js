@@ -40,7 +40,14 @@ async function renderResumo() {
   return true;
 }
 
-function renderFormulario() {
+async function renderFormulario() {
+  let perfil = {};
+  try {
+    perfil = await apiGet('/conta/perfil');
+  } catch (_) {
+    // sem morada guardada no perfil - fica em branco, o cliente preenche à mão
+  }
+
   document.getElementById('conteudo-checkout').innerHTML = `
     <form class="checkout" id="form-checkout">
       <div id="erro-checkout"></div>
@@ -48,11 +55,11 @@ function renderFormulario() {
       <fieldset>
         <legend>Morada de Entrega</legend>
         <label>Morada *</label>
-        <input type="text" name="morada" required>
+        <input type="text" name="morada" value="${perfil.morada || ''}" required>
         <label>Localidade *</label>
-        <input type="text" name="localidade" required>
+        <input type="text" name="localidade" value="${perfil.localidade || ''}" required>
         <label>Código Postal *</label>
-        <input type="text" name="codigoPostal" placeholder="0000-000" required>
+        <input type="text" name="codigoPostal" placeholder="0000-000" value="${perfil.codigoPostal || ''}" required>
       </fieldset>
 
       <fieldset>
@@ -130,7 +137,7 @@ async function submeterEncomenda(e) {
 
 async function iniciarCheckout() {
   const temItens = await renderResumo();
-  if (temItens) renderFormulario();
+  if (temItens) await renderFormulario();
 }
 
 (async function init() {

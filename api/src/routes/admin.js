@@ -5,7 +5,7 @@
 const express = require('express');
 const { getPool, sql } = require('../db');
 const { SEQUENCIA_ESTADOS, ESTADO_ANULADA, ESTADOS_LABELS, proximoEstado } = require('../constants/encomendaEstados');
-const { enviarEmailEncomenda } = require('../services/email');
+const { enviarEmailEncomenda, separarNomeVariante } = require('../services/email');
 const { gerarPdfEncomenda } = require('../services/pdf');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 
@@ -437,6 +437,7 @@ router.get('/encomendas', async (req, res) => {
       clienteNome: e.Cliente_Nome,
       clienteEmail: e.Cliente_Email,
       proximoEstado: proximoEstado(e.Estado),
+      proximoEstadoLabel: ESTADOS_LABELS[proximoEstado(e.Estado)] || null,
       podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada',
       podeDevolver: e.Estado === 'Enviada',
     })));
@@ -469,7 +470,7 @@ router.get('/encomendas/:numero', async (req, res) => {
     const linhas = await pool.request()
       .input('encomendaId', sql.Int, e.Id)
       .query(`
-        SELECT l.Codigo_Artigo, l.Codigo_Lote, l.Descricao, l.Quantidade, l.Preco_Unitario,
+        SELECT l.Codigo_Artigo, l.Codigo_Lote, l.Descricao, l.Quantidade, l.Preco_Unitario, l.Preco_Venda, l.Desconto,
                ISNULL((
                  SELECT SUM(dl.Quantidade)
                  FROM dbo.ZAPP_DBSiteCD_DevolucoesLinhas dl
@@ -480,11 +481,14 @@ router.get('/encomendas/:numero', async (req, res) => {
         WHERE l.Encomenda_Id = @encomendaId;
       `);
 
+    const totalProdutos = linhas.recordset.reduce((s, l) => s + l.Preco_Unitario * l.Quantidade, 0);
+
     res.json({
       numero: e.Numero,
       estado: e.Estado,
       estadoLabel: ESTADOS_LABELS[e.Estado] || e.Estado,
       total: e.Total,
+      totalProdutos,
       portes: e.Portes,
       valeCodigo: e.Vale_Codigo,
       valeDesconto: e.Vale_Desconto,
@@ -498,15 +502,24 @@ router.get('/encomendas/:numero', async (req, res) => {
       proximoEstado: proximoEstado(e.Estado),
       podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada',
       podeDevolver: e.Estado === 'Enviada',
-      linhas: linhas.recordset.map((l) => ({
-        codigoArtigo: l.Codigo_Artigo,
-        codigoLote: l.Codigo_Lote,
-        descricao: l.Descricao,
-        quantidade: l.Quantidade,
-        precoUnitario: l.Preco_Unitario,
-        quantidadeDevolvida: l.Quantidade_Devolvida,
-        quantidadeDevolvivel: l.Quantidade - l.Quantidade_Devolvida,
-      })),
+      linhas: linhas.recordset.map((l) => {
+        const { nome, variante } = separarNomeVariante(l.Descricao);
+        return {
+          codigoArtigo: l.Codigo_Artigo,
+          codigoLote: l.Codigo_Lote,
+          descricao: l.Descricao,
+          nome,
+          variante,
+          quantidade: l.Quantidade,
+          precoUnitario: l.Preco_Unitario,
+          precoVenda: l.Preco_Venda,
+          desconto: l.Desconto,
+          descontoPercentagem: l.Preco_Venda > 0 ? Math.round((l.Desconto / l.Preco_Venda) * 100) : 0,
+          valorLiquido: Math.round(l.Preco_Unitario * l.Quantidade * 100) / 100,
+          quantidadeDevolvida: l.Quantidade_Devolvida,
+          quantidadeDevolvivel: l.Quantidade - l.Quantidade_Devolvida,
+        };
+      }),
     });
   } catch (err) {
     console.error(err);

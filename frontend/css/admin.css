@@ -537,6 +537,34 @@ body {
   font-size: 14px;
 }
 
+/* Detalhe da encomenda - variante e resumo de totais */
+.texto-variante {
+  color: #1a5fb4;
+  font-size: 12px;
+}
+
+.resumo-encomenda-totais {
+  max-width: 320px;
+  margin-left: auto;
+  margin-top: 12px;
+}
+
+.resumo-encomenda-totais div {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.resumo-encomenda-totais .resumo-total-final {
+  border-top: 1px solid var(--cinza-medio);
+  margin-top: 4px;
+  padding-top: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
 /* Modal */
 .modal-overlay {
   position: fixed;

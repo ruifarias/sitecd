@@ -58,6 +58,15 @@ function renderFormularioAuth(container, onSucesso) {
               <label>NIF</label>
               <input type="text" name="nif">
             </fieldset>
+            <fieldset>
+              <legend>Morada de Entrega (opcional, pode preencher depois)</legend>
+              <label>Morada</label>
+              <input type="text" name="morada">
+              <label>Localidade</label>
+              <input type="text" name="localidade">
+              <label>Código Postal</label>
+              <input type="text" name="codigoPostal" placeholder="0000-000">
+            </fieldset>
             <button type="submit" class="botao-principal">Criar Conta</button>
           </form>
         `}
@@ -92,6 +101,9 @@ function renderFormularioAuth(container, onSucesso) {
           password: form.password.value,
           telefone: form.telefone.value || undefined,
           nif: form.nif.value || undefined,
+          morada: form.morada.value || undefined,
+          localidade: form.localidade.value || undefined,
+          codigoPostal: form.codigoPostal.value || undefined,
         });
       }
       guardarToken(resultado.token);

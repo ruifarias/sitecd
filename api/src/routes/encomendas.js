@@ -37,7 +37,9 @@ router.post('/', requireAuth, async (req, res) => {
       .input('sessaoId', sql.NVarChar(100), sessaoId)
       .query(`
         SELECT c.Id, c.Codigo_Artigo, c.Codigo_Lote, c.Quantidade, a.Descritivo_Artigo, v.Descricao_Lote,
-               CASE WHEN p.Percentagem_Desconto > 0 THEN p.Preco_Outlet ELSE p.Preco END AS Preco
+               p.Preco AS Preco_Venda,
+               CASE WHEN p.Percentagem_Desconto > 0 THEN p.Preco_Outlet ELSE p.Preco END AS Preco,
+               CASE WHEN p.Percentagem_Desconto > 0 THEN ISNULL(p.Preco, 0) - ISNULL(p.Preco_Outlet, 0) ELSE 0 END AS Desconto
         FROM dbo.ZAPP_DBSiteCD_Carrinho c
         INNER JOIN dbo.ZAPP_DBSiteCD_Artigos a ON a.Codigo_Artigo = c.Codigo_Artigo
         LEFT JOIN dbo.ZAPP_DBSiteCD_Variantes v ON v.Codigo_Artigo = c.Codigo_Artigo AND v.Codigo_Lote = c.Codigo_Lote
@@ -157,9 +159,11 @@ router.post('/', requireAuth, async (req, res) => {
         .input('descricao', sql.NVarChar(200), `${linha.Descritivo_Artigo} - ${linha.Descricao_Lote || linha.Codigo_Lote}`)
         .input('quantidade', sql.Int, linha.Quantidade)
         .input('precoUnitario', sql.Money, linha.Preco || 0)
+        .input('precoVenda', sql.Money, linha.Preco_Venda || linha.Preco || 0)
+        .input('desconto', sql.Money, linha.Desconto || 0)
         .query(`
-          INSERT INTO dbo.ZAPP_DBSiteCD_EncomendasLinhas (Encomenda_Id, Codigo_Artigo, Codigo_Lote, Descricao, Quantidade, Preco_Unitario)
-          VALUES (@encomendaId, @codigoArtigo, @codigoLote, @descricao, @quantidade, @precoUnitario);
+          INSERT INTO dbo.ZAPP_DBSiteCD_EncomendasLinhas (Encomenda_Id, Codigo_Artigo, Codigo_Lote, Descricao, Quantidade, Preco_Unitario, Preco_Venda, Desconto)
+          VALUES (@encomendaId, @codigoArtigo, @codigoLote, @descricao, @quantidade, @precoUnitario, @precoVenda, @desconto);
         `);
 
       const reservaReq = new sql.Request(transaction);
