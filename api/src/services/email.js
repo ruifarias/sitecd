@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
-const { ESTADOS_LABELS } = require('../constants/encomendaEstados');
+const { ESTADOS_LABELS, ehEstadoDevolucao } = require('../constants/encomendaEstados');
 const { obterEncomendaCompleta } = require('./encomendaService');
 
 const EMPRESA = {
@@ -116,7 +116,8 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
           ${encomenda.morada.codigoPostal || ''} ${encomenda.morada.localidade || ''}<br>
           Portugal<br><br>
           Nº Contribuinte: ${encomenda.cliente.nif || '-'}<br>
-          Email: ${encomenda.cliente.email}
+          Email: ${encomenda.cliente.email}<br>
+          Código de Cliente: ${encomenda.cliente.codigoCliente || '-'}
         </td>
       </tr>
     </table>
@@ -171,6 +172,18 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
       </tr>
     </table>
 
+    ${ehEstadoDevolucao(encomenda.estado) ? `
+      <p style="color:#777;font-size:12px;margin-bottom:16px">Os portes de envio não são devolvidos nem estão sujeitos a crédito.</p>
+    ` : ''}
+
+    ${encomenda.devolucao ? `
+      <div style="border-top:1px solid #ddd;padding-top:12px;margin-bottom:16px">
+        <strong>Dados Bancários para Reembolso</strong><br>
+        IBAN: ${encomenda.devolucao.iban}<br>
+        Nome do 1º Titular da Conta: ${encomenda.devolucao.nomeTitular}
+      </div>
+    ` : ''}
+
     <div style="border-top:1px solid #ddd;padding-top:12px;margin-bottom:16px">
       <strong>Local de Entrega</strong><br>
       Nome: ${encomenda.cliente.nome}<br>
@@ -191,12 +204,13 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
       <strong>Estado actual</strong><br>
       ${estadoLabel}
       ${encomenda.estado === 'Anulada' && encomenda.motivoAnulacao ? `<br><strong>Motivo da anulação:</strong> ${encomenda.motivoAnulacao}` : ''}
+      ${encomenda.estado === 'DevolucaoRecebidaNaoAceite' && encomenda.motivoAnulacao ? `<br><strong>Motivo da não aceitação:</strong> ${encomenda.motivoAnulacao}` : ''}
     </div>
 
-    ${encomenda.pontosGanhos > 0 ? `
+    ${encomenda.pontosGanhos !== 0 ? `
       <div style="border-top:1px solid #ddd;padding-top:12px;margin-bottom:16px">
         Pontos desta encomenda: <strong>${encomenda.pontosGanhos}</strong>
-        ${encomenda.estado === 'Enviada' ? '(já atribuídos, disponíveis para uso)' : encomenda.estado === 'Anulada' ? '(anulados)' : '(pendentes até a encomenda ser enviada)'}
+        ${encomenda.estado === 'Enviada' ? '(já atribuídos, disponíveis para uso)' : encomenda.estado === 'Anulada' ? '(anulados)' : ehEstadoDevolucao(encomenda.estado) ? '(estornados)' : '(pendentes até a encomenda ser enviada)'}
       </div>
     ` : ''}
 
@@ -205,7 +219,7 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
   `;
 }
 
-async function enviarEmailEncomenda(numero, { tituloEvento, notaEvento, assunto } = {}) {
+async function enviarEmailEncomenda(numero, { tituloEvento, notaEvento, assunto, copiaEmpresa } = {}) {
   const transporte = getTransporte();
   if (!transporte) {
     console.warn(`[email] SMTP não configurado — a saltar envio para a encomenda ${numero}.`);
@@ -227,11 +241,12 @@ async function enviarEmailEncomenda(numero, { tituloEvento, notaEvento, assunto 
     await transporte.sendMail({
       from: process.env.SMTP_FROM || `"Clássico Desportivo" <${process.env.SMTP_USER}>`,
       to: encomenda.cliente.email,
+      cc: copiaEmpresa ? EMPRESA.email : undefined,
       subject: assunto || `Encomenda ${numero} — Clássico Desportivo`,
       html: templateFactura(encomenda, { tituloEvento, notaEvento }),
       attachments: anexos,
     });
-    console.log(`[email] Enviado (${assunto || numero}) para ${encomenda.cliente.email}.`);
+    console.log(`[email] Enviado (${assunto || numero}) para ${encomenda.cliente.email}${copiaEmpresa ? ` (cc: ${EMPRESA.email})` : ''}.`);
   } catch (err) {
     console.error(`[email] Falha ao enviar email da encomenda ${numero}:`, err.message);
   }

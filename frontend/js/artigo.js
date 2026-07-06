@@ -24,6 +24,46 @@ function construirURLListagem() {
   return `index.html${filtros.toString() ? '?' + filtros.toString() : ''}`;
 }
 
+// Filtros do cabeçalho (iguais aos da página principal): pré-preenchidos com
+// os filtros vindos da listagem, e ao premir Enter voltam à listagem já com o
+// filtro actualizado (mantém marca/género/modalidade/familiaGrau4 originais,
+// que não têm campo próprio neste cabeçalho compacto).
+function construirURLListagemComFiltros() {
+  const params = new URLSearchParams();
+  const q = document.getElementById('pesquisa-input').value.trim();
+  const marcaText = document.getElementById('pesquisa-marca').value.trim();
+  const cor = document.getElementById('pesquisa-cor').value.trim();
+  const tamanho = document.getElementById('pesquisa-tamanho').value.trim();
+  if (q) params.set('q', q);
+  if (marcaText) params.set('marcaText', marcaText);
+  if (cor) params.set('cor', cor);
+  if (tamanho) params.set('tamanho', tamanho);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('marca')) params.set('marca', urlParams.get('marca'));
+  if (urlParams.get('genero')) params.set('genero', urlParams.get('genero'));
+  if (urlParams.get('modalidade')) params.set('modalidade', urlParams.get('modalidade'));
+  if (urlParams.get('familiaGrau4')) params.set('familiaGrau4', urlParams.get('familiaGrau4'));
+
+  return `index.html${params.toString() ? '?' + params.toString() : ''}`;
+}
+
+function inicializarFiltrosHeader() {
+  const urlParams = new URLSearchParams(window.location.search);
+  document.getElementById('pesquisa-input').value = urlParams.get('q') || '';
+  document.getElementById('pesquisa-marca').value = urlParams.get('marcaText') || '';
+  document.getElementById('pesquisa-cor').value = urlParams.get('cor') || '';
+  document.getElementById('pesquisa-tamanho').value = urlParams.get('tamanho') || '';
+
+  ['pesquisa-input', 'pesquisa-marca', 'pesquisa-cor', 'pesquisa-tamanho'].forEach((id) => {
+    document.getElementById(id).addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        window.location.href = construirURLListagemComFiltros();
+      }
+    });
+  });
+}
+
 async function renderArtigo(a) {
   const imagemPrincipal = a.imagens[0] || '';
 
@@ -229,6 +269,7 @@ async function adicionarAoCarrinho() {
 }
 
 (async function init() {
+  inicializarFiltrosHeader();
   const codigo = obterCodigoDaURL();
   if (!codigo) {
     document.getElementById('layout-artigo').innerHTML = '<div class="vazio">Artigo não especificado.</div>';

@@ -4,7 +4,17 @@
 // Acesso restrito a clientes com IsAdmin = 1 (ver migração 016 e middleware/auth.js).
 const express = require('express');
 const { getPool, sql } = require('../db');
-const { SEQUENCIA_ESTADOS, ESTADO_ANULADA, ESTADO_DEVOLVIDA, ESTADOS_LABELS, proximoEstado } = require('../constants/encomendaEstados');
+const {
+  SEQUENCIA_ESTADOS,
+  ESTADO_ANULADA,
+  ESTADO_DEV_RECEBIDA_ACEITE,
+  ESTADO_DEV_RECEBIDA_NAO_ACEITE,
+  ESTADO_DEV_PAGA,
+  ESTADOS_LABELS,
+  proximoEstado,
+  ehEstadoDevolucao,
+  proximosEstadosDevolucao,
+} = require('../constants/encomendaEstados');
 const { enviarEmailEncomenda, separarNomeVariante } = require('../services/email');
 const { gerarPdfEncomenda } = require('../services/pdf');
 const { registarDevolucao } = require('../services/devolucaoService');
@@ -418,7 +428,7 @@ router.get('/encomendas', async (req, res) => {
 
     const resultado = await request.query(`
       SELECT e.Numero, e.Estado, e.Total, e.Portes, e.Pontos_Ganhos, e.Metodo_Pagamento, e.Data_Criacao, e.Data_Actualizacao,
-             c.Nome AS Cliente_Nome, c.Email AS Cliente_Email
+             c.Nome AS Cliente_Nome, c.Email AS Cliente_Email, c.Codigo_Cliente
       FROM dbo.ZAPP_DBSiteCD_Encomendas e
       LEFT JOIN dbo.ZAPP_DBSiteCD_Clientes c ON c.Id = e.Cliente_Id
       ${whereClause}
@@ -437,9 +447,10 @@ router.get('/encomendas', async (req, res) => {
       dataActualizacao: e.Data_Actualizacao,
       clienteNome: e.Cliente_Nome,
       clienteEmail: e.Cliente_Email,
+      codigoCliente: e.Codigo_Cliente,
       proximoEstado: proximoEstado(e.Estado),
       proximoEstadoLabel: ESTADOS_LABELS[proximoEstado(e.Estado)] || null,
-      podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada' && e.Estado !== ESTADO_DEVOLVIDA,
+      podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada' && !ehEstadoDevolucao(e.Estado),
       podeDevolver: e.Estado === 'Enviada',
     })));
   } catch (err) {
@@ -457,7 +468,7 @@ router.get('/encomendas/:numero', async (req, res) => {
       .query(`
         SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
                e.Metodo_Pagamento, e.Data_Criacao, e.Data_Actualizacao, e.Motivo_Anulacao,
-               c.Nome AS Cliente_Nome, c.Email AS Cliente_Email
+               c.Nome AS Cliente_Nome, c.Email AS Cliente_Email, c.Codigo_Cliente
         FROM dbo.ZAPP_DBSiteCD_Encomendas e
         LEFT JOIN dbo.ZAPP_DBSiteCD_Clientes c ON c.Id = e.Cliente_Id
         WHERE e.Numero = @numero;
@@ -500,9 +511,11 @@ router.get('/encomendas/:numero', async (req, res) => {
       motivoAnulacao: e.Motivo_Anulacao,
       clienteNome: e.Cliente_Nome,
       clienteEmail: e.Cliente_Email,
+      codigoCliente: e.Codigo_Cliente,
       proximoEstado: proximoEstado(e.Estado),
-      podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada' && e.Estado !== ESTADO_DEVOLVIDA,
+      podeAnular: e.Estado !== ESTADO_ANULADA && e.Estado !== 'Enviada' && !ehEstadoDevolucao(e.Estado),
       podeDevolver: e.Estado === 'Enviada',
+      proximosEstadosDevolucao: proximosEstadosDevolucao(e.Estado).map((estado) => ({ estado, label: ESTADOS_LABELS[estado] })),
       linhas: linhas.recordset.map((l) => {
         const { nome, variante } = separarNomeVariante(l.Descricao);
         return {
@@ -582,11 +595,62 @@ router.get('/encomendas/:numero/devolucoes', async (req, res) => {
 // total de artigos já enviados (também disponível para o próprio cliente em
 // /api/conta/encomendas/:numero/devolucao - ver services/devolucaoService.js).
 router.post('/encomendas/:numero/devolucao', async (req, res) => {
-  const resultado = await registarDevolucao(req.params.numero, req.body.linhas);
+  const resultado = await registarDevolucao(req.params.numero, req.body.linhas, {
+    iban: req.body.iban,
+    nomeTitular: req.body.nomeTitular,
+  });
   if (resultado.erro) {
     return res.status(resultado.status || 500).json({ erro: resultado.erro });
   }
   res.status(201).json(resultado);
+});
+
+// PUT /admin/encomendas/:numero/estado-devolucao - transição de estado de uma
+// Nota de Devolução (Emitida -> Recebida e Aceite / Recebida mas Não Aceite ->
+// Paga). Notifica sempre o cliente por email da mudança de estado.
+router.put('/encomendas/:numero/estado-devolucao', async (req, res) => {
+  const { estado: novoEstado, motivo } = req.body;
+  try {
+    const pool = await getPool();
+    const encRes = await pool.request()
+      .input('numero', sql.VarChar(30), req.params.numero)
+      .query('SELECT Id, Estado FROM dbo.ZAPP_DBSiteCD_Encomendas WHERE Numero = @numero;');
+
+    if (encRes.recordset.length === 0) {
+      return res.status(404).json({ erro: 'Nota de devolução não encontrada.' });
+    }
+    const estadoActual = encRes.recordset[0].Estado;
+
+    if (!proximosEstadosDevolucao(estadoActual).includes(novoEstado)) {
+      return res.status(400).json({ erro: `Não é possível passar de "${ESTADOS_LABELS[estadoActual]}" para "${ESTADOS_LABELS[novoEstado] || novoEstado}".` });
+    }
+
+    if (novoEstado === ESTADO_DEV_RECEBIDA_NAO_ACEITE && (!motivo || !motivo.trim())) {
+      return res.status(400).json({ erro: 'É obrigatório indicar o motivo da não aceitação.' });
+    }
+
+    await pool.request()
+      .input('id', sql.Int, encRes.recordset[0].Id)
+      .input('estado', sql.VarChar(30), novoEstado)
+      .input('motivo', sql.NVarChar(500), novoEstado === ESTADO_DEV_RECEBIDA_NAO_ACEITE ? motivo.trim() : null)
+      .query(`
+        UPDATE dbo.ZAPP_DBSiteCD_Encomendas
+        SET Estado = @estado, Data_Actualizacao = GETDATE(), Motivo_Anulacao = @motivo
+        WHERE Id = @id;
+      `);
+
+    const eventos = {
+      [ESTADO_DEV_RECEBIDA_ACEITE]: { tituloEvento: 'Devolução Recebida e Aceite', notaEvento: 'Os artigos devolvidos foram recebidos e validados. Iremos processar o reembolso para o IBAN indicado.' },
+      [ESTADO_DEV_RECEBIDA_NAO_ACEITE]: { tituloEvento: 'Devolução Recebida mas Não Aceite', notaEvento: `Os artigos devolvidos foram recebidos mas não foram aceites. Motivo: ${motivo?.trim() || '-'}` },
+      [ESTADO_DEV_PAGA]: { tituloEvento: 'Devolução Paga', notaEvento: 'O reembolso da sua devolução foi processado para o IBAN indicado.' },
+    };
+    enviarEmailEncomenda(req.params.numero, { ...eventos[novoEstado], copiaEmpresa: true }).catch(() => {});
+
+    res.json({ ok: true, estado: novoEstado, estadoLabel: ESTADOS_LABELS[novoEstado] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao actualizar o estado da devolução.' });
+  }
 });
 
 // GET /admin/encomendas/:numero/pdf - exportação da encomenda em PDF
@@ -797,6 +861,219 @@ router.put('/encomendas/:numero/anular', async (req, res) => {
     console.error(err);
     try { await transaction.rollback(); } catch (_) { /* já pode ter sido revertida */ }
     res.status(500).json({ erro: 'Falha ao anular encomenda.' });
+  }
+});
+
+// ---- Fichas de Clientes / Extracto de Cliente ----
+
+// GET /admin/clientes - lista de fichas de clientes (pesquisável por código,
+// nome ou email)
+router.get('/clientes', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const request = pool.request();
+    const condicoes = [];
+    if (req.query.q) {
+      request.input('q', sql.NVarChar(150), `%${req.query.q}%`);
+      condicoes.push('(Codigo_Cliente LIKE @q OR Nome LIKE @q OR Email LIKE @q)');
+    }
+    const whereClause = condicoes.length > 0 ? `WHERE ${condicoes.join(' AND ')}` : '';
+
+    const resultado = await request.query(`
+      SELECT Codigo_Cliente, Nome, Email, Telefone, NIF, Morada, Localidade, Codigo_Postal, Data_Criacao, IsAdmin
+      FROM dbo.ZAPP_DBSiteCD_Clientes
+      ${whereClause}
+      ORDER BY Data_Criacao DESC;
+    `);
+
+    res.json(resultado.recordset.map((c) => ({
+      codigoCliente: c.Codigo_Cliente,
+      nome: c.Nome,
+      email: c.Email,
+      telefone: c.Telefone,
+      nif: c.NIF,
+      morada: c.Morada,
+      localidade: c.Localidade,
+      codigoPostal: c.Codigo_Postal,
+      dataCriacao: c.Data_Criacao,
+      isAdmin: !!c.IsAdmin,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao listar clientes.' });
+  }
+});
+
+// GET /admin/clientes/:codigo - ficha de um cliente
+router.get('/clientes/:codigo', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('codigo', sql.VarChar(20), req.params.codigo)
+      .query(`
+        SELECT Codigo_Cliente, Nome, Email, Telefone, NIF, Morada, Localidade, Codigo_Postal, Data_Criacao, IsAdmin
+        FROM dbo.ZAPP_DBSiteCD_Clientes
+        WHERE Codigo_Cliente = @codigo;
+      `);
+
+    if (resultado.recordset.length === 0) {
+      return res.status(404).json({ erro: 'Cliente não encontrado.' });
+    }
+    const c = resultado.recordset[0];
+    res.json({
+      codigoCliente: c.Codigo_Cliente,
+      nome: c.Nome,
+      email: c.Email,
+      telefone: c.Telefone,
+      nif: c.NIF,
+      morada: c.Morada,
+      localidade: c.Localidade,
+      codigoPostal: c.Codigo_Postal,
+      dataCriacao: c.Data_Criacao,
+      isAdmin: !!c.IsAdmin,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter ficha do cliente.' });
+  }
+});
+
+// PUT /admin/clientes/:codigo - o Backoffice edita/corrige os dados de um
+// cliente (nome, telefone, NIF, morada). O email e o Código de Cliente não são
+// editáveis (o email identifica a conta de login; o código é calculado).
+router.put('/clientes/:codigo', async (req, res) => {
+  const { nome, telefone, nif, morada, localidade, codigoPostal } = req.body;
+  if (!nome || !nome.trim()) {
+    return res.status(400).json({ erro: 'O nome é obrigatório.' });
+  }
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('codigo', sql.VarChar(20), req.params.codigo)
+      .input('nome', sql.NVarChar(150), nome.trim())
+      .input('telefone', sql.NVarChar(30), telefone || null)
+      .input('nif', sql.VarChar(20), nif || null)
+      .input('morada', sql.NVarChar(200), morada || null)
+      .input('localidade', sql.NVarChar(100), localidade || null)
+      .input('codigoPostal', sql.VarChar(10), codigoPostal || null)
+      .query(`
+        UPDATE dbo.ZAPP_DBSiteCD_Clientes
+        SET Nome = @nome, Telefone = @telefone, NIF = @nif,
+            Morada = @morada, Localidade = @localidade, Codigo_Postal = @codigoPostal
+        OUTPUT inserted.Codigo_Cliente
+        WHERE Codigo_Cliente = @codigo;
+      `);
+    if (resultado.recordset.length === 0) {
+      return res.status(404).json({ erro: 'Cliente não encontrado.' });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao guardar os dados do cliente.' });
+  }
+});
+
+// GET /admin/clientes/:codigo/extrato - encomendas + movimentos de pontos de
+// um cliente, opcionalmente filtrado por intervalo de datas (desde/ate),
+// ordenado por data mais recente primeiro.
+router.get('/clientes/:codigo/extrato', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const clienteRes = await pool.request()
+      .input('codigo', sql.VarChar(20), req.params.codigo)
+      .query('SELECT Id, Codigo_Cliente, Nome, Email, Telefone, NIF FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Codigo_Cliente = @codigo;');
+
+    if (clienteRes.recordset.length === 0) {
+      return res.status(404).json({ erro: 'Cliente não encontrado.' });
+    }
+    const cliente = clienteRes.recordset[0];
+
+    const { desde, ate } = req.query;
+    const condicoesData = [];
+    const encReq = pool.request().input('clienteId', sql.Int, cliente.Id);
+    const pontosReq = pool.request().input('clienteId', sql.Int, cliente.Id);
+    if (desde) {
+      encReq.input('desde', sql.DateTime, new Date(desde));
+      pontosReq.input('desde', sql.DateTime, new Date(desde));
+      condicoesData.push('Data_Criacao >= @desde');
+    }
+    if (ate) {
+      const ateFim = new Date(ate);
+      ateFim.setHours(23, 59, 59, 999);
+      encReq.input('ate', sql.DateTime, ateFim);
+      pontosReq.input('ate', sql.DateTime, ateFim);
+      condicoesData.push('Data_Criacao <= @ate');
+    }
+    const whereData = condicoesData.length > 0 ? `AND ${condicoesData.join(' AND ')}` : '';
+
+    const encomendasRes = await encReq.query(`
+      SELECT Numero, Estado, Total, Pontos_Ganhos, Data_Criacao
+      FROM dbo.ZAPP_DBSiteCD_Encomendas
+      WHERE Cliente_Id = @clienteId ${whereData}
+      ORDER BY Data_Criacao DESC;
+    `);
+
+    const pontosRes = await pontosReq.query(`
+      SELECT Tipo, Pontos, Descricao, Data_Criacao
+      FROM dbo.ZAPP_DBSiteCD_PontosLedger
+      WHERE Cliente_Id = @clienteId ${whereData}
+      ORDER BY Data_Criacao DESC;
+    `);
+
+    const saldoRes = await pool.request()
+      .input('clienteId', sql.Int, cliente.Id)
+      .query('SELECT ISNULL(SUM(Pontos), 0) AS Saldo FROM dbo.ZAPP_DBSiteCD_PontosLedger WHERE Cliente_Id = @clienteId;');
+
+    // Saldo acumulado até ao limite superior do filtro (ou até agora, se sem
+    // filtro) - ponto de partida para calcular o "Acumulado" de cada linha do
+    // extracto, indo de trás para a frente (a lista vem ordenada da mais
+    // recente para a mais antiga).
+    const saldoAteFiltroReq = pool.request().input('clienteId', sql.Int, cliente.Id);
+    let condicaoAteFiltro = '';
+    if (ate) {
+      const ateFim = new Date(ate);
+      ateFim.setHours(23, 59, 59, 999);
+      saldoAteFiltroReq.input('ate', sql.DateTime, ateFim);
+      condicaoAteFiltro = 'AND Data_Criacao <= @ate';
+    }
+    const saldoAteFiltroRes = await saldoAteFiltroReq.query(`
+      SELECT ISNULL(SUM(Pontos), 0) AS Saldo FROM dbo.ZAPP_DBSiteCD_PontosLedger WHERE Cliente_Id = @clienteId ${condicaoAteFiltro};
+    `);
+    let acumulado = saldoAteFiltroRes.recordset[0].Saldo;
+    const pontosComAcumulado = pontosRes.recordset.map((p) => {
+      const linha = { tipo: p.Tipo, pontos: p.Pontos, descricao: p.Descricao, data: p.Data_Criacao, acumulado };
+      acumulado -= p.Pontos;
+      return linha;
+    });
+
+    res.json({
+      cliente: {
+        codigoCliente: cliente.Codigo_Cliente,
+        nome: cliente.Nome,
+        email: cliente.Email,
+        telefone: cliente.Telefone,
+        nif: cliente.NIF,
+      },
+      saldoPontos: saldoRes.recordset[0].Saldo,
+      encomendas: encomendasRes.recordset.map((e) => ({
+        numero: e.Numero,
+        estado: e.Estado,
+        estadoLabel: ESTADOS_LABELS[e.Estado] || e.Estado,
+        total: e.Total,
+        pontosGanhos: e.Pontos_Ganhos,
+        data: e.Data_Criacao,
+      })),
+      pontos: pontosComAcumulado.map((p) => ({
+        tipo: p.tipo,
+        pontos: p.pontos,
+        acumulado: p.acumulado,
+        descricao: p.descricao,
+        data: p.data,
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter extracto do cliente.' });
   }
 });
 

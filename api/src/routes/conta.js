@@ -18,7 +18,7 @@ router.get('/perfil', async (req, res) => {
     const pool = await getPool();
     const resultado = await pool.request()
       .input('id', sql.Int, req.cliente.id)
-      .query('SELECT Nome, Email, Telefone, NIF, Morada, Localidade, Codigo_Postal FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Id = @id;');
+      .query('SELECT Nome, Email, Telefone, NIF, Morada, Localidade, Codigo_Postal, Codigo_Cliente FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Id = @id;');
 
     if (resultado.recordset.length === 0) {
       return res.status(404).json({ erro: 'Cliente não encontrado.' });
@@ -32,6 +32,7 @@ router.get('/perfil', async (req, res) => {
       morada: c.Morada,
       localidade: c.Localidade,
       codigoPostal: c.Codigo_Postal,
+      codigoCliente: c.Codigo_Cliente,
     });
   } catch (err) {
     console.error(err);
@@ -243,7 +244,10 @@ router.post('/encomendas/:numero/devolucao', async (req, res) => {
       return res.status(404).json({ erro: 'Encomenda não encontrada.' });
     }
 
-    const resultado = await registarDevolucao(req.params.numero, req.body.linhas);
+    const resultado = await registarDevolucao(req.params.numero, req.body.linhas, {
+      iban: req.body.iban,
+      nomeTitular: req.body.nomeTitular,
+    });
     if (resultado.erro) {
       return res.status(resultado.status || 500).json({ erro: resultado.erro });
     }

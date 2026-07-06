@@ -6,7 +6,7 @@ const path = require('path');
 const PDFDocument = require('pdfkit');
 const { obterEncomendaCompleta } = require('./encomendaService');
 const { EMPRESA, formatarPreco, formatarData, separarNomeVariante } = require('./email');
-const { ESTADOS_LABELS } = require('../constants/encomendaEstados');
+const { ESTADOS_LABELS, ehEstadoDevolucao } = require('../constants/encomendaEstados');
 
 const PASTA_IMAGENS = path.resolve(__dirname, '..', '..', '..', 'storage', 'imagens');
 const CAMINHO_LOGO = path.resolve(__dirname, '..', '..', '..', 'frontend', 'imagens', 'logo-transparente.png');
@@ -57,9 +57,10 @@ async function gerarPdfEncomenda(numero) {
   doc.moveDown(0.5);
   doc.text(`Nº Contribuinte: ${encomenda.cliente.nif || '-'}`, 320, doc.y, { width: 235 });
   doc.text(`Email: ${encomenda.cliente.email}`, 320, doc.y, { width: 235 });
+  doc.text(`Código de Cliente: ${encomenda.cliente.codigoCliente || '-'}`, 320, doc.y, { width: 235 });
 
   // Tabela de artigos
-  y = 200;
+  y = 212;
   const colunas = [
     { titulo: 'Código', largura: 50 },
     { titulo: 'Artigo', largura: 248 },
@@ -150,6 +151,9 @@ async function gerarPdfEncomenda(numero) {
   doc.fontSize(11).font('Helvetica-Bold').text('Total', xLabelTotais, yDireita, { width: larguraLabelTotais });
   doc.text(formatarPreco(encomenda.total), xValorTotais, yDireita, { width: larguraValorTotais, align: 'right' });
   doc.fontSize(9).font('Helvetica').fillColor('#777').text('IVA incluído nos preços', xLabelTotais, yDireita + 16);
+  if (ehEstadoDevolucao(encomenda.estado)) {
+    doc.text('Os portes de envio não são devolvidos nem estão sujeitos a crédito.', xLabelTotais, yDireita + 30, { width: larguraUtil - (xLabelTotais - 40) });
+  }
   doc.fillColor('#000');
 
   y += 80;
@@ -163,6 +167,14 @@ async function gerarPdfEncomenda(numero) {
   doc.text(`País: Portugal    Telemóvel: ${encomenda.cliente.telefone || '-'}    Email: ${encomenda.cliente.email}`, 40, y + 53);
 
   y += 76;
+
+  if (encomenda.devolucao) {
+    doc.font('Helvetica-Bold').text('Dados Bancários para Reembolso', 40, y);
+    doc.font('Helvetica').text(`IBAN: ${encomenda.devolucao.iban}`, 40, y + 14);
+    doc.text(`Nome do 1º Titular da Conta: ${encomenda.devolucao.nomeTitular}`, 40, y + 27);
+    y += 50;
+  }
+
   doc.font('Helvetica-Bold').text('Método de Pagamento', 40, y);
   doc.font('Helvetica').text(encomenda.metodoPagamento, 40, y + 14);
 
@@ -172,6 +184,10 @@ async function gerarPdfEncomenda(numero) {
   doc.font('Helvetica').text(estadoLabel, 40, y + 14);
   if (encomenda.estado === 'Anulada' && encomenda.motivoAnulacao) {
     doc.font('Helvetica-Bold').fillColor('#c0392b').text(`Motivo da anulação: ${encomenda.motivoAnulacao}`, 40, y + 28, { width: larguraUtil });
+    doc.fillColor('#000');
+  }
+  if (encomenda.estado === 'DevolucaoRecebidaNaoAceite' && encomenda.motivoAnulacao) {
+    doc.font('Helvetica-Bold').fillColor('#c0392b').text(`Motivo da não aceitação: ${encomenda.motivoAnulacao}`, 40, y + 28, { width: larguraUtil });
     doc.fillColor('#000');
   }
 

@@ -333,7 +333,7 @@ body {
 }
 
 .tabela-scroll-painel {
-  max-height: 600px;
+  max-height: 430px;
   overflow-y: auto;
   border: 1px solid var(--cinza-medio);
   border-radius: 6px;
@@ -367,6 +367,14 @@ body {
 
 .sync-table tr:hover {
   background: var(--cinza-claro);
+}
+
+.sync-table tr.linha-clicavel {
+  cursor: pointer;
+}
+
+.sync-table tr.linha-clicavel:hover {
+  background: #ffe8e8;
 }
 
 .sync-table tr.erro-row {
@@ -406,7 +414,10 @@ body {
 .badge-estado.EmPreparacao { background: #e2d9f3; color: #4b2e83; }
 .badge-estado.Enviada { background: #d4edda; color: #155724; }
 .badge-estado.Anulada { background: #f8d7da; color: #721c24; }
-.badge-estado.Devolvida { background: #d1ecf1; color: #0c5460; }
+.badge-estado.NotaDevolucaoEmitida { background: #d1ecf1; color: #0c5460; }
+.badge-estado.DevolucaoRecebidaAceite { background: #d4edda; color: #155724; }
+.badge-estado.DevolucaoRecebidaNaoAceite { background: #f8d7da; color: #721c24; }
+.badge-estado.DevolucaoPaga { background: #d6d8db; color: #383d41; }
 
 .acoes-encomenda {
   display: flex;

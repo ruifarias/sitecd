@@ -23,6 +23,12 @@
       <button class="menu-item activo" data-secao="encomendas">
         Encomendas
       </button>
+      <button class="menu-item" data-secao="fichas-clientes">
+        Fichas de Clientes
+      </button>
+      <button class="menu-item" data-secao="extrato-cliente">
+        Extracto de Cliente
+      </button>
       <button class="menu-item" data-secao="marcas-principais">
         Marcas Principais
       </button>
@@ -60,6 +66,22 @@
 
       <div class="loader" id="loader-encomendas" style="display:none;">A carregar encomendas...</div>
 
+      <div class="form-group" style="max-width:280px">
+        <label for="filtro-estado-encomendas">Filtrar por Estado:</label>
+        <select id="filtro-estado-encomendas">
+          <option value="">Todos os Estados</option>
+          <option value="AguardarPagamento">Confirmação e a Aguardar Pagamento</option>
+          <option value="PagamentoEfectuado">Pagamento Efectuado</option>
+          <option value="EmPreparacao">Encomenda em Preparação</option>
+          <option value="Enviada">Encomenda Enviada</option>
+          <option value="Anulada">Encomenda Anulada</option>
+          <option value="NotaDevolucaoEmitida">Nota de Devolução Emitida</option>
+          <option value="DevolucaoRecebidaAceite">Devolução Recebida e Aceite</option>
+          <option value="DevolucaoRecebidaNaoAceite">Devolução Recebida mas Não Aceite</option>
+          <option value="DevolucaoPaga">Devolução Paga</option>
+        </select>
+      </div>
+
       <div class="tabela-scroll-painel">
         <table id="encomendas-table" class="sync-table">
           <thead>
@@ -77,6 +99,64 @@
       </div>
 
       <div id="detalhe-encomenda-admin"></div>
+    </section>
+
+    <!-- Fichas de Clientes -->
+    <section id="secao-fichas-clientes" class="secao">
+      <h1>Fichas de Clientes</h1>
+      <p class="descricao">Lista de todos os clientes registados, com o respectivo Código de Cliente.</p>
+
+      <div class="loader" id="loader-fichas-clientes" style="display:none;">A carregar clientes...</div>
+
+      <div class="form-group" style="max-width:320px">
+        <label for="pesquisa-fichas-clientes">Pesquisar (código, nome ou email):</label>
+        <input type="text" id="pesquisa-fichas-clientes" placeholder="Pesquisar...">
+      </div>
+
+      <div class="tabela-scroll-painel">
+        <table id="fichas-clientes-table" class="sync-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nome</th>
+              <th>Email</th>
+              <th>Telefone</th>
+              <th>NIF</th>
+              <th>Morada</th>
+              <th>Data Registo</th>
+              <th>Acções</th>
+            </tr>
+          </thead>
+          <tbody id="fichas-clientes-tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="detalhe-ficha-cliente"></div>
+    </section>
+
+    <!-- Extracto de Cliente -->
+    <section id="secao-extrato-cliente" class="secao">
+      <h1>Extracto de Cliente</h1>
+      <p class="descricao">Indique o Código de Cliente para consultar as suas encomendas e movimentos de pontos, ordenados por data (mais recente primeiro). Pode filtrar por intervalo de datas.</p>
+
+      <div class="form-group" style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;max-width:none">
+        <div>
+          <label for="input-codigo-extrato">Código de Cliente *</label>
+          <input type="text" id="input-codigo-extrato" placeholder="CLI000001">
+        </div>
+        <div>
+          <label for="input-desde-extrato">Desde</label>
+          <input type="date" id="input-desde-extrato">
+        </div>
+        <div>
+          <label for="input-ate-extrato">Até</label>
+          <input type="date" id="input-ate-extrato">
+        </div>
+        <button id="btn-consultar-extrato" class="botao-principal">Consultar</button>
+      </div>
+      <span id="msg-extrato-cliente" class="mensagem"></span>
+
+      <div id="resultado-extrato-cliente" style="margin-top:20px"></div>
     </section>
 
     <!-- Marcas Principais -->

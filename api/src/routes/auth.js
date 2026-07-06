@@ -121,7 +121,7 @@ router.get('/perfil', requireAuth, async (req, res) => {
     const pool = await getPool();
     const resultado = await pool.request()
       .input('id', sql.Int, req.cliente.id)
-      .query('SELECT Nome, Email, Telefone, NIF, IsAdmin, Morada, Localidade, Codigo_Postal FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Id = @id;');
+      .query('SELECT Nome, Email, Telefone, NIF, IsAdmin, Morada, Localidade, Codigo_Postal, Codigo_Cliente FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Id = @id;');
 
     if (resultado.recordset.length === 0) {
       return res.status(404).json({ erro: 'Cliente não encontrado.' });
@@ -136,6 +136,7 @@ router.get('/perfil', requireAuth, async (req, res) => {
       morada: c.Morada,
       localidade: c.Localidade,
       codigoPostal: c.Codigo_Postal,
+      codigoCliente: c.Codigo_Cliente,
     });
   } catch (err) {
     console.error(err);

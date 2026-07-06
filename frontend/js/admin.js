@@ -1,3 +1,9 @@
+// Estados da Nota de Devolução (ver api/src/constants/encomendaEstados.js)
+const ESTADOS_DEVOLUCAO = ['NotaDevolucaoEmitida', 'DevolucaoRecebidaAceite', 'DevolucaoRecebidaNaoAceite', 'DevolucaoPaga'];
+function ehEstadoDevolucao(estado) {
+  return ESTADOS_DEVOLUCAO.includes(estado);
+}
+
 // ========== MODAL: LISTA DE ARTIGOS DE UMA MARCA ==========
 function mostrarListaArtigosMarca(nomeMarca, artigos) {
   const existente = document.getElementById('modal-artigos-marca');
@@ -121,18 +127,20 @@ async function carregarEncomendas() {
   const tbody = document.getElementById('encomendas-tbody');
   document.getElementById('detalhe-encomenda-admin').innerHTML = '';
 
+  const estado = document.getElementById('filtro-estado-encomendas')?.value || '';
+
   loader.style.display = 'block';
   try {
-    const encomendas = await apiGet('/admin/encomendas');
+    const encomendas = await apiGet(`/admin/encomendas${estado ? `?estado=${estado}` : ''}`);
     if (encomendas.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6">Ainda não há encomendas.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6">Nenhuma encomenda encontrada.</td></tr>';
       return;
     }
     tbody.innerHTML = encomendas.map((e) => `
       <tr>
         <td>${new Date(e.data).toLocaleDateString('pt-PT')}</td>
         <td>${e.numero}</td>
-        <td>${e.clienteNome || '-'}<br><small>${e.clienteEmail || ''}</small></td>
+        <td>${e.clienteNome || '-'}<br><small>${e.clienteEmail || ''} ${e.codigoCliente ? `· ${e.codigoCliente}` : ''}</small></td>
         <td>${formatarPreco(e.total)}</td>
         <td><span class="badge-estado ${e.estado}">${e.estadoLabel}</span></td>
         <td>
@@ -156,7 +164,7 @@ async function carregarEncomendas() {
       btn.addEventListener('click', () => anularEncomendaAdmin(btn.dataset.numero));
     });
     tbody.querySelectorAll('.btn-devolver-encomenda').forEach((btn) => {
-      btn.addEventListener('click', () => verDetalheEncomendaAdmin(btn.dataset.numero, true));
+      btn.addEventListener('click', () => abrirDevolucaoAdmin(btn.dataset.numero));
     });
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="6" style="color:red">Erro: ${err.message}</td></tr>`;
@@ -165,7 +173,7 @@ async function carregarEncomendas() {
   }
 }
 
-async function verDetalheEncomendaAdmin(numero, focarDevolucao = false) {
+async function verDetalheEncomendaAdmin(numero) {
   const container = document.getElementById('detalhe-encomenda-admin');
   try {
     const e = await apiGet(`/admin/encomendas/${numero}`);
@@ -174,7 +182,7 @@ async function verDetalheEncomendaAdmin(numero, focarDevolucao = false) {
     container.innerHTML = `
       <div class="form-group" style="margin-top:20px;border-top:1px solid #ddd;padding-top:16px">
         <h3>Encomenda ${e.numero} — <span class="badge-estado ${e.estado}">${e.estadoLabel}</span></h3>
-        <p>Cliente: ${e.clienteNome} (${e.clienteEmail})</p>
+        <p>Cliente: ${e.clienteNome} (${e.clienteEmail}) — Código de Cliente: ${e.codigoCliente || '-'}</p>
         ${e.estado === 'Anulada' && e.motivoAnulacao ? `<p class="mensagem-erro">Motivo da anulação: ${e.motivoAnulacao}</p>` : ''}
         <table class="sync-table">
           <thead>
@@ -208,8 +216,12 @@ async function verDetalheEncomendaAdmin(numero, focarDevolucao = false) {
           ${e.valeDesconto > 0 ? `<div><span>Vale aplicado (${e.valeCodigo})</span><span>-${formatarPreco(e.valeDesconto)}</span></div>` : ''}
           <div class="resumo-total-final"><span>Total</span><span>${formatarPreco(e.total)}</span></div>
         </div>
-        <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === 'Enviada' ? '(atribuídos)' : e.estado === 'Devolvida' ? '(estornados)' : '(pendentes até envio)'}</p>
-        <button class="botao-secundario" id="btn-pdf-encomenda-admin">Exportar PDF</button>
+        <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === 'Enviada' ? '(atribuídos)' : ehEstadoDevolucao(e.estado) ? '(estornados)' : '(pendentes até envio)'}</p>
+        <div class="acoes-encomenda">
+          <button class="botao-secundario" id="btn-pdf-encomenda-admin">Exportar PDF</button>
+          ${(e.proximosEstadosDevolucao || []).map((pe) => `<button class="botao-principal btn-mudar-estado-devolucao" data-estado="${pe.estado}" data-label="${pe.label}">${pe.label}</button>`).join('')}
+        </div>
+        <span id="msg-estado-devolucao" class="mensagem"></span>
 
         ${devolucoes.length > 0 ? `
           <h4 style="margin-top:20px">Devoluções Registadas</h4>
@@ -227,41 +239,79 @@ async function verDetalheEncomendaAdmin(numero, focarDevolucao = false) {
             </tbody>
           </table>
         ` : ''}
-
-        ${e.podeDevolver ? `
-          <h4 id="secao-form-devolucao" style="margin-top:20px">Registar Devolução</h4>
-          <p class="descricao">Indique a quantidade a devolver de cada artigo (0 = não devolver este artigo).</p>
-          <table class="sync-table">
-            <thead><tr><th>Artigo</th><th>Já devolvida</th><th>Disponível p/ devolver</th><th>Qtd. a devolver</th></tr></thead>
-            <tbody>
-              ${e.linhas.map((l, i) => `
-                <tr>
-                  <td>${l.descricao}</td>
-                  <td>${l.quantidadeDevolvida}</td>
-                  <td>${l.quantidadeDevolvivel}</td>
-                  <td><input type="number" class="input-qtd-devolver" data-codigo-artigo="${l.codigoArtigo}" data-codigo-lote="${l.codigoLote}" min="0" max="${l.quantidadeDevolvivel}" value="0" style="width:70px" ${l.quantidadeDevolvivel === 0 ? 'disabled' : ''}></td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          <div class="acoes">
-            <button id="btn-confirmar-devolucao" class="botao-principal">Confirmar Devolução</button>
-            <span id="msg-devolucao" class="mensagem"></span>
-          </div>
-        ` : ''}
       </div>
     `;
     document.getElementById('btn-pdf-encomenda-admin').addEventListener('click', () => {
       apiDownload(`/admin/encomendas/${numero}/pdf`, `${numero}.pdf`).catch((err) => alert('Erro ao gerar PDF: ' + err.message));
     });
+    document.querySelectorAll('.btn-mudar-estado-devolucao').forEach((btn) => {
+      btn.addEventListener('click', () => mudarEstadoDevolucao(numero, btn.dataset.estado, btn.dataset.label));
+    });
+  } catch (err) {
+    container.innerHTML = `<div class="mensagem-erro">${err.message}</div>`;
+  }
+}
 
-    const btnDevolucao = document.getElementById('btn-confirmar-devolucao');
-    if (btnDevolucao) {
-      btnDevolucao.addEventListener('click', () => submeterDevolucao(numero));
+async function mudarEstadoDevolucao(numero, estado, label) {
+  let motivo;
+  if (estado === 'DevolucaoRecebidaNaoAceite') {
+    motivo = prompt(`Motivo da não aceitação da devolução ${numero}:`);
+    if (motivo === null) return;
+    if (!motivo.trim()) {
+      alert('É obrigatório indicar o motivo da não aceitação.');
+      return;
     }
-    if (focarDevolucao) {
-      document.getElementById('secao-form-devolucao')?.scrollIntoView({ behavior: 'smooth' });
-    }
+  } else if (!confirm(`Mudar o estado da devolução ${numero} para "${label}"?`)) {
+    return;
+  }
+
+  try {
+    await apiPut(`/admin/encomendas/${numero}/estado-devolucao`, { estado, motivo });
+    await carregarEncomendas();
+    await verDetalheEncomendaAdmin(numero);
+  } catch (err) {
+    alert('Erro: ' + err.message);
+  }
+}
+
+// Devolução: acção separada da consulta do detalhe - abre directamente o
+// formulário para picar os artigos a devolver, tal como na área do cliente.
+async function abrirDevolucaoAdmin(numero) {
+  const container = document.getElementById('detalhe-encomenda-admin');
+  try {
+    const e = await apiGet(`/admin/encomendas/${numero}`);
+    container.innerHTML = `
+      <div class="form-group" style="margin-top:20px;border-top:1px solid #ddd;padding-top:16px">
+        <h3>Devolução — Encomenda ${e.numero}</h3>
+        <p class="descricao">Indique a quantidade a devolver de cada artigo (0 = não devolver este artigo). Os portes de envio nunca são devolvidos.</p>
+        <table class="sync-table">
+          <thead><tr><th>Artigo</th><th>Já devolvida</th><th>Disponível p/ devolver</th><th>Qtd. a devolver</th></tr></thead>
+          <tbody>
+            ${e.linhas.map((l) => `
+              <tr>
+                <td>${l.descricao}</td>
+                <td>${l.quantidadeDevolvida}</td>
+                <td>${l.quantidadeDevolvivel}</td>
+                <td><input type="number" class="input-qtd-devolver" data-codigo-artigo="${l.codigoArtigo}" data-codigo-lote="${l.codigoLote}" min="0" max="${l.quantidadeDevolvivel}" value="0" style="width:70px" ${l.quantidadeDevolvivel === 0 ? 'disabled' : ''}></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="form-group" style="max-width:400px;margin-top:16px">
+          <label>IBAN *</label>
+          <input type="text" id="input-iban-devolucao" placeholder="PT50 0000 0000 0000 0000 0000 0" required>
+          <label>Nome do 1º Titular da Conta *</label>
+          <input type="text" id="input-titular-devolucao" required>
+        </div>
+        <div class="acoes">
+          <button id="btn-confirmar-devolucao" class="botao-principal">Confirmar Devolução</button>
+          <button id="btn-cancelar-devolucao" class="botao-secundario">Cancelar</button>
+          <span id="msg-devolucao" class="mensagem"></span>
+        </div>
+      </div>
+    `;
+    document.getElementById('btn-confirmar-devolucao').addEventListener('click', () => submeterDevolucao(numero));
+    document.getElementById('btn-cancelar-devolucao').addEventListener('click', () => verDetalheEncomendaAdmin(numero));
   } catch (err) {
     container.innerHTML = `<div class="mensagem-erro">${err.message}</div>`;
   }
@@ -284,6 +334,14 @@ async function submeterDevolucao(numero) {
     return;
   }
 
+  const iban = document.getElementById('input-iban-devolucao').value.trim();
+  const nomeTitular = document.getElementById('input-titular-devolucao').value.trim();
+  if (!iban || !nomeTitular) {
+    msg.textContent = '✗ O IBAN e o nome do 1º titular da conta são obrigatórios';
+    msg.className = 'mensagem erro';
+    return;
+  }
+
   if (!confirm(`Confirma a devolução de ${linhas.length} artigo(s) da encomenda ${numero}?`)) return;
 
   const btn = document.getElementById('btn-confirmar-devolucao');
@@ -292,9 +350,10 @@ async function submeterDevolucao(numero) {
   msg.className = 'mensagem';
 
   try {
-    const resultado = await apiPost(`/admin/encomendas/${numero}/devolucao`, { linhas });
-    msg.textContent = `✓ Devolução registada! Valor: ${formatarPreco(resultado.valorDevolvido)}, Pontos estornados: ${resultado.pontosEstornados}`;
+    const resultado = await apiPost(`/admin/encomendas/${numero}/devolucao`, { linhas, iban, nomeTitular });
+    msg.textContent = `✓ Devolução registada (${resultado.numeroDevolucao})! Valor: ${formatarPreco(resultado.valorDevolvido)}, Pontos estornados: ${resultado.pontosEstornados}`;
     msg.className = 'mensagem sucesso';
+    await carregarEncomendas();
     await verDetalheEncomendaAdmin(numero);
   } catch (err) {
     msg.textContent = '✗ Erro: ' + err.message;
@@ -325,6 +384,205 @@ async function anularEncomendaAdmin(numero) {
     await carregarEncomendas();
   } catch (err) {
     alert('Erro: ' + err.message);
+  }
+}
+
+// ========== FICHAS DE CLIENTES ==========
+async function carregarFichasClientes() {
+  const loader = document.getElementById('loader-fichas-clientes');
+  const tbody = document.getElementById('fichas-clientes-tbody');
+  const q = document.getElementById('pesquisa-fichas-clientes').value.trim();
+
+  loader.style.display = 'block';
+  try {
+    const clientes = await apiGet(`/admin/clientes${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+    if (clientes.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8">Nenhum cliente encontrado.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = clientes.map((c) => `
+      <tr class="linha-clicavel" data-codigo="${c.codigoCliente}" title="Ver/editar ficha deste cliente">
+        <td>${c.codigoCliente}</td>
+        <td>${c.nome}${c.isAdmin ? ' <small>(admin)</small>' : ''}</td>
+        <td>${c.email}</td>
+        <td>${c.telefone || '-'}</td>
+        <td>${c.nif || '-'}</td>
+        <td>${c.morada ? `${c.morada}, ${c.codigoPostal || ''} ${c.localidade || ''}` : '-'}</td>
+        <td>${new Date(c.dataCriacao).toLocaleDateString('pt-PT')}</td>
+        <td><button type="button" class="botao-secundario btn-extracto-cliente" data-codigo="${c.codigoCliente}">Extracto</button></td>
+      </tr>
+    `).join('');
+    tbody.querySelectorAll('.linha-clicavel').forEach((tr) => {
+      tr.addEventListener('click', () => abrirFichaCliente(tr.dataset.codigo));
+    });
+    tbody.querySelectorAll('.btn-extracto-cliente').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        irParaExtratoCliente(btn.dataset.codigo);
+      });
+    });
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="8" style="color:red">Erro: ${err.message}</td></tr>`;
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
+// Ficha de cliente: consultar e editar os dados de um cliente (nome, telefone,
+// NIF, morada), com possibilidade de gravar alterações.
+async function abrirFichaCliente(codigoCliente) {
+  const container = document.getElementById('detalhe-ficha-cliente');
+  try {
+    const c = await apiGet(`/admin/clientes/${encodeURIComponent(codigoCliente)}`);
+    container.innerHTML = `
+      <div class="form-group" style="margin-top:20px;border-top:1px solid #ddd;padding-top:16px">
+        <h3>Ficha de Cliente — ${c.codigoCliente}</h3>
+        <form class="checkout" id="form-ficha-cliente">
+          <fieldset>
+            <label>Email</label>
+            <input type="email" value="${c.email}" disabled>
+            <label>Nome *</label>
+            <input type="text" name="nome" value="${c.nome || ''}" required>
+            <label>Telefone</label>
+            <input type="tel" name="telefone" value="${c.telefone || ''}">
+            <label>NIF</label>
+            <input type="text" name="nif" value="${c.nif || ''}">
+            <label>Morada</label>
+            <input type="text" name="morada" value="${c.morada || ''}">
+            <label>Localidade</label>
+            <input type="text" name="localidade" value="${c.localidade || ''}">
+            <label>Código Postal</label>
+            <input type="text" name="codigoPostal" placeholder="0000-000" value="${c.codigoPostal || ''}">
+          </fieldset>
+          <div class="acoes">
+            <button type="submit" class="botao-principal">Guardar Alterações</button>
+            <button type="button" class="botao-secundario" id="btn-extracto-ficha-cliente">Extracto</button>
+            <span id="msg-ficha-cliente" class="mensagem"></span>
+          </div>
+        </form>
+      </div>
+    `;
+    document.getElementById('form-ficha-cliente').addEventListener('submit', (e) => guardarFichaCliente(e, codigoCliente));
+    document.getElementById('btn-extracto-ficha-cliente').addEventListener('click', () => irParaExtratoCliente(codigoCliente));
+  } catch (err) {
+    container.innerHTML = `<div class="mensagem-erro">${err.message}</div>`;
+  }
+}
+
+async function guardarFichaCliente(e, codigoCliente) {
+  e.preventDefault();
+  const form = e.target;
+  const botao = form.querySelector('button[type="submit"]');
+  const msg = document.getElementById('msg-ficha-cliente');
+  botao.disabled = true;
+  msg.textContent = 'A guardar...';
+  msg.className = 'mensagem';
+
+  try {
+    await apiPut(`/admin/clientes/${encodeURIComponent(codigoCliente)}`, {
+      nome: form.nome.value,
+      telefone: form.telefone.value || undefined,
+      nif: form.nif.value || undefined,
+      morada: form.morada.value || undefined,
+      localidade: form.localidade.value || undefined,
+      codigoPostal: form.codigoPostal.value || undefined,
+    });
+    msg.textContent = '✓ Guardado com sucesso!';
+    msg.className = 'mensagem sucesso';
+    await carregarFichasClientes();
+  } catch (err) {
+    msg.textContent = '✗ ' + err.message;
+    msg.className = 'mensagem erro';
+  } finally {
+    botao.disabled = false;
+  }
+}
+
+// Navega da ficha do cliente para o Extracto de Cliente, já com a pesquisa
+// preenchida e consultada (mesmo código usado nas Fichas de Clientes).
+function irParaExtratoCliente(codigoCliente) {
+  document.querySelectorAll('.menu-item').forEach((i) => i.classList.remove('activo'));
+  document.querySelector('.menu-item[data-secao="extrato-cliente"]').classList.add('activo');
+  document.querySelectorAll('.secao').forEach((s) => s.classList.remove('activa'));
+  document.getElementById('secao-extrato-cliente').classList.add('activa');
+  document.getElementById('input-codigo-extrato').value = codigoCliente;
+  consultarExtratoCliente();
+}
+
+// ========== EXTRACTO DE CLIENTE ==========
+async function consultarExtratoCliente() {
+  const codigo = document.getElementById('input-codigo-extrato').value.trim();
+  const desde = document.getElementById('input-desde-extrato').value;
+  const ate = document.getElementById('input-ate-extrato').value;
+  const msg = document.getElementById('msg-extrato-cliente');
+  const resultado = document.getElementById('resultado-extrato-cliente');
+
+  if (!codigo) {
+    msg.textContent = '✗ Indique o Código de Cliente';
+    msg.className = 'mensagem erro';
+    return;
+  }
+
+  msg.textContent = 'A consultar...';
+  msg.className = 'mensagem';
+  resultado.innerHTML = '';
+
+  try {
+    const params = new URLSearchParams();
+    if (desde) params.set('desde', desde);
+    if (ate) params.set('ate', ate);
+    const dados = await apiGet(`/admin/clientes/${encodeURIComponent(codigo)}/extrato${params.toString() ? `?${params}` : ''}`);
+    msg.textContent = '';
+
+    resultado.innerHTML = `
+      <div class="form-group">
+        <h3>${dados.cliente.nome} — ${dados.cliente.codigoCliente}</h3>
+        <p class="descricao">Email: ${dados.cliente.email} · Telefone: ${dados.cliente.telefone || '-'} · NIF: ${dados.cliente.nif || '-'} · Saldo de Pontos: <strong>${dados.saldoPontos}</strong></p>
+      </div>
+
+      <h4>Encomendas</h4>
+      ${dados.encomendas.length === 0 ? '<p class="descricao">Sem encomendas no período seleccionado.</p>' : `
+        <div class="tabela-scroll-painel" style="max-height:300px">
+          <table class="sync-table">
+            <thead><tr><th>Data</th><th>Número</th><th>Estado</th><th>Total</th><th>Pontos</th></tr></thead>
+            <tbody>
+              ${dados.encomendas.map((e) => `
+                <tr>
+                  <td>${new Date(e.data).toLocaleDateString('pt-PT')}</td>
+                  <td>${e.numero}</td>
+                  <td><span class="badge-estado ${e.estado}">${e.estadoLabel}</span></td>
+                  <td>${formatarPreco(e.total)}</td>
+                  <td>${e.pontosGanhos}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `}
+
+      <h4 style="margin-top:20px">Movimentos de Pontos</h4>
+      ${dados.pontos.length === 0 ? '<p class="descricao">Sem movimentos de pontos no período seleccionado.</p>' : `
+        <div class="tabela-scroll-painel" style="max-height:300px">
+          <table class="sync-table">
+            <thead><tr><th>Data</th><th>Tipo</th><th>Pontos</th><th>Acumulado</th><th>Descrição</th></tr></thead>
+            <tbody>
+              ${dados.pontos.map((p) => `
+                <tr>
+                  <td>${new Date(p.data).toLocaleDateString('pt-PT')}</td>
+                  <td>${p.tipo}</td>
+                  <td>${p.pontos}</td>
+                  <td>${p.acumulado}</td>
+                  <td>${p.descricao || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `}
+    `;
+  } catch (err) {
+    msg.textContent = '✗ ' + err.message;
+    msg.className = 'mensagem erro';
   }
 }
 
@@ -762,6 +1020,11 @@ function inicializarMenu() {
         case 'encomendas':
           carregarEncomendas();
           break;
+        case 'fichas-clientes':
+          carregarFichasClientes();
+          break;
+        case 'extrato-cliente':
+          break;
         case 'marcas-principais':
           carregarMarcas();
           break;
@@ -798,12 +1061,31 @@ function inicializarEventos() {
   document.getElementById('btn-guardar-portes').addEventListener('click', guardarPortes);
   document.getElementById('btn-guardar-pontos').addEventListener('click', guardarPontos);
   document.getElementById('filtro-erros-only').addEventListener('change', renderSyncLog);
+  document.getElementById('filtro-estado-encomendas').addEventListener('change', carregarEncomendas);
   document.getElementById('btn-atualizar-log').addEventListener('click', carregarSyncLog);
   document.getElementById('btn-guardar-pagina').addEventListener('click', guardarPaginaConteudo);
+  document.getElementById('pesquisa-fichas-clientes').addEventListener('input', carregarFichasClientes);
+  document.getElementById('btn-consultar-extrato').addEventListener('click', consultarExtratoCliente);
+  ['input-codigo-extrato', 'input-desde-extrato', 'input-ate-extrato'].forEach((id) => {
+    document.getElementById(id).addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') consultarExtratoCliente();
+    });
+  });
   document.getElementById('btn-logout-admin').addEventListener('click', () => {
+    if (!confirm('Deseja terminar a sessão?')) return;
     removerToken();
     window.location.reload();
   });
+
+  inicializarDatasExtrato();
+}
+
+// Datas por omissão do Extracto de Cliente: 1 de Janeiro a 31 de Dezembro do
+// ano actual.
+function inicializarDatasExtrato() {
+  const ano = new Date().getFullYear();
+  document.getElementById('input-desde-extrato').value = `${ano}-01-01`;
+  document.getElementById('input-ate-extrato').value = `${ano}-12-31`;
 }
 
 // ========== ACESSO (só administradores) ==========

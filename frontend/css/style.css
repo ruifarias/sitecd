@@ -140,11 +140,23 @@ header.topo {
 }
 .carrinho-icone {
   position: relative;
-  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--branco);
 }
-.carrinho-icone-grande {
-  font-size: 30px;
-  margin-left: 4px;
+.carrinho-icone svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  display: block;
+}
+.carrinho-icone:hover {
+  color: var(--vermelho);
 }
 .carrinho-badge {
   position: absolute;
@@ -158,12 +170,6 @@ header.topo {
   padding: 1px 6px;
   min-width: 16px;
   text-align: center;
-}
-.carrinho-icone-grande .carrinho-badge {
-  top: -6px;
-  right: -12px;
-  font-size: 12px;
-  padding: 2px 7px;
 }
 
 /* ---------- Layout de listagem ---------- */

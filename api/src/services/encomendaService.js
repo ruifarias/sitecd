@@ -2,6 +2,7 @@
 // com imagem do artigo, morada, IVA) - usado pelo email de notificação e pela
 // exportação em PDF, para não duplicar as mesmas queries em vários sítios.
 const { getPool, sql } = require('../db');
+const { ehEstadoDevolucao } = require('../constants/encomendaEstados');
 
 async function obterTaxaIva(pool) {
   const config = await pool.request().query(`SELECT Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave = 'TaxaIVA';`);
@@ -17,7 +18,7 @@ async function obterEncomendaCompleta(numero) {
       SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
              e.Metodo_Pagamento, e.Data_Criacao, e.Data_Actualizacao, e.Motivo_Anulacao,
              e.Morada_Entrega, e.Localidade_Entrega, e.Codigo_Postal_Entrega,
-             c.Nome AS Cliente_Nome, c.Email AS Cliente_Email, c.Telefone AS Cliente_Telefone, c.NIF AS Cliente_Nif
+             c.Nome AS Cliente_Nome, c.Email AS Cliente_Email, c.Telefone AS Cliente_Telefone, c.NIF AS Cliente_Nif, c.Codigo_Cliente
       FROM dbo.ZAPP_DBSiteCD_Encomendas e
       LEFT JOIN dbo.ZAPP_DBSiteCD_Clientes c ON c.Id = e.Cliente_Id
       WHERE e.Numero = @numero;
@@ -38,6 +39,19 @@ async function obterEncomendaCompleta(numero) {
   const taxaIva = await obterTaxaIva(pool);
   const baseIncidencia = Math.round((e.Total / (1 + taxaIva / 100)) * 100) / 100;
   const valorIva = Math.round((e.Total - baseIncidencia) * 100) / 100;
+
+  let devolucao = null;
+  if (ehEstadoDevolucao(e.Estado)) {
+    const devolucaoRes = await pool.request()
+      .input('encomendaDevolucaoId', sql.Int, e.Id)
+      .query('SELECT Iban, Nome_Titular FROM dbo.ZAPP_DBSiteCD_Devolucoes WHERE Encomenda_Devolucao_Id = @encomendaDevolucaoId;');
+    if (devolucaoRes.recordset.length > 0) {
+      devolucao = {
+        iban: devolucaoRes.recordset[0].Iban,
+        nomeTitular: devolucaoRes.recordset[0].Nome_Titular,
+      };
+    }
+  }
 
   return {
     numero: e.Numero,
@@ -61,10 +75,12 @@ async function obterEncomendaCompleta(numero) {
       email: e.Cliente_Email,
       telefone: e.Cliente_Telefone,
       nif: e.Cliente_Nif,
+      codigoCliente: e.Codigo_Cliente,
     },
     taxaIva,
     baseIncidencia,
     valorIva,
+    devolucao,
     linhas: linhasRes.recordset.map((l) => ({
       codigoArtigo: l.Codigo_Artigo,
       codigoLote: l.Codigo_Lote,
