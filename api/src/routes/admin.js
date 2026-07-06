@@ -84,10 +84,21 @@ router.get('/sync-log', async (req, res) => {
 });
 
 // ---- Famílias por classificar (Modalidade/Género em falta, com artigos publicados reais) ----
+// Sem ?termo, mostra só as famílias por classificar; com ?termo, pesquisa por
+// código ou nome em TODAS as famílias (já classificadas ou não), para permitir
+// corrigir uma classificação existente.
 router.get('/familias-por-classificar', async (req, res) => {
+  const termo = (req.query.termo || '').trim();
   try {
     const pool = await getPool();
-    const result = await pool.request().query(`
+    const request = pool.request();
+    let condicao = `WHERE COALESCE(f4.Modalidade_Id, f3.Modalidade_Id) IS NULL
+         OR COALESCE(f4.Genero_Id, f3.Genero_Id) IS NULL`;
+    if (termo) {
+      request.input('termo', sql.NVarChar(100), `%${termo}%`);
+      condicao = `WHERE f4.Codigo_Familia LIKE @termo OR f4.Familia LIKE @termo`;
+    }
+    const result = await request.query(`
       SELECT DISTINCT f4.Codigo_Familia, f4.Familia, f1.Familia AS Categoria,
              COALESCE(f4.Modalidade_Id, f3.Modalidade_Id) AS Modalidade_Id_Actual,
              modal.Titulo AS Modalidade_Titulo_Actual,
@@ -101,9 +112,8 @@ router.get('/familias-por-classificar', async (req, res) => {
       INNER JOIN dbo.ZAPP_DBSiteCD_Artigos a ON a.Codigo_Familia = f4.Codigo_Familia AND a.Publicado = 1
       LEFT JOIN dbo.ZAPP_DBSiteCD_Modalidades modal ON modal.Id = COALESCE(f4.Modalidade_Id, f3.Modalidade_Id)
       LEFT JOIN dbo.ZAPP_DBSiteCD_Generos gen ON gen.Id = COALESCE(f4.Genero_Id, f3.Genero_Id)
-      WHERE COALESCE(f4.Modalidade_Id, f3.Modalidade_Id) IS NULL
-         OR COALESCE(f4.Genero_Id, f3.Genero_Id) IS NULL
-      ORDER BY NumArtigos DESC;
+      ${condicao}
+      ORDER BY f4.Codigo_Familia;
     `);
     res.json(result.recordset.map((r) => ({
       codigoFamilia: r.Codigo_Familia,
@@ -722,7 +732,10 @@ router.put('/encomendas/:numero/avancar', async (req, res) => {
     await updReq
       .input('id', sql.Int, encomenda.Id)
       .input('estado', sql.VarChar(30), novoEstado)
-      .query('UPDATE dbo.ZAPP_DBSiteCD_Encomendas SET Estado = @estado, Data_Actualizacao = GETDATE() WHERE Id = @id;');
+      // GETUTCDATE() (não GETDATE()) - esta data é comparada em Node com new Date()
+      // para o prazo de confirmação de receção; GETDATE() devolve hora local do
+      // servidor SQL mas o driver marca-a como UTC, desfasando a comparação.
+      .query('UPDATE dbo.ZAPP_DBSiteCD_Encomendas SET Estado = @estado, Data_Actualizacao = GETUTCDATE() WHERE Id = @id;');
 
     if (novoEstado === 'Enviada') {
       // A encomenda já foi facturada no sistema central e o stock real já foi

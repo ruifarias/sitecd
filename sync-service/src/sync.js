@@ -232,10 +232,11 @@ async function validarPrecoZero(pool) {
 
     UPDATE a
     SET a.Publicado = 0, a.Data_Sincronizacao = GETDATE()
-    OUTPUT inserted.Codigo_Artigo, inserted.Descritivo_Artigo, inserted.Marca, p.Preco INTO @ComPrecoZero
+    OUTPUT inserted.Codigo_Artigo, inserted.Descritivo_Artigo, m.Marca, p.Preco INTO @ComPrecoZero
     FROM dbo.ZAPP_DBSiteCD_Artigos a
     INNER JOIN dbo.ZAPP_DBSiteCD_Precos p ON p.Codigo_Artigo = a.Codigo_Artigo
     INNER JOIN dbo.ZAPP_DBSiteCD_SyncStaging_ChangedArtigos c ON c.Codigo_Artigo = a.Codigo_Artigo
+    LEFT JOIN dbo.ZAPP_DBSiteCD_Marcas m ON m.Codigo_Marca = a.Codigo_Marca
     WHERE p.Preco = 0 AND a.Publicado = 1;
 
     SELECT * FROM @ComPrecoZero;

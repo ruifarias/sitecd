@@ -270,6 +270,15 @@
       <h1>Famílias por Classificar</h1>
       <p class="descricao">Famílias com artigos publicados sem Modalidade e/ou Género atribuídos. Não bloqueia a publicação dos artigos, mas eles não aparecem nos filtros de Modalidade/Género até serem classificados.</p>
 
+      <div class="form-group" style="max-width:400px">
+        <label for="input-pesquisa-familia">Pesquisar por código ou nome da família (todas, incluindo já classificadas):</label>
+        <input type="text" id="input-pesquisa-familia" placeholder="Ex: 8999 ou Ténis">
+        <div class="acoes" style="margin-top:8px">
+          <button id="btn-pesquisar-familia" class="botao-secundario">Pesquisar</button>
+          <button id="btn-limpar-pesquisa-familia" class="botao-secundario">Limpar</button>
+        </div>
+      </div>
+
       <div class="loader" id="loader-classificar" style="display:none;">A carregar famílias...</div>
 
       <table id="classificar-table" class="classificar-table">

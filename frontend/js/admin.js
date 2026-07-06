@@ -147,7 +147,7 @@ async function carregarEncomendas() {
         <td>
           <div class="acoes-encomenda">
             <button class="botao-secundario btn-ver-detalhe-admin" data-numero="${e.numero}">Ver</button>
-            ${e.proximoEstado ? `<button class="botao-principal btn-avancar-estado" data-numero="${e.numero}" data-proximo-estado-label="${e.proximoEstadoLabel || ''}">Avançar</button>` : ''}
+            ${e.proximoEstado ? `<button class="botao-principal btn-avancar-estado" data-numero="${e.numero}" data-proximo-estado-label="${e.proximoEstadoLabel || ''}">Avançar para: ${e.proximoEstadoLabel || 'Estado Seguinte'}</button>` : ''}
             ${e.podeAnular ? `<button class="botao-secundario btn-anular-encomenda" data-numero="${e.numero}">Anular</button>` : ''}
             ${e.podeDevolver ? `<button class="botao-secundario btn-devolver-encomenda" data-numero="${e.numero}">Devolução</button>` : ''}
           </div>
@@ -889,7 +889,7 @@ async function carregarFamilias() {
 }
 
 // ========== FAMÍLIAS POR CLASSIFICAR ==========
-async function carregarFamiliasClassificar() {
+async function carregarFamiliasClassificar(termo = '') {
   const loader = document.getElementById('loader-classificar');
   const tbody = document.getElementById('classificar-tbody');
 
@@ -897,14 +897,15 @@ async function carregarFamiliasClassificar() {
   tbody.innerHTML = '';
 
   try {
+    const caminho = termo ? `/admin/familias-por-classificar?termo=${encodeURIComponent(termo)}` : '/admin/familias-por-classificar';
     const [familias, modalidades, generos] = await Promise.all([
-      apiGet('/admin/familias-por-classificar'),
+      apiGet(caminho),
       apiGet('/modalidades'),
       apiGet('/generos'),
     ]);
 
     if (familias.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--cinza-texto);">Todas as famílias estão classificadas!</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--cinza-texto);">${termo ? 'Nenhuma família encontrada.' : 'Todas as famílias estão classificadas!'}</td></tr>`;
       return;
     }
 
@@ -1091,6 +1092,16 @@ function inicializarEventos() {
   document.getElementById('filtro-erros-only').addEventListener('change', renderSyncLog);
   document.getElementById('filtro-estado-encomendas').addEventListener('change', carregarEncomendas);
   document.getElementById('btn-atualizar-log').addEventListener('click', carregarSyncLog);
+  document.getElementById('btn-pesquisar-familia').addEventListener('click', () => {
+    carregarFamiliasClassificar(document.getElementById('input-pesquisa-familia').value.trim());
+  });
+  document.getElementById('btn-limpar-pesquisa-familia').addEventListener('click', () => {
+    document.getElementById('input-pesquisa-familia').value = '';
+    carregarFamiliasClassificar();
+  });
+  document.getElementById('input-pesquisa-familia').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') carregarFamiliasClassificar(e.target.value.trim());
+  });
   document.getElementById('btn-guardar-pagina').addEventListener('click', guardarPaginaConteudo);
   document.getElementById('pesquisa-fichas-clientes').addEventListener('input', carregarFichasClientes);
   document.getElementById('btn-consultar-extrato').addEventListener('click', consultarExtratoCliente);

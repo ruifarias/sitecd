@@ -155,7 +155,8 @@ router.get('/encomendas/:numero', async (req, res) => {
     let dataDisponivelConfirmacao = null;
     if (e.Estado === 'Enviada') {
       const configRes = await pool.request().query("SELECT Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave = 'DiasConfirmacaoRecepcao';");
-      const dias = parseInt(configRes.recordset[0]?.Valor, 10) || 1;
+      const diasConfigurados = parseInt(configRes.recordset[0]?.Valor, 10);
+      const dias = Number.isNaN(diasConfigurados) ? 1 : diasConfigurados;
       dataDisponivelConfirmacao = new Date(e.Data_Actualizacao);
       dataDisponivelConfirmacao.setDate(dataDisponivelConfirmacao.getDate() + dias);
       podeConfirmarRecepcao = new Date() >= dataDisponivelConfirmacao;
@@ -303,7 +304,8 @@ router.put('/encomendas/:numero/confirmar-recepcao', async (req, res) => {
 
     const configReq = new sql.Request(transaction);
     const configRes = await configReq.query("SELECT Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave = 'DiasConfirmacaoRecepcao';");
-    const dias = parseInt(configRes.recordset[0]?.Valor, 10) || 1;
+    const diasConfigurados = parseInt(configRes.recordset[0]?.Valor, 10);
+    const dias = Number.isNaN(diasConfigurados) ? 1 : diasConfigurados;
     const disponivelEm = new Date(encomenda.Data_Actualizacao);
     disponivelEm.setDate(disponivelEm.getDate() + dias);
     if (new Date() < disponivelEm) {
@@ -315,7 +317,7 @@ router.put('/encomendas/:numero/confirmar-recepcao', async (req, res) => {
     await updReq
       .input('id', sql.Int, encomenda.Id)
       .input('estado', sql.VarChar(30), ESTADO_RECEBIDA_CONFORME)
-      .query('UPDATE dbo.ZAPP_DBSiteCD_Encomendas SET Estado = @estado, Data_Actualizacao = GETDATE() WHERE Id = @id;');
+      .query('UPDATE dbo.ZAPP_DBSiteCD_Encomendas SET Estado = @estado, Data_Actualizacao = GETUTCDATE() WHERE Id = @id;');
 
     if (encomenda.Pontos_Ganhos > 0) {
       // idempotente: só atribui se ainda não houver um "Ganho" para esta encomenda

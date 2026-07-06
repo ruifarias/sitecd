@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
-const { ESTADOS_LABELS, ehEstadoDevolucao } = require('../constants/encomendaEstados');
+const { ESTADOS_LABELS, ehEstadoDevolucao, ESTADO_RECEBIDA_CONFORME } = require('../constants/encomendaEstados');
 const { obterEncomendaCompleta } = require('./encomendaService');
 
 const EMPRESA = {
@@ -212,7 +212,7 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
     ${encomenda.pontosGanhos !== 0 ? `
       <div style="border-top:1px solid #ddd;padding-top:12px;margin-bottom:16px">
         Pontos desta encomenda: <strong>${encomenda.pontosGanhos}</strong>
-        ${encomenda.estado === 'Enviada' ? '(já atribuídos, disponíveis para uso)' : encomenda.estado === 'Anulada' ? '(anulados)' : ehEstadoDevolucao(encomenda.estado) ? '(estornados)' : '(pendentes até a encomenda ser enviada)'}
+        ${encomenda.estado === ESTADO_RECEBIDA_CONFORME ? '(já atribuídos, disponíveis para uso)' : encomenda.estado === 'Anulada' ? '(anulados)' : ehEstadoDevolucao(encomenda.estado) ? '(estornados)' : '(pendentes até ser confirmada a receção pelo cliente)'}
       </div>
     ` : ''}
 

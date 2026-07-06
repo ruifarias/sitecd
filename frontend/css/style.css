@@ -382,7 +382,7 @@ header.topo {
 /* ---------- Ficha de artigo ---------- */
 .layout-artigo {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 30% minmax(0, 1fr);
   gap: 48px;
   max-width: 1400px;
   margin: 0 auto;
@@ -412,9 +412,10 @@ header.topo {
 .botao-voltar {
   display: inline-block;
   color: var(--vermelho);
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 600;
   margin-bottom: 16px;
-  padding: 6px 0;
+  padding: 8px 0;
   text-decoration: none;
   transition: color 0.2s;
 }
@@ -512,6 +513,7 @@ header.topo {
 
 .secao-familia {
   grid-column: 1 / -1;
+  min-width: 0;
   margin-top: 48px;
   padding: 32px 0;
   border-top: 1px solid var(--cinza-medio);
@@ -535,7 +537,6 @@ header.topo {
   align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: calc(6 * 140px + 5 * 16px + 2 * 52px);
   margin: 12px 0;
   overflow: hidden;
 }
@@ -566,9 +567,9 @@ header.topo {
   overflow-x: auto;
   padding: 12px 0;
   flex: 1;
+  min-width: 0;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
-  max-width: calc(6 * 140px + 5 * 16px);
 }
 
 .artigos-mesma-sub-scroll::-webkit-scrollbar {
@@ -850,7 +851,8 @@ footer.rodape {
 @media (max-width: 800px) {
   .layout-listagem { grid-template-columns: 1fr; }
   .filtros { border-right: none; border-bottom: 1px solid var(--cinza-medio); padding-bottom: 16px; }
-  .layout-artigo { grid-template-columns: 1fr; }
+  .layout-artigo { grid-template-columns: minmax(0, 1fr); }
+  .galeria-principal { max-width: 420px; margin: 0 auto; }
   header.topo nav { display: none; }
   .rodape-principal { grid-template-columns: 1fr; }
 }
