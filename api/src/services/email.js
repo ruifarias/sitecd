@@ -181,6 +181,8 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
         <strong>Dados Bancários para Reembolso</strong><br>
         IBAN: ${encomenda.devolucao.iban}<br>
         Nome do 1º Titular da Conta: ${encomenda.devolucao.nomeTitular}
+        ${encomenda.devolucao.motivo ? `<br><br><strong>Razão da Devolução</strong><br>${encomenda.devolucao.motivo}` : ''}
+        <br><br><em>Li e Aceito as condições de devolução!</em>
       </div>
     ` : ''}
 
@@ -252,4 +254,45 @@ async function enviarEmailEncomenda(numero, { tituloEvento, notaEvento, assunto,
   }
 }
 
-module.exports = { enviarEmailEncomenda, templateFactura, formatarPreco, formatarData, separarNomeVariante, EMPRESA };
+// Email de recuperação de password: link com token de uso único (ver
+// routes/auth.js - POST /recuperar-password e /redefinir-password). Não falha
+// nem bloqueia o pedido do cliente se o SMTP não estiver configurado.
+async function enviarEmailRecuperacaoPassword(email, nome, link) {
+  const transporte = getTransporte();
+  if (!transporte) {
+    console.warn(`[email] SMTP não configurado — a saltar envio de recuperação de password para ${email}.`);
+    return;
+  }
+
+  const html = `
+    <div style="font-family:Arial,Helvetica,sans-serif;max-width:500px;margin:0 auto;color:#222;font-size:14px">
+      <p><img src="cid:logo-empresa" width="70" alt="Clássico Desportivo"></p>
+      <p>Olá ${nome || ''},</p>
+      <p>Recebemos um pedido de recuperação de password para a sua conta em Clássico Desportivo.</p>
+      <p style="margin:24px 0">
+        <a href="${link}" style="background:#111;color:#fff;padding:12px 24px;text-decoration:none;font-weight:700">Criar Nova Password</a>
+      </p>
+      <p style="color:#777;font-size:12px">Este link é válido por 1 hora. Se não pediu a recuperação de password, ignore este email — a sua password mantém-se inalterada.</p>
+      <p style="color:#999;font-size:11px;margin-top:24px">Clássico Desportivo — este email foi enviado automaticamente, não responda a esta mensagem.</p>
+    </div>
+  `;
+
+  try {
+    const anexos = [];
+    if (fs.existsSync(CAMINHO_LOGO)) {
+      anexos.push({ filename: 'logo.png', path: CAMINHO_LOGO, cid: 'logo-empresa' });
+    }
+    await transporte.sendMail({
+      from: process.env.SMTP_FROM || `"Clássico Desportivo" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: 'Recuperação de Password — Clássico Desportivo',
+      html,
+      attachments: anexos,
+    });
+    console.log(`[email] Email de recuperação de password enviado para ${email}.`);
+  } catch (err) {
+    console.error(`[email] Falha ao enviar email de recuperação de password para ${email}:`, err.message);
+  }
+}
+
+module.exports = { enviarEmailEncomenda, enviarEmailRecuperacaoPassword, templateFactura, formatarPreco, formatarData, separarNomeVariante, EMPRESA };

@@ -1,5 +1,6 @@
 // Estados da Nota de Devolução (ver api/src/constants/encomendaEstados.js)
 const ESTADOS_DEVOLUCAO = ['NotaDevolucaoEmitida', 'DevolucaoRecebidaAceite', 'DevolucaoRecebidaNaoAceite', 'DevolucaoPaga'];
+const ESTADO_RECEBIDA_CONFORME = 'RecebidaSemDevolucao';
 function ehEstadoDevolucao(estado) {
   return ESTADOS_DEVOLUCAO.includes(estado);
 }
@@ -28,10 +29,17 @@ async function carregarPerfil() {
           <legend>Morada de Entrega</legend>
           <label>Morada</label>
           <input type="text" name="morada" value="${perfil.morada || ''}">
-          <label>Localidade</label>
-          <input type="text" name="localidade" value="${perfil.localidade || ''}">
           <label>Código Postal</label>
           <input type="text" name="codigoPostal" placeholder="0000-000" value="${perfil.codigoPostal || ''}">
+          <label>Localidade</label>
+          <input type="text" name="localidade" value="${perfil.localidade || ''}">
+        </fieldset>
+        <fieldset>
+          <legend>Dados Bancários para Reembolso (opcional)</legend>
+          <label>IBAN</label>
+          <input type="text" name="iban" placeholder="PT50 0000 0000 0000 0000 0000 0" value="${perfil.iban || ''}">
+          <label>Nome do 1º Titular da Conta</label>
+          <input type="text" name="nomeTitularConta" value="${perfil.nomeTitularConta || ''}">
         </fieldset>
         <button type="submit" class="botao-principal">Guardar Alterações</button>
         <span id="msg-perfil" class="mensagem"></span>
@@ -60,6 +68,8 @@ async function guardarPerfil(e) {
       morada: form.morada.value || undefined,
       localidade: form.localidade.value || undefined,
       codigoPostal: form.codigoPostal.value || undefined,
+      iban: form.iban.value || undefined,
+      nomeTitularConta: form.nomeTitularConta.value || undefined,
     });
     msg.textContent = '✓ Guardado com sucesso!';
     msg.className = 'mensagem sucesso';
@@ -95,7 +105,7 @@ async function carregarEncomendas() {
                 <td>${e.numero}</td>
                 <td><span class="badge-estado ${e.estado}">${e.estadoLabel}</span></td>
                 <td>${formatarPreco(e.total)}</td>
-                <td>${e.pontosGanhos} ${e.estado !== 'Enviada' && !ehEstadoDevolucao(e.estado) ? '<small>(pendente)</small>' : ''}</td>
+                <td>${e.pontosGanhos} ${e.estado !== ESTADO_RECEBIDA_CONFORME && e.estado !== 'Anulada' && !ehEstadoDevolucao(e.estado) ? '<small>(pendente)</small>' : ''}</td>
                 <td>
                   <div class="acoes-encomenda">
                     <button class="botao-secundario btn-ver-encomenda" data-numero="${e.numero}">Ver detalhe</button>
@@ -158,13 +168,30 @@ async function verDetalheEncomenda(numero) {
           ${e.valeDesconto > 0 ? `<div><span>Vale aplicado (${e.valeCodigo})</span><span>-${formatarPreco(e.valeDesconto)}</span></div>` : ''}
           <div class="resumo-total-final"><span>Total</span><span>${formatarPreco(e.total)}</span></div>
         </div>
-        <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === 'Enviada' ? '(já atribuídos)' : e.estado === 'Anulada' ? '(anulados)' : ehEstadoDevolucao(e.estado) ? '(estornados)' : '(pendentes até a encomenda ser enviada)'}</p>
+        <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === ESTADO_RECEBIDA_CONFORME ? '(já atribuídos)' : e.estado === 'Anulada' ? '(anulados)' : ehEstadoDevolucao(e.estado) ? '(estornados)' : '(pendentes até confirmar a receção da encomenda)'}</p>
+
+        ${e.devolucao ? `
+          <div class="form-group" style="margin-top:16px">
+            <h4>Dados Bancários para Reembolso</h4>
+            <p class="descricao">IBAN: ${e.devolucao.iban || '-'}<br>Nome do 1º Titular da Conta: ${e.devolucao.nomeTitular || '-'}</p>
+            ${e.devolucao.motivo ? `<h4 style="margin-top:12px">Razão da Devolução</h4><p class="descricao">${e.devolucao.motivo}</p>` : ''}
+          </div>
+        ` : ''}
+
+        ${e.estado === 'Enviada' && !e.podeConfirmarRecepcao ? `
+          <p class="descricao">Pode confirmar a receção desta encomenda a partir de ${new Date(e.dataDisponivelConfirmacao).toLocaleDateString('pt-PT')}.</p>
+        ` : ''}
+
         <button class="botao-secundario" id="btn-pdf-encomenda">Exportar PDF</button>
+        ${e.podeConfirmarRecepcao ? `
+          <button class="botao-principal" id="btn-confirmar-recepcao">Confirmar Receção da Encomenda</button>
+          <span id="msg-confirmar-recepcao" class="mensagem"></span>
+        ` : ''}
 
         ${devolucoes.length > 0 ? `
           <h4 style="margin-top:20px">Devoluções Registadas</h4>
           <table class="sync-table">
-            <thead><tr><th>Data</th><th>Artigos</th><th>Valor</th><th>Pontos Estornados</th></tr></thead>
+            <thead><tr><th>Data</th><th>Artigos</th><th>Valor</th><th>Pontos Estornados</th><th>IBAN</th><th>Titular</th><th>Razão</th></tr></thead>
             <tbody>
               ${devolucoes.map((d) => `
                 <tr>
@@ -172,6 +199,9 @@ async function verDetalheEncomenda(numero) {
                   <td>${d.linhas.map((l) => `${l.quantidade}× ${l.descricao}`).join('<br>')}</td>
                   <td>${formatarPreco(d.valorDevolvido)}</td>
                   <td>-${d.pontosEstornados}</td>
+                  <td>${d.iban || '-'}</td>
+                  <td>${d.nomeTitular || '-'}</td>
+                  <td>${d.motivo || '-'}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -182,8 +212,35 @@ async function verDetalheEncomenda(numero) {
     document.getElementById('btn-pdf-encomenda').addEventListener('click', () => {
       apiDownload(`/conta/encomendas/${numero}/pdf`, `${numero}.pdf`).catch((err) => alert('Erro ao gerar PDF: ' + err.message));
     });
+    const btnConfirmarRecepcao = document.getElementById('btn-confirmar-recepcao');
+    if (btnConfirmarRecepcao) {
+      btnConfirmarRecepcao.addEventListener('click', () => confirmarRecepcaoEncomenda(numero));
+    }
   } catch (err) {
     container.innerHTML = `<div class="mensagem-erro">${err.message}</div>`;
+  }
+}
+
+async function confirmarRecepcaoEncomenda(numero) {
+  const confirmado = confirm(`Confirma a receção da encomenda? Confirma que estava tudo conforme e que não irá precisar devolver ou trocar nenhum dos artigos da encomenda ${numero}?`);
+  if (!confirmado) return;
+
+  const btn = document.getElementById('btn-confirmar-recepcao');
+  const msg = document.getElementById('msg-confirmar-recepcao');
+  btn.disabled = true;
+  msg.textContent = 'A processar...';
+  msg.className = 'mensagem';
+
+  try {
+    await apiPut(`/conta/encomendas/${numero}/confirmar-recepcao`, {});
+    msg.textContent = '✓ Receção confirmada! Os pontos desta compra já estão disponíveis.';
+    msg.className = 'mensagem sucesso';
+    await carregarEncomendas();
+    await verDetalheEncomenda(numero);
+  } catch (err) {
+    msg.textContent = '✗ Erro: ' + err.message;
+    msg.className = 'mensagem erro';
+    btn.disabled = false;
   }
 }
 
@@ -193,7 +250,11 @@ async function verDetalheEncomenda(numero) {
 async function abrirDevolucaoCliente(numero) {
   const container = document.getElementById('detalhe-encomenda');
   try {
-    const e = await apiGet(`/conta/encomendas/${numero}`);
+    const [e, perfil, condicoes] = await Promise.all([
+      apiGet(`/conta/encomendas/${numero}`),
+      apiGet('/conta/perfil'),
+      apiGet('/paginas/devolucoes-trocas'),
+    ]);
     container.innerHTML = `
       <div class="form-group" style="margin-top:20px;border-top:1px solid #ddd;padding-top:16px">
         <h3>Devolução — Encomenda ${e.numero}</h3>
@@ -211,14 +272,22 @@ async function abrirDevolucaoCliente(numero) {
             `).join('')}
           </tbody>
         </table>
-        <div class="form-group" style="max-width:400px;margin-top:16px">
+        <div class="form-group" style="margin-top:16px">
           <label>IBAN *</label>
-          <input type="text" id="input-iban-devolucao-cliente" placeholder="PT50 0000 0000 0000 0000 0000 0" required>
+          <input type="text" id="input-iban-devolucao-cliente" placeholder="PT50 0000 0000 0000 0000 0000 0" value="${perfil.iban || ''}" required>
           <label>Nome do 1º Titular da Conta *</label>
-          <input type="text" id="input-titular-devolucao-cliente" required>
+          <input type="text" id="input-titular-devolucao-cliente" value="${perfil.nomeTitularConta || ''}" required>
+          <label>Razão da Devolução *</label>
+          <textarea id="input-motivo-devolucao-cliente" rows="3" required></textarea>
+        </div>
+        <div class="form-group" style="margin-top:16px">
+          <h4>Condições de Devolução</h4>
+          <div class="pagina-conteudo" style="max-height:300px;overflow-y:auto;border:1px solid var(--cinza-medio,#ccc);padding:12px;border-radius:4px">
+            ${condicoes.conteudo}
+          </div>
         </div>
         <div class="acoes">
-          <button id="btn-confirmar-devolucao-cliente" class="botao-principal">Confirmar Devolução</button>
+          <button id="btn-confirmar-devolucao-cliente" class="botao-principal">Li e Aceito as condições de devolução!</button>
           <button id="btn-cancelar-devolucao-cliente" class="botao-secundario">Cancelar</button>
           <span id="msg-devolucao-cliente" class="mensagem"></span>
         </div>
@@ -250,8 +319,9 @@ async function submeterDevolucaoCliente(numero) {
 
   const iban = document.getElementById('input-iban-devolucao-cliente').value.trim();
   const nomeTitular = document.getElementById('input-titular-devolucao-cliente').value.trim();
-  if (!iban || !nomeTitular) {
-    msg.textContent = '✗ O IBAN e o nome do 1º titular da conta são obrigatórios';
+  const motivo = document.getElementById('input-motivo-devolucao-cliente').value.trim();
+  if (!iban || !nomeTitular || !motivo) {
+    msg.textContent = '✗ O IBAN, o nome do 1º titular da conta e a razão da devolução são obrigatórios';
     msg.className = 'mensagem erro';
     return;
   }
@@ -264,7 +334,7 @@ async function submeterDevolucaoCliente(numero) {
   msg.className = 'mensagem';
 
   try {
-    const resultado = await apiPost(`/conta/encomendas/${numero}/devolucao`, { linhas, iban, nomeTitular });
+    const resultado = await apiPost(`/conta/encomendas/${numero}/devolucao`, { linhas, iban, nomeTitular, motivo });
     msg.textContent = `✓ Devolução registada (${resultado.numeroDevolucao})! Valor: ${formatarPreco(resultado.valorDevolvido)}, Pontos estornados: ${resultado.pontosEstornados}`;
     msg.className = 'mensagem sucesso';
     await carregarEncomendas();
@@ -286,7 +356,7 @@ async function carregarPontosEVales() {
     const pontos = await apiGet('/conta/pontos');
     saldoEl.innerHTML = `
       <p style="font-size:20px"><strong>Saldo: ${pontos.saldo} pontos</strong></p>
-      ${pontos.pontosPendentes > 0 ? `<p class="descricao">+ ${pontos.pontosPendentes} pontos pendentes (atribuídos assim que a(s) encomenda(s) for(em) enviada(s))</p>` : ''}
+      ${pontos.pontosPendentes > 0 ? `<p class="descricao">+ ${pontos.pontosPendentes} pontos pendentes (atribuídos assim que confirmar a receção da(s) encomenda(s))</p>` : ''}
       <button id="btn-trocar-vale" class="botao-principal">Trocar pontos por vale</button>
       <span id="msg-trocar-vale" class="mensagem"></span>
     `;

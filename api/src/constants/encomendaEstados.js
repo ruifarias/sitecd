@@ -1,11 +1,14 @@
 // Fluxo de estados da encomenda, gerido no Backoffice (Admin). Sequência linear:
 // AguardarPagamento → PagamentoEfectuado → EmPreparacao → Enviada, com Anulada
 // disponível em qualquer estado antes de Enviada (ver routes/admin.js).
-// Os pontos de fidelização só são atribuídos definitivamente quando o estado
-// passa a Enviada (ver routes/encomendas.js e routes/admin.js).
+// Os pontos de fidelização só são atribuídos definitivamente quando o cliente
+// confirma a receção da encomenda (ver routes/conta.js), passando o estado a
+// RecebidaSemDevolucao - não faz parte da sequência automática de "avançar"
+// porque essa transição é sempre despoletada pelo cliente, nunca pelo Backoffice.
 const SEQUENCIA_ESTADOS = ['AguardarPagamento', 'PagamentoEfectuado', 'EmPreparacao', 'Enviada'];
 
 const ESTADO_ANULADA = 'Anulada';
+const ESTADO_RECEBIDA_CONFORME = 'RecebidaSemDevolucao';
 
 // Fluxo (não-linear) da Nota de Devolução: emitida ao ser criada pelo cliente
 // (ou pelo Backoffice), depois o Backoffice marca-a como aceite ou não aceite,
@@ -34,6 +37,7 @@ const ESTADOS_LABELS = {
   PagamentoEfectuado: 'Pagamento Efectuado',
   EmPreparacao: 'Encomenda em Preparação',
   Enviada: 'Encomenda Enviada',
+  [ESTADO_RECEBIDA_CONFORME]: 'Recebida pelo Cliente e Estava Tudo Conforme, sem Necessidade de Devolução ou Troca',
   Anulada: 'Encomenda Anulada',
   [ESTADO_DEV_NOTA_EMITIDA]: 'Nota de Devolução Emitida',
   [ESTADO_DEV_RECEBIDA_ACEITE]: 'Devolução Recebida e Aceite',
@@ -58,6 +62,7 @@ function proximosEstadosDevolucao(estadoActual) {
 module.exports = {
   SEQUENCIA_ESTADOS,
   ESTADO_ANULADA,
+  ESTADO_RECEBIDA_CONFORME,
   ESTADO_DEV_NOTA_EMITIDA,
   ESTADO_DEV_RECEBIDA_ACEITE,
   ESTADO_DEV_RECEBIDA_NAO_ACEITE,

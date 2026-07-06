@@ -44,11 +44,12 @@ async function obterEncomendaCompleta(numero) {
   if (ehEstadoDevolucao(e.Estado)) {
     const devolucaoRes = await pool.request()
       .input('encomendaDevolucaoId', sql.Int, e.Id)
-      .query('SELECT Iban, Nome_Titular FROM dbo.ZAPP_DBSiteCD_Devolucoes WHERE Encomenda_Devolucao_Id = @encomendaDevolucaoId;');
+      .query('SELECT Iban, Nome_Titular, Motivo FROM dbo.ZAPP_DBSiteCD_Devolucoes WHERE Encomenda_Devolucao_Id = @encomendaDevolucaoId;');
     if (devolucaoRes.recordset.length > 0) {
       devolucao = {
         iban: devolucaoRes.recordset[0].Iban,
         nomeTitular: devolucaoRes.recordset[0].Nome_Titular,
+        motivo: devolucaoRes.recordset[0].Motivo,
       };
     }
   }

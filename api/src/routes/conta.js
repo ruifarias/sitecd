@@ -4,10 +4,12 @@ const express = require('express');
 const crypto = require('crypto');
 const { getPool, sql } = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { ESTADOS_LABELS } = require('../constants/encomendaEstados');
+const { ESTADOS_LABELS, ehEstadoDevolucao, ESTADO_RECEBIDA_CONFORME } = require('../constants/encomendaEstados');
 const { gerarPdfEncomenda } = require('../services/pdf');
-const { separarNomeVariante } = require('../services/email');
+const { separarNomeVariante, enviarEmailEncomenda } = require('../services/email');
 const { registarDevolucao } = require('../services/devolucaoService');
+const { normalizarNif } = require('../utils/nif');
+const { validarIBAN } = require('../utils/iban');
 
 const router = express.Router();
 router.use(requireAuth);
@@ -18,7 +20,7 @@ router.get('/perfil', async (req, res) => {
     const pool = await getPool();
     const resultado = await pool.request()
       .input('id', sql.Int, req.cliente.id)
-      .query('SELECT Nome, Email, Telefone, NIF, Morada, Localidade, Codigo_Postal, Codigo_Cliente FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Id = @id;');
+      .query('SELECT Nome, Email, Telefone, NIF, Morada, Localidade, Codigo_Postal, Codigo_Cliente, Iban, Nome_Titular_Conta FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Id = @id;');
 
     if (resultado.recordset.length === 0) {
       return res.status(404).json({ erro: 'Cliente não encontrado.' });
@@ -33,6 +35,8 @@ router.get('/perfil', async (req, res) => {
       localidade: c.Localidade,
       codigoPostal: c.Codigo_Postal,
       codigoCliente: c.Codigo_Cliente,
+      iban: c.Iban,
+      nomeTitularConta: c.Nome_Titular_Conta,
     });
   } catch (err) {
     console.error(err);
@@ -44,9 +48,16 @@ router.get('/perfil', async (req, res) => {
 // morada de entrega por omissão (pré-preenchida no checkout, mas alterável
 // por encomenda).
 router.put('/perfil', async (req, res) => {
-  const { nome, telefone, nif, morada, localidade, codigoPostal } = req.body;
+  const { nome, telefone, nif, morada, localidade, codigoPostal, iban, nomeTitularConta } = req.body;
   if (!nome || !nome.trim()) {
     return res.status(400).json({ erro: 'O nome é obrigatório.' });
+  }
+  const nifValidado = normalizarNif(nif);
+  if (!nifValidado.ok) {
+    return res.status(400).json({ erro: nifValidado.erro });
+  }
+  if (iban && iban.trim() && !validarIBAN(iban)) {
+    return res.status(400).json({ erro: 'IBAN inválido.' });
   }
 
   try {
@@ -55,14 +66,17 @@ router.put('/perfil', async (req, res) => {
       .input('id', sql.Int, req.cliente.id)
       .input('nome', sql.NVarChar(150), nome.trim())
       .input('telefone', sql.NVarChar(30), telefone || null)
-      .input('nif', sql.VarChar(20), nif || null)
+      .input('nif', sql.VarChar(20), nifValidado.nif)
       .input('morada', sql.NVarChar(200), morada || null)
       .input('localidade', sql.NVarChar(100), localidade || null)
       .input('codigoPostal', sql.VarChar(10), codigoPostal || null)
+      .input('iban', sql.VarChar(34), iban || null)
+      .input('nomeTitularConta', sql.NVarChar(150), nomeTitularConta || null)
       .query(`
         UPDATE dbo.ZAPP_DBSiteCD_Clientes
         SET Nome = @nome, Telefone = @telefone, NIF = @nif,
-            Morada = @morada, Localidade = @localidade, Codigo_Postal = @codigoPostal
+            Morada = @morada, Localidade = @localidade, Codigo_Postal = @codigoPostal,
+            Iban = @iban, Nome_Titular_Conta = @nomeTitularConta
         WHERE Id = @id;
       `);
     res.json({ sucesso: true });
@@ -110,7 +124,7 @@ router.get('/encomendas/:numero', async (req, res) => {
       .input('numero', sql.VarChar(30), req.params.numero)
       .input('clienteId', sql.Int, req.cliente.id)
       .query(`
-        SELECT Id, Numero, Estado, Total, Portes, Vale_Codigo, Vale_Desconto, Pontos_Ganhos, Metodo_Pagamento, Data_Criacao, Motivo_Anulacao
+        SELECT Id, Numero, Estado, Total, Portes, Vale_Codigo, Vale_Desconto, Pontos_Ganhos, Metodo_Pagamento, Data_Criacao, Data_Actualizacao, Motivo_Anulacao
         FROM dbo.ZAPP_DBSiteCD_Encomendas
         WHERE Numero = @numero AND Cliente_Id = @clienteId;
       `);
@@ -137,6 +151,30 @@ router.get('/encomendas/:numero', async (req, res) => {
     const totalProdutos = linhas.recordset.reduce((s, l) => s + l.Preco_Unitario * l.Quantidade, 0);
     const podeDevolver = e.Estado === 'Enviada';
 
+    let podeConfirmarRecepcao = false;
+    let dataDisponivelConfirmacao = null;
+    if (e.Estado === 'Enviada') {
+      const configRes = await pool.request().query("SELECT Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave = 'DiasConfirmacaoRecepcao';");
+      const dias = parseInt(configRes.recordset[0]?.Valor, 10) || 1;
+      dataDisponivelConfirmacao = new Date(e.Data_Actualizacao);
+      dataDisponivelConfirmacao.setDate(dataDisponivelConfirmacao.getDate() + dias);
+      podeConfirmarRecepcao = new Date() >= dataDisponivelConfirmacao;
+    }
+
+    let devolucao = null;
+    if (ehEstadoDevolucao(e.Estado)) {
+      const devolucaoRes = await pool.request()
+        .input('encomendaDevolucaoId', sql.Int, e.Id)
+        .query('SELECT Iban, Nome_Titular, Motivo FROM dbo.ZAPP_DBSiteCD_Devolucoes WHERE Encomenda_Devolucao_Id = @encomendaDevolucaoId;');
+      if (devolucaoRes.recordset.length > 0) {
+        devolucao = {
+          iban: devolucaoRes.recordset[0].Iban,
+          nomeTitular: devolucaoRes.recordset[0].Nome_Titular,
+          motivo: devolucaoRes.recordset[0].Motivo,
+        };
+      }
+    }
+
     res.json({
       numero: e.Numero,
       estado: e.Estado,
@@ -150,7 +188,10 @@ router.get('/encomendas/:numero', async (req, res) => {
       metodoPagamento: e.Metodo_Pagamento,
       data: e.Data_Criacao,
       motivoAnulacao: e.Motivo_Anulacao,
+      devolucao,
       podeDevolver,
+      podeConfirmarRecepcao,
+      dataDisponivelConfirmacao,
       linhas: linhas.recordset.map((l) => {
         const { nome, variante } = separarNomeVariante(l.Descricao);
         return {
@@ -194,7 +235,7 @@ router.get('/encomendas/:numero/devolucoes', async (req, res) => {
     const devolucoes = await pool.request()
       .input('encomendaId', sql.Int, encomendaId)
       .query(`
-        SELECT Id, Valor_Devolvido, Pontos_Estornados, Data_Criacao
+        SELECT Id, Valor_Devolvido, Pontos_Estornados, Data_Criacao, Iban, Nome_Titular, Motivo
         FROM dbo.ZAPP_DBSiteCD_Devolucoes
         WHERE Encomenda_Id = @encomendaId
         ORDER BY Data_Criacao DESC;
@@ -211,6 +252,9 @@ router.get('/encomendas/:numero/devolucoes', async (req, res) => {
         valorDevolvido: d.Valor_Devolvido,
         pontosEstornados: d.Pontos_Estornados,
         data: d.Data_Criacao,
+        iban: d.Iban,
+        nomeTitular: d.Nome_Titular,
+        motivo: d.Motivo,
         linhas: linhas.recordset.map((l) => ({
           codigoArtigo: l.Codigo_Artigo,
           codigoLote: l.Codigo_Lote,
@@ -225,6 +269,89 @@ router.get('/encomendas/:numero/devolucoes', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao obter devoluções.' });
+  }
+});
+
+// PUT /api/conta/encomendas/:numero/confirmar-recepcao - o cliente confirma
+// que recebeu a encomenda e que está tudo conforme, sem necessidade de
+// devolução ou troca. Liberta definitivamente os pontos de fidelização desta
+// encomenda (entram no livro-razão). Só disponível a partir de
+// DiasConfirmacaoRecepcao dias após a encomenda passar a "Enviada".
+router.put('/encomendas/:numero/confirmar-recepcao', async (req, res) => {
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
+
+  try {
+    await transaction.begin();
+
+    const encReq = new sql.Request(transaction);
+    const encRes = await encReq
+      .input('numero', sql.VarChar(30), req.params.numero)
+      .input('clienteId', sql.Int, req.cliente.id)
+      .query('SELECT Id, Estado, Cliente_Id, Pontos_Ganhos, Data_Actualizacao FROM dbo.ZAPP_DBSiteCD_Encomendas WITH (UPDLOCK, HOLDLOCK) WHERE Numero = @numero AND Cliente_Id = @clienteId;');
+
+    if (encRes.recordset.length === 0) {
+      await transaction.rollback();
+      return res.status(404).json({ erro: 'Encomenda não encontrada.' });
+    }
+    const encomenda = encRes.recordset[0];
+
+    if (encomenda.Estado !== 'Enviada') {
+      await transaction.rollback();
+      return res.status(400).json({ erro: 'Esta encomenda não está no estado "Encomenda Enviada".' });
+    }
+
+    const configReq = new sql.Request(transaction);
+    const configRes = await configReq.query("SELECT Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave = 'DiasConfirmacaoRecepcao';");
+    const dias = parseInt(configRes.recordset[0]?.Valor, 10) || 1;
+    const disponivelEm = new Date(encomenda.Data_Actualizacao);
+    disponivelEm.setDate(disponivelEm.getDate() + dias);
+    if (new Date() < disponivelEm) {
+      await transaction.rollback();
+      return res.status(400).json({ erro: `Só pode confirmar a receção a partir de ${disponivelEm.toLocaleDateString('pt-PT')}.` });
+    }
+
+    const updReq = new sql.Request(transaction);
+    await updReq
+      .input('id', sql.Int, encomenda.Id)
+      .input('estado', sql.VarChar(30), ESTADO_RECEBIDA_CONFORME)
+      .query('UPDATE dbo.ZAPP_DBSiteCD_Encomendas SET Estado = @estado, Data_Actualizacao = GETDATE() WHERE Id = @id;');
+
+    if (encomenda.Pontos_Ganhos > 0) {
+      // idempotente: só atribui se ainda não houver um "Ganho" para esta encomenda
+      const jaAtribuidoReq = new sql.Request(transaction);
+      const jaAtribuidoRes = await jaAtribuidoReq
+        .input('encomendaId', sql.Int, encomenda.Id)
+        .query(`SELECT COUNT(*) AS Total FROM dbo.ZAPP_DBSiteCD_PontosLedger WHERE Encomenda_Id = @encomendaId AND Tipo = 'Ganho';`);
+
+      if (jaAtribuidoRes.recordset[0].Total === 0) {
+        const pontosReq = new sql.Request(transaction);
+        await pontosReq
+          .input('clienteId', sql.Int, encomenda.Cliente_Id)
+          .input('pontos', sql.Int, encomenda.Pontos_Ganhos)
+          .input('encomendaId', sql.Int, encomenda.Id)
+          .input('descricao', sql.NVarChar(200), `Compra ${req.params.numero} (receção confirmada)`)
+          .query(`
+            INSERT INTO dbo.ZAPP_DBSiteCD_PontosLedger (Cliente_Id, Tipo, Pontos, Encomenda_Id, Descricao)
+            VALUES (@clienteId, 'Ganho', @pontos, @encomendaId, @descricao);
+          `);
+      }
+    }
+
+    await transaction.commit();
+
+    const estadoLabel = ESTADOS_LABELS[ESTADO_RECEBIDA_CONFORME];
+    enviarEmailEncomenda(req.params.numero, {
+      assunto: `Encomenda ${req.params.numero} — ${estadoLabel}`,
+      tituloEvento: `Estado actualizado: ${estadoLabel}`,
+      notaEvento: 'Confirmou a receção da encomenda. Os pontos desta compra já estão disponíveis para utilização.',
+    }).catch((emailErr) => console.error('[email] Erro ao enviar notificação de estado:', emailErr.message));
+
+    res.json({ ok: true, estado: ESTADO_RECEBIDA_CONFORME, estadoLabel, pontosGanhos: encomenda.Pontos_Ganhos });
+  } catch (err) {
+    console.error(err);
+    try { await transaction.rollback(); } catch (_) { /* já pode ter sido revertida */ }
+    res.status(500).json({ erro: 'Falha ao confirmar a receção da encomenda.' });
   }
 });
 
@@ -247,6 +374,7 @@ router.post('/encomendas/:numero/devolucao', async (req, res) => {
     const resultado = await registarDevolucao(req.params.numero, req.body.linhas, {
       iban: req.body.iban,
       nomeTitular: req.body.nomeTitular,
+      motivo: req.body.motivo,
     });
     if (resultado.erro) {
       return res.status(resultado.status || 500).json({ erro: resultado.erro });
@@ -298,14 +426,14 @@ router.get('/pontos', async (req, res) => {
         ORDER BY Data_Criacao DESC;
       `);
 
-    // Pontos de encomendas ainda não enviadas/anuladas - só entram no saldo
-    // usável quando o Backoffice marcar a encomenda como "Enviada".
+    // Pontos de encomendas ainda não confirmadas como recebidas/anuladas - só
+    // entram no saldo usável quando o cliente confirmar a receção da encomenda.
     const pendentesRes = await pool.request()
       .input('clienteId', sql.Int, req.cliente.id)
       .query(`
         SELECT ISNULL(SUM(Pontos_Ganhos), 0) AS Pendentes
         FROM dbo.ZAPP_DBSiteCD_Encomendas
-        WHERE Cliente_Id = @clienteId AND Estado NOT IN ('Enviada', 'Anulada');
+        WHERE Cliente_Id = @clienteId AND Estado NOT IN ('${ESTADO_RECEBIDA_CONFORME}', 'Anulada');
       `);
 
     res.json({

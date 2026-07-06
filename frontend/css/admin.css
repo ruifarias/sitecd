@@ -278,6 +278,17 @@ body {
   font-size: 14px;
 }
 
+.form-group input[type="text"],
+.form-group textarea {
+  width: 100%;
+  max-width: 500px;
+  padding: 8px 12px;
+  border: 1px solid var(--cinza-medio);
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
 .form-group small {
   display: block;
   margin-top: 4px;
@@ -413,6 +424,7 @@ body {
 .badge-estado.PagamentoEfectuado { background: #cce5ff; color: #004085; }
 .badge-estado.EmPreparacao { background: #e2d9f3; color: #4b2e83; }
 .badge-estado.Enviada { background: #d4edda; color: #155724; }
+.badge-estado.RecebidaSemDevolucao { background: #a8dadc; color: #1d3557; }
 .badge-estado.Anulada { background: #f8d7da; color: #721c24; }
 .badge-estado.NotaDevolucaoEmitida { background: #d1ecf1; color: #0c5460; }
 .badge-estado.DevolucaoRecebidaAceite { background: #d4edda; color: #155724; }

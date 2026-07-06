@@ -11,16 +11,23 @@
 const { getPool, sql } = require('../db');
 const { ESTADO_DEV_NOTA_EMITIDA } = require('../constants/encomendaEstados');
 const { enviarEmailEncomenda } = require('./email');
+const { validarIBAN } = require('../utils/iban');
 
-async function registarDevolucao(numero, linhasDevolucao, { iban, nomeTitular } = {}) {
+async function registarDevolucao(numero, linhasDevolucao, { iban, nomeTitular, motivo } = {}) {
   if (!Array.isArray(linhasDevolucao) || linhasDevolucao.length === 0) {
     return { erro: 'Indique pelo menos um artigo a devolver.', status: 400 };
   }
   if (!iban || !iban.trim()) {
     return { erro: 'O IBAN é obrigatório.', status: 400 };
   }
+  if (!validarIBAN(iban)) {
+    return { erro: 'IBAN inválido.', status: 400 };
+  }
   if (!nomeTitular || !nomeTitular.trim()) {
     return { erro: 'O nome do 1º titular da conta é obrigatório.', status: 400 };
+  }
+  if (!motivo || !motivo.trim()) {
+    return { erro: 'A razão da devolução é obrigatória.', status: 400 };
   }
 
   const pool = await getPool();
@@ -152,13 +159,28 @@ async function registarDevolucao(numero, linhasDevolucao, { iban, nomeTitular } 
       .input('pontosEstornados', sql.Int, pontosEstornados)
       .input('iban', sql.VarChar(34), iban.trim())
       .input('nomeTitular', sql.NVarChar(150), nomeTitular.trim())
+      .input('motivo', sql.NVarChar(500), motivo.trim())
       .input('encomendaDevolucaoId', sql.Int, devEncomendaId)
       .query(`
-        INSERT INTO dbo.ZAPP_DBSiteCD_Devolucoes (Encomenda_Id, Valor_Devolvido, Pontos_Estornados, Iban, Nome_Titular, Encomenda_Devolucao_Id)
+        INSERT INTO dbo.ZAPP_DBSiteCD_Devolucoes (Encomenda_Id, Valor_Devolvido, Pontos_Estornados, Iban, Nome_Titular, Motivo, Encomenda_Devolucao_Id)
         OUTPUT inserted.Id
-        VALUES (@encomendaId, @valorDevolvido, @pontosEstornados, @iban, @nomeTitular, @encomendaDevolucaoId);
+        VALUES (@encomendaId, @valorDevolvido, @pontosEstornados, @iban, @nomeTitular, @motivo, @encomendaDevolucaoId);
       `);
     const devolucaoId = devolucaoRes.recordset[0].Id;
+
+    // Actualiza/preenche o IBAN e o Nome do 1º Titular na ficha do cliente com
+    // os dados usados nesta devolução (ficam disponíveis/pré-preenchidos da
+    // próxima vez, e visíveis na Ficha de Cliente do Backoffice).
+    const actualizarClienteReq = new sql.Request(transaction);
+    await actualizarClienteReq
+      .input('clienteId', sql.Int, encomenda.Cliente_Id)
+      .input('iban', sql.VarChar(34), iban.trim())
+      .input('nomeTitular', sql.NVarChar(150), nomeTitular.trim())
+      .query(`
+        UPDATE dbo.ZAPP_DBSiteCD_Clientes
+        SET Iban = @iban, Nome_Titular_Conta = @nomeTitular
+        WHERE Id = @clienteId;
+      `);
 
     for (const linha of linhasParaDevolver) {
       const linhaReq = new sql.Request(transaction);

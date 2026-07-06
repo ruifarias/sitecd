@@ -1,10 +1,13 @@
 // Registo/login de clientes. Password com bcryptjs (sem compilação nativa,
 // evita problemas do bcrypt em Windows sem toolchain de compilação).
 const express = require('express');
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { getPool, sql } = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { enviarEmailRecuperacaoPassword } = require('../services/email');
+const { normalizarNif } = require('../utils/nif');
 
 const router = express.Router();
 
@@ -19,8 +22,15 @@ router.post('/registo', async (req, res) => {
   if (!nome || !email || !password) {
     return res.status(400).json({ erro: 'Nome, email e password são obrigatórios.' });
   }
+  if (!telefone || !telefone.trim()) {
+    return res.status(400).json({ erro: 'O telefone é obrigatório.' });
+  }
   if (password.length < 8) {
     return res.status(400).json({ erro: 'A password deve ter pelo menos 8 caracteres.' });
+  }
+  const nifValidado = normalizarNif(nif);
+  if (!nifValidado.ok) {
+    return res.status(400).json({ erro: nifValidado.erro });
   }
 
   try {
@@ -43,8 +53,8 @@ router.post('/registo', async (req, res) => {
         .input('id', sql.Int, registo.Id)
         .input('nome', sql.NVarChar(150), nome)
         .input('passwordHash', sql.NVarChar(255), passwordHash)
-        .input('telefone', sql.NVarChar(30), telefone || null)
-        .input('nif', sql.VarChar(20), nif || null)
+        .input('telefone', sql.NVarChar(30), telefone.trim())
+        .input('nif', sql.VarChar(20), nifValidado.nif)
         .input('morada', sql.NVarChar(200), morada || null)
         .input('localidade', sql.NVarChar(100), localidade || null)
         .input('codigoPostal', sql.VarChar(10), codigoPostal || null)
@@ -61,8 +71,8 @@ router.post('/registo', async (req, res) => {
         .input('nome', sql.NVarChar(150), nome)
         .input('email', sql.NVarChar(150), email)
         .input('passwordHash', sql.NVarChar(255), passwordHash)
-        .input('telefone', sql.NVarChar(30), telefone || null)
-        .input('nif', sql.VarChar(20), nif || null)
+        .input('telefone', sql.NVarChar(30), telefone.trim())
+        .input('nif', sql.VarChar(20), nifValidado.nif)
         .input('morada', sql.NVarChar(200), morada || null)
         .input('localidade', sql.NVarChar(100), localidade || null)
         .input('codigoPostal', sql.VarChar(10), codigoPostal || null)
@@ -112,6 +122,86 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao iniciar sessão.' });
+  }
+});
+
+// POST /api/auth/recuperar-password - gera um token de uso único (válido 1h)
+// e envia por email um link para /redefinir-password.html?token=... . Responde
+// sempre com sucesso (mesmo se o email não existir), para não revelar quais
+// emails estão registados.
+router.post('/recuperar-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ erro: 'O email é obrigatório.' });
+  }
+
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('email', sql.NVarChar(150), email)
+      .query('SELECT Id, Nome, Password_Hash FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Email = @email;');
+
+    if (resultado.recordset.length > 0 && resultado.recordset[0].Password_Hash) {
+      const cliente = resultado.recordset[0];
+      const token = crypto.randomBytes(32).toString('hex');
+      const expira = new Date(Date.now() + 60 * 60 * 1000);
+
+      await pool.request()
+        .input('id', sql.Int, cliente.Id)
+        .input('token', sql.VarChar(64), token)
+        .input('expira', sql.DateTime, expira)
+        .query('UPDATE dbo.ZAPP_DBSiteCD_Clientes SET Reset_Token = @token, Reset_Token_Expira = @expira WHERE Id = @id;');
+
+      const link = `${process.env.FRONTEND_BASE_URL || 'http://localhost:3000'}/redefinir-password.html?token=${token}`;
+      enviarEmailRecuperacaoPassword(email, cliente.Nome, link).catch(() => {});
+    }
+
+    res.json({ ok: true, mensagem: 'Se o email estiver registado, receberá um link para recuperar a password.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao processar o pedido de recuperação de password.' });
+  }
+});
+
+// POST /api/auth/redefinir-password - valida o token (e a sua validade) e
+// define a nova password.
+router.post('/redefinir-password', async (req, res) => {
+  const { token, novaPassword } = req.body;
+  if (!token || !novaPassword) {
+    return res.status(400).json({ erro: 'Token e nova password são obrigatórios.' });
+  }
+  if (novaPassword.length < 8) {
+    return res.status(400).json({ erro: 'A password deve ter pelo menos 8 caracteres.' });
+  }
+
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('token', sql.VarChar(64), token)
+      .query('SELECT Id, Reset_Token_Expira FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Reset_Token = @token;');
+
+    if (resultado.recordset.length === 0) {
+      return res.status(400).json({ erro: 'Link de recuperação inválido ou já utilizado.' });
+    }
+    const cliente = resultado.recordset[0];
+    if (!cliente.Reset_Token_Expira || new Date(cliente.Reset_Token_Expira) < new Date()) {
+      return res.status(400).json({ erro: 'Link de recuperação expirado. Peça um novo.' });
+    }
+
+    const passwordHash = await bcrypt.hash(novaPassword, 10);
+    await pool.request()
+      .input('id', sql.Int, cliente.Id)
+      .input('passwordHash', sql.NVarChar(255), passwordHash)
+      .query(`
+        UPDATE dbo.ZAPP_DBSiteCD_Clientes
+        SET Password_Hash = @passwordHash, Reset_Token = NULL, Reset_Token_Expira = NULL
+        WHERE Id = @id;
+      `);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao redefinir a password.' });
   }
 });
 

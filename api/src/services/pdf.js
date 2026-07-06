@@ -172,7 +172,12 @@ async function gerarPdfEncomenda(numero) {
     doc.font('Helvetica-Bold').text('Dados Bancários para Reembolso', 40, y);
     doc.font('Helvetica').text(`IBAN: ${encomenda.devolucao.iban}`, 40, y + 14);
     doc.text(`Nome do 1º Titular da Conta: ${encomenda.devolucao.nomeTitular}`, 40, y + 27);
-    y += 50;
+    if (encomenda.devolucao.motivo) {
+      doc.font('Helvetica-Bold').text('Razão da Devolução', 40, y + 44);
+      doc.font('Helvetica').text(encomenda.devolucao.motivo, 40, y + 58, { width: larguraUtil });
+    }
+    doc.font('Helvetica-Oblique').text('Li e Aceito as condições de devolução!', 40, doc.y + 12);
+    y = doc.y + 12;
   }
 
   doc.font('Helvetica-Bold').text('Método de Pagamento', 40, y);

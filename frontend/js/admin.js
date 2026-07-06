@@ -1,5 +1,6 @@
 // Estados da Nota de Devolução (ver api/src/constants/encomendaEstados.js)
 const ESTADOS_DEVOLUCAO = ['NotaDevolucaoEmitida', 'DevolucaoRecebidaAceite', 'DevolucaoRecebidaNaoAceite', 'DevolucaoPaga'];
+const ESTADO_RECEBIDA_CONFORME = 'RecebidaSemDevolucao';
 function ehEstadoDevolucao(estado) {
   return ESTADOS_DEVOLUCAO.includes(estado);
 }
@@ -216,7 +217,16 @@ async function verDetalheEncomendaAdmin(numero) {
           ${e.valeDesconto > 0 ? `<div><span>Vale aplicado (${e.valeCodigo})</span><span>-${formatarPreco(e.valeDesconto)}</span></div>` : ''}
           <div class="resumo-total-final"><span>Total</span><span>${formatarPreco(e.total)}</span></div>
         </div>
-        <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === 'Enviada' ? '(atribuídos)' : ehEstadoDevolucao(e.estado) ? '(estornados)' : '(pendentes até envio)'}</p>
+        <p>Pontos desta encomenda: ${e.pontosGanhos} ${e.estado === ESTADO_RECEBIDA_CONFORME ? '(atribuídos)' : ehEstadoDevolucao(e.estado) ? '(estornados)' : '(pendentes até o cliente confirmar a receção)'}</p>
+
+        ${e.devolucao ? `
+          <div class="form-group" style="margin-top:16px">
+            <h4>Dados Bancários para Reembolso</h4>
+            <p class="descricao">IBAN: ${e.devolucao.iban || '-'}<br>Nome do 1º Titular da Conta: ${e.devolucao.nomeTitular || '-'}</p>
+            ${e.devolucao.motivo ? `<h4 style="margin-top:12px">Razão da Devolução</h4><p class="descricao">${e.devolucao.motivo}</p>` : ''}
+          </div>
+        ` : ''}
+
         <div class="acoes-encomenda">
           <button class="botao-secundario" id="btn-pdf-encomenda-admin">Exportar PDF</button>
           ${(e.proximosEstadosDevolucao || []).map((pe) => `<button class="botao-principal btn-mudar-estado-devolucao" data-estado="${pe.estado}" data-label="${pe.label}">${pe.label}</button>`).join('')}
@@ -226,7 +236,7 @@ async function verDetalheEncomendaAdmin(numero) {
         ${devolucoes.length > 0 ? `
           <h4 style="margin-top:20px">Devoluções Registadas</h4>
           <table class="sync-table">
-            <thead><tr><th>Data</th><th>Artigos</th><th>Valor</th><th>Pontos Estornados</th></tr></thead>
+            <thead><tr><th>Data</th><th>Artigos</th><th>Valor</th><th>Pontos Estornados</th><th>IBAN</th><th>Titular</th><th>Razão</th></tr></thead>
             <tbody>
               ${devolucoes.map((d) => `
                 <tr>
@@ -234,6 +244,9 @@ async function verDetalheEncomendaAdmin(numero) {
                   <td>${d.linhas.map((l) => `${l.quantidade}× ${l.descricao}`).join('<br>')}</td>
                   <td>${formatarPreco(d.valorDevolvido)}</td>
                   <td>-${d.pontosEstornados}</td>
+                  <td>${d.iban || '-'}</td>
+                  <td>${d.nomeTitular || '-'}</td>
+                  <td>${d.motivo || '-'}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -280,6 +293,7 @@ async function abrirDevolucaoAdmin(numero) {
   const container = document.getElementById('detalhe-encomenda-admin');
   try {
     const e = await apiGet(`/admin/encomendas/${numero}`);
+    const ficha = e.codigoCliente ? await apiGet(`/admin/clientes/${e.codigoCliente}`) : {};
     container.innerHTML = `
       <div class="form-group" style="margin-top:20px;border-top:1px solid #ddd;padding-top:16px">
         <h3>Devolução — Encomenda ${e.numero}</h3>
@@ -297,11 +311,13 @@ async function abrirDevolucaoAdmin(numero) {
             `).join('')}
           </tbody>
         </table>
-        <div class="form-group" style="max-width:400px;margin-top:16px">
+        <div class="form-group" style="margin-top:16px">
           <label>IBAN *</label>
-          <input type="text" id="input-iban-devolucao" placeholder="PT50 0000 0000 0000 0000 0000 0" required>
+          <input type="text" id="input-iban-devolucao" placeholder="PT50 0000 0000 0000 0000 0000 0" value="${ficha.iban || ''}" required>
           <label>Nome do 1º Titular da Conta *</label>
-          <input type="text" id="input-titular-devolucao" required>
+          <input type="text" id="input-titular-devolucao" value="${ficha.nomeTitularConta || ''}" required>
+          <label>Razão da Devolução *</label>
+          <textarea id="input-motivo-devolucao" rows="3" required></textarea>
         </div>
         <div class="acoes">
           <button id="btn-confirmar-devolucao" class="botao-principal">Confirmar Devolução</button>
@@ -336,8 +352,9 @@ async function submeterDevolucao(numero) {
 
   const iban = document.getElementById('input-iban-devolucao').value.trim();
   const nomeTitular = document.getElementById('input-titular-devolucao').value.trim();
-  if (!iban || !nomeTitular) {
-    msg.textContent = '✗ O IBAN e o nome do 1º titular da conta são obrigatórios';
+  const motivo = document.getElementById('input-motivo-devolucao').value.trim();
+  if (!iban || !nomeTitular || !motivo) {
+    msg.textContent = '✗ O IBAN, o nome do 1º titular da conta e a razão da devolução são obrigatórios';
     msg.className = 'mensagem erro';
     return;
   }
@@ -350,7 +367,7 @@ async function submeterDevolucao(numero) {
   msg.className = 'mensagem';
 
   try {
-    const resultado = await apiPost(`/admin/encomendas/${numero}/devolucao`, { linhas, iban, nomeTitular });
+    const resultado = await apiPost(`/admin/encomendas/${numero}/devolucao`, { linhas, iban, nomeTitular, motivo });
     msg.textContent = `✓ Devolução registada (${resultado.numeroDevolucao})! Valor: ${formatarPreco(resultado.valorDevolvido)}, Pontos estornados: ${resultado.pontosEstornados}`;
     msg.className = 'mensagem sucesso';
     await carregarEncomendas();
@@ -446,13 +463,19 @@ async function abrirFichaCliente(codigoCliente) {
             <label>Telefone</label>
             <input type="tel" name="telefone" value="${c.telefone || ''}">
             <label>NIF</label>
-            <input type="text" name="nif" value="${c.nif || ''}">
+            <input type="text" name="nif" value="${c.nif || ''}" placeholder="Deixe em branco para Consumidor Final">
             <label>Morada</label>
             <input type="text" name="morada" value="${c.morada || ''}">
-            <label>Localidade</label>
-            <input type="text" name="localidade" value="${c.localidade || ''}">
             <label>Código Postal</label>
             <input type="text" name="codigoPostal" placeholder="0000-000" value="${c.codigoPostal || ''}">
+            <label>Localidade</label>
+            <input type="text" name="localidade" value="${c.localidade || ''}">
+          </fieldset>
+          <fieldset>
+            <label>IBAN (opcional)</label>
+            <input type="text" name="iban" placeholder="PT50 0000 0000 0000 0000 0000 0" value="${c.iban || ''}">
+            <label>Nome do 1º Titular da Conta (opcional)</label>
+            <input type="text" name="nomeTitularConta" value="${c.nomeTitularConta || ''}">
           </fieldset>
           <div class="acoes">
             <button type="submit" class="botao-principal">Guardar Alterações</button>
@@ -486,6 +509,8 @@ async function guardarFichaCliente(e, codigoCliente) {
       morada: form.morada.value || undefined,
       localidade: form.localidade.value || undefined,
       codigoPostal: form.codigoPostal.value || undefined,
+      iban: form.iban.value || undefined,
+      nomeTitularConta: form.nomeTitularConta.value || undefined,
     });
     msg.textContent = '✓ Guardado com sucesso!';
     msg.className = 'mensagem sucesso';
@@ -745,6 +770,7 @@ async function carregarConfigPontos() {
     document.getElementById('pontos-por-euro').value = config.PontosPorEuro || 1;
     document.getElementById('pontos-para-vale').value = config.PontosParaVale || 100;
     document.getElementById('valor-vale').value = config.ValorVale || 5.00;
+    document.getElementById('dias-confirmacao-recepcao').value = config.DiasConfirmacaoRecepcao || 1;
   } catch (err) {
     console.error('Erro ao carregar config:', err);
   }
@@ -754,10 +780,11 @@ async function guardarPontos() {
   const pontosPorEuro = document.getElementById('pontos-por-euro').value;
   const pontosParaVale = document.getElementById('pontos-para-vale').value;
   const valorVale = document.getElementById('valor-vale').value;
+  const diasConfirmacaoRecepcao = document.getElementById('dias-confirmacao-recepcao').value;
   const btn = document.getElementById('btn-guardar-pontos');
   const msg = document.getElementById('msg-pontos');
 
-  if (pontosPorEuro === '' || pontosParaVale === '' || valorVale === '' || pontosParaVale < 1) {
+  if (pontosPorEuro === '' || pontosParaVale === '' || valorVale === '' || pontosParaVale < 1 || diasConfirmacaoRecepcao === '' || diasConfirmacaoRecepcao < 0) {
     msg.textContent = '✗ Valores inválidos';
     msg.className = 'mensagem erro';
     return;
@@ -771,6 +798,7 @@ async function guardarPontos() {
     await apiPut('/admin/config/PontosPorEuro', { valor: pontosPorEuro });
     await apiPut('/admin/config/PontosParaVale', { valor: pontosParaVale });
     await apiPut('/admin/config/ValorVale', { valor: valorVale });
+    await apiPut('/admin/config/DiasConfirmacaoRecepcao', { valor: diasConfirmacaoRecepcao });
     msg.textContent = '✓ Guardado com sucesso!';
     msg.className = 'mensagem sucesso';
   } catch (err) {
