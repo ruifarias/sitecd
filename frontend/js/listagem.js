@@ -27,7 +27,6 @@ function lerParametrosURL() {
   estado.cor = params.get('cor') || null;
   estado.tamanho = params.get('tamanho') || null;
   estado.ordenar = params.get('ordenar') || 'preco_desc';
-  estado.page = parseInt(params.get('page'), 10) || 1;
   estado.familiaGrau1 = params.get('familiaGrau1') || null;
   estado.familiaGrau2 = params.get('familiaGrau2') || null;
   estado.familiaGrau3 = params.get('familiaGrau3') || null;
@@ -57,7 +56,6 @@ function actualizarURL() {
   if (estado.familiaGrau3) params.set('familiaGrau3', estado.familiaGrau3);
   if (estado.familiaGrau4) params.set('familiaGrau4', estado.familiaGrau4);
   if (estado.familia) params.set('familia', estado.familia);
-  if (estado.page > 1) params.set('page', estado.page);
   const query = params.toString();
   window.history.replaceState({}, '', query ? `?${query}` : window.location.pathname);
 }
@@ -70,7 +68,7 @@ function renderSeparadores() {
     { valor: 'outlet', rotulo: 'Outlet' },
   ];
   container.innerHTML = opcoes.map((o) => `
-    <button data-separador="${o.valor}" class="${estado.separador === o.valor ? 'activo' : ''}">${o.rotulo}</button>
+    <button data-separador="${o.valor}" class="nav-link ${estado.separador === o.valor ? 'activo' : ''}">${o.rotulo}</button>
   `).join('');
   container.querySelectorAll('button').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -85,9 +83,9 @@ function renderSeparadores() {
 
 async function renderFiltroMarca() {
   const { principais, outras } = await apiGet('/marcas', true);
-  const container = document.getElementById('filtro-marca');
+  const container = document.getElementById('painel-marca');
 
-  let html = '';
+  let html = '<ul class="filtro-lista">';
 
   // Marcas principais
   if (principais && principais.length > 0) {
@@ -111,6 +109,7 @@ async function renderFiltroMarca() {
     `;
   }
 
+  html += '</ul>';
   container.innerHTML = html;
 
   // Event listener para toggle
@@ -139,16 +138,17 @@ async function renderFiltroMarca() {
       estado.page = 1;
       actualizarURL();
       carregarArtigos();
+      container.classList.remove('aberto');
     });
   });
 }
 
 async function renderFiltroModalidade() {
   const modalidades = await apiGet('/modalidades');
-  const container = document.getElementById('filtro-modalidade');
-  container.innerHTML = modalidades.map((m) => `
+  const container = document.getElementById('painel-modalidade');
+  container.innerHTML = `<ul class="filtro-lista">${modalidades.map((m) => `
     <li><label><input type="radio" name="modalidade" value="${m.tag}" ${estado.modalidade === m.tag ? 'checked' : ''}> ${m.titulo}</label></li>
-  `).join('');
+  `).join('')}</ul>`;
   container.querySelectorAll('input').forEach((input) => {
     input.addEventListener('click', (e) => {
       if (e.target.checked && estado.modalidade === input.value) {
@@ -162,27 +162,24 @@ async function renderFiltroModalidade() {
       estado.page = 1;
       actualizarURL();
       carregarArtigos();
+      container.classList.remove('aberto');
     });
   });
 }
 
 async function renderFiltroGenero() {
   const generos = await apiGet('/generos');
-  const container = document.getElementById('filtro-genero');
+  const container = document.getElementById('genero-pills');
   container.innerHTML = generos.map((g) => `
-    <li><label><input type="radio" name="genero" value="${g.tag}" ${estado.genero === g.tag ? 'checked' : ''}> ${g.titulo}</label></li>
+    <button type="button" class="genero-pill ${estado.genero === g.tag ? 'activo' : ''}" data-genero="${g.tag}">${g.titulo}</button>
   `).join('');
-  container.querySelectorAll('input').forEach((input) => {
-    input.addEventListener('click', (e) => {
-      if (e.target.checked && estado.genero === input.value) {
-        // Se já estava selecionado, desseleccionar
-        e.target.checked = false;
-        estado.genero = null;
-      } else {
-        // Seleccionar
-        estado.genero = input.value;
-      }
+  container.querySelectorAll('button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      estado.genero = estado.genero === btn.dataset.genero ? null : btn.dataset.genero;
       estado.page = 1;
+      container.querySelectorAll('button').forEach((b) => {
+        b.classList.toggle('activo', b.dataset.genero === estado.genero);
+      });
       actualizarURL();
       carregarArtigos();
     });
@@ -359,32 +356,33 @@ function renderProdutosAgrupadosPorFamilia(artigos) {
   grelha.innerHTML = html;
 }
 
-function renderPaginacao(pagina, totalPaginas) {
-  const container = document.getElementById('paginacao');
-  if (totalPaginas <= 1) { container.innerHTML = ''; return; }
+function renderBotaoCarregarMais(pagina, totalPaginas) {
+  const container = document.getElementById('carregar-mais-container');
+  if (pagina >= totalPaginas) {
+    container.innerHTML = artigosCarregados.length > 0
+      ? '<p class="fim-listagem">FIM DE LISTAGEM - Reveja os filtros!</p>'
+      : '';
+    return;
+  }
 
-  const paginas = [];
-  const inicio = Math.max(1, pagina - 2);
-  const fim = Math.min(totalPaginas, pagina + 2);
-  for (let p = inicio; p <= fim; p++) paginas.push(p);
-
-  container.innerHTML = `
-    <button ${pagina === 1 ? 'disabled' : ''} data-page="${pagina - 1}">‹</button>
-    ${paginas.map((p) => `<button class="${p === pagina ? 'activo' : ''}" data-page="${p}">${p}</button>`).join('')}
-    <button ${pagina === totalPaginas ? 'disabled' : ''} data-page="${pagina + 1}">›</button>
-  `;
-  container.querySelectorAll('button[data-page]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      estado.page = parseInt(btn.dataset.page, 10);
-      actualizarURL();
-      carregarArtigos();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+  container.innerHTML = `<button class="botao-carregar-mais" id="btn-carregar-mais">Carregar Mais Artigos</button>`;
+  document.getElementById('btn-carregar-mais').addEventListener('click', (e) => {
+    e.target.disabled = true;
+    e.target.textContent = 'A carregar...';
+    estado.page += 1;
+    carregarArtigos(true);
   });
 }
 
-async function carregarArtigos() {
-  document.getElementById('contagem-resultados').textContent = 'A carregar...';
+const TAMANHO_PAGINA = 50;
+let artigosCarregados = [];
+
+async function carregarArtigos(acumular = false) {
+  if (!acumular) {
+    estado.page = 1;
+    artigosCarregados = [];
+    document.getElementById('contagem-resultados').textContent = 'A carregar...';
+  }
   const params = new URLSearchParams();
   if (estado.familia) params.set('familia', estado.familia);
   if (estado.marca) params.set('marca', estado.marca);
@@ -397,13 +395,16 @@ async function carregarArtigos() {
   if (estado.separador !== 'todos') params.set('separador', estado.separador);
   params.set('ordenar', estado.ordenar);
   params.set('page', estado.page);
-  params.set('pageSize', 24);
+  params.set('pageSize', TAMANHO_PAGINA);
 
   try {
     const dados = await apiGet(`/artigos?${params.toString()}`);
-    document.getElementById('contagem-resultados').textContent = `${dados.total} artigo${dados.total === 1 ? '' : 's'}`;
-    renderProdutos(dados.artigos);
-    renderPaginacao(dados.page, dados.totalPages);
+    artigosCarregados = acumular ? artigosCarregados.concat(dados.artigos) : dados.artigos;
+    document.getElementById('contagem-resultados').textContent = artigosCarregados.length < dados.total
+      ? `${artigosCarregados.length} de ${dados.total} artigos`
+      : `${dados.total} artigo${dados.total === 1 ? '' : 's'}`;
+    renderProdutos(artigosCarregados);
+    renderBotaoCarregarMais(dados.page, dados.totalPages);
   } catch (err) {
     document.getElementById('contagem-resultados').textContent = 'Erro ao carregar artigos.';
     document.getElementById('grelha-produtos').innerHTML = `<div class="vazio">${err.message}</div>`;
@@ -585,6 +586,7 @@ function limparTodosFiltros() {
   document.getElementById('pesquisa-cor').value = '';
   document.getElementById('pesquisa-tamanho').value = '';
   document.querySelectorAll('.filtro-lista input:checked').forEach((i) => { i.checked = false; });
+  document.querySelectorAll('#genero-pills button.activo').forEach((b) => { b.classList.remove('activo'); });
   document.getElementById('familia-grau1').value = '';
   document.getElementById('familia-grau2').value = '';
   document.getElementById('familia-grau3').value = '';
@@ -599,7 +601,6 @@ function limparTodosFiltros() {
   carregarArtigos();
 }
 
-document.getElementById('limpar-filtros').addEventListener('click', limparTodosFiltros);
 document.getElementById('limpar-filtros-header').addEventListener('click', limparTodosFiltros);
 
 let debouncePesquisa;
@@ -646,9 +647,35 @@ document.getElementById('pesquisa-marca').addEventListener('input', (e) => {
   }, 350);
 });
 
+// Dropdowns de Marca/Modalidade: em dispositivos com rato (desktop) abrem ao
+// passar por cima; em touch (sem hover fiável) alternam com um clique no
+// botão - só um dos dois mecanismos fica activo, para o clique não fechar
+// imediatamente um painel que o próprio "mouseenter" acabou de abrir.
+function configurarDropdown(dropdownId) {
+  const dropdown = document.getElementById(dropdownId);
+  const trigger = dropdown.querySelector('.nav-dropdown-trigger');
+  const painel = dropdown.querySelector('.nav-dropdown-painel');
+  const suportaHover = window.matchMedia('(hover: hover)').matches;
+
+  if (suportaHover) {
+    dropdown.addEventListener('mouseenter', () => painel.classList.add('aberto'));
+    dropdown.addEventListener('mouseleave', () => painel.classList.remove('aberto'));
+  } else {
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      painel.classList.toggle('aberto');
+    });
+  }
+  document.addEventListener('click', (e) => {
+    if (!dropdown.contains(e.target)) painel.classList.remove('aberto');
+  });
+}
+
 (async function init() {
   lerParametrosURL();
   renderSeparadores();
+  configurarDropdown('dropdown-marca');
+  configurarDropdown('dropdown-modalidade');
   await Promise.all([renderFiltroGenero(), renderFiltroMarca(), renderFiltroModalidade()]);
 
   // Sempre carregar e restaurar o estado dos comboboxes de famílias

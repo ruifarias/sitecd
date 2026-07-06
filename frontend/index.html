@@ -12,6 +12,21 @@
 <header class="topo">
   <div class="topo-linha1">
     <a href="index.html" class="logo"><img src="imagens/logo-transparente.png" alt="Clássico Desportivo" class="logo-icone">Clássico Desportivo</a>
+    <nav class="nav-principal" id="nav-principal">
+      <div class="separadores" id="separadores"></div>
+      <div class="nav-dropdown" id="dropdown-marca">
+        <button class="nav-link nav-dropdown-trigger" type="button">Marca <span class="seta-dropdown">▾</span></button>
+        <div class="nav-dropdown-painel" id="painel-marca"></div>
+      </div>
+      <div class="nav-dropdown" id="dropdown-modalidade">
+        <button class="nav-link nav-dropdown-trigger" type="button">Modalidade <span class="seta-dropdown">▾</span></button>
+        <div class="nav-dropdown-painel" id="painel-modalidade"></div>
+      </div>
+    </nav>
+  </div>
+
+  <div class="topo-linha2">
+    <div class="genero-pills" id="genero-pills"></div>
     <div class="pesquisas-centro">
       <div class="pesquisa-topo">
         <input type="text" id="pesquisa-input" placeholder="Pesquisar artigos...">
@@ -37,7 +52,7 @@
     </div>
   </div>
 
-  <div class="topo-linha2" id="familias-cascata-header">
+  <div class="topo-linha3" id="familias-cascata-header">
     <select id="familia-grau1" class="select-familia">
       <option value="">Seleccionar Familia...</option>
     </select>
@@ -54,21 +69,6 @@
 </header>
 
 <div class="layout-listagem">
-  <aside class="filtros">
-    <div class="separadores" id="separadores"></div>
-
-    <h3>Género</h3>
-    <ul class="filtro-lista" id="filtro-genero"><li>A carregar...</li></ul>
-
-    <h3>Marca</h3>
-    <ul class="filtro-lista" id="filtro-marca"><li>A carregar...</li></ul>
-
-    <h3>Modalidade</h3>
-    <ul class="filtro-lista" id="filtro-modalidade"><li>A carregar...</li></ul>
-
-    <span class="limpar-filtros" id="limpar-filtros">Limpar filtros</span>
-  </aside>
-
   <main>
     <div class="topo-resultados">
       <span id="contagem-resultados">A carregar...</span>
@@ -85,7 +85,7 @@
     </div>
 
     <div class="grelha-produtos" id="grelha-produtos"></div>
-    <div class="paginacao" id="paginacao"></div>
+    <div class="carregar-mais-container" id="carregar-mais-container"></div>
   </main>
 </div>
 
