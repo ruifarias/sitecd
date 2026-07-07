@@ -305,8 +305,8 @@ router.get('/:codigo/mesma-subfamilia', async (req, res) => {
     }
 
     if (req.query.marca) {
-      request.input('marca', sql.VarChar(100), `%${req.query.marca}%`);
-      condicoes.push('a.Marca LIKE @marca');
+      request.input('marca', sql.VarChar(3), req.query.marca);
+      condicoes.push('a.Codigo_Marca = @marca');
     }
 
     if (req.query.genero) {
@@ -321,14 +321,16 @@ router.get('/:codigo/mesma-subfamilia', async (req, res) => {
 
     const whereClause = condicoes.join(' AND ');
 
-    // Depois, buscar todos os artigos da mesma sub-família (máx 20)
+    // Depois, buscar todos os artigos da mesma sub-família (máx 40), do preço
+    // mais elevado para o mais baixo (preço efectivo - com desconto Outlet
+    // quando aplicável)
     const result = await request.query(`
-      SELECT TOP 20 a.Codigo_Artigo, a.Descritivo_Artigo, a.Marca, a.Preco, a.Percentagem_Desconto, a.Preco_Outlet, a.Em_Outlet,
+      SELECT TOP 40 a.Codigo_Artigo, a.Descritivo_Artigo, a.Marca, a.Preco, a.Percentagem_Desconto, a.Preco_Outlet, a.Em_Outlet,
              a.Familia_Grau1, a.Familia_Grau2, a.Familia_Grau3, a.Familia_Grau4,
              (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal
       FROM dbo.ZAPP_DBSiteCD_VCatalogo a
       WHERE ${whereClause}
-      ORDER BY a.Descritivo_Artigo;
+      ORDER BY ${PRECO_EFECTIVO} DESC;
     `);
 
     // Obter info da família do artigo original

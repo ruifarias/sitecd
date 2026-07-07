@@ -64,6 +64,20 @@ function formatarPreco(valor) {
   return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(valor);
 }
 
+function formatarDesconto(precoOriginal, precoComDesconto) {
+  if (!precoOriginal) return '';
+  const percentagem = Math.round((1 - precoComDesconto / precoOriginal) * 100);
+  return `-${percentagem}%`;
+}
+
+function mensagemPeriodoOutlet() {
+  const hoje = new Date();
+  const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+  const formatar = (d) => d.toLocaleDateString('pt-PT');
+  return `Artigos de Outlet com desconto de ${formatar(primeiroDia)} a ${formatar(ultimoDia)}`;
+}
+
 function obterSessaoId() {
   let id = localStorage.getItem('sessaoId');
   if (!id) {

@@ -316,6 +316,17 @@ header.topo {
   color: var(--cinza-texto);
 }
 
+.resultados-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.aviso-outlet {
+  color: var(--vermelho);
+}
+
 .ordenacao-controls {
   display: flex;
   align-items: center;
@@ -420,6 +431,7 @@ header.topo {
 .precos { display: flex; gap: 8px; align-items: baseline; }
 .preco-actual { font-weight: 700; font-size: 14px; }
 .preco-original { font-size: 12px; color: var(--cinza-texto); text-decoration: line-through; }
+.desconto-percentagem { font-size: 12px; font-weight: 700; color: var(--vermelho); }
 
 .carregar-mais-container {
   display: flex;
@@ -503,6 +515,12 @@ header.topo {
 .info-artigo h1 { font-size: 22px; margin: 4px 0 12px; font-weight: 600; }
 .info-artigo .precos { margin-bottom: 20px; font-size: 20px; }
 .info-artigo .preco-actual { font-size: 22px; }
+.info-artigo .botao-voltar,
+.info-artigo .badge-outlet,
+.info-artigo .aviso-outlet {
+  vertical-align: middle;
+}
+
 .badge-outlet {
   display: inline-block;
   background: var(--vermelho);
@@ -512,6 +530,14 @@ header.topo {
   padding: 3px 10px;
   margin-bottom: 10px;
   text-transform: uppercase;
+}
+
+.info-artigo .aviso-outlet {
+  display: inline-block;
+  color: var(--vermelho);
+  font-size: 13px;
+  margin-left: 10px;
+  margin-bottom: 10px;
 }
 
 .selector-variante h4,
@@ -909,6 +935,14 @@ footer.rodape {
   display: block;
 }
 .rodape-coluna a:hover { color: var(--vermelho); }
+
+.rodape-links-uteis a {
+  color: var(--branco);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.rodape-links-uteis a:hover { color: var(--vermelho); }
 
 .rodape-legal {
   border-top: 1px solid rgba(255, 255, 255, 0.1);

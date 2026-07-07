@@ -14,7 +14,7 @@ const EMPRESA = {
   localidade: '2430-306 Marinha Grande',
   pais: 'Portugal',
   nif: 'PT 505 794 268',
-  telefone: '244 566 945',
+  telefone: '244 566 945 * Custo da chamada para rede fixa nacional',
   email: 'geral@classicodesportivo.pt',
 };
 

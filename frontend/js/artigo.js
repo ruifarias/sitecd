@@ -3,62 +3,39 @@ let disponivelSeleccionada = 0;
 let quantidade = 1;
 let artigoActual = null;
 
+// Mesmo objecto de estado e cabeçalho de filtros da listagem (ver
+// cabecalho.js): aqui não há grelha para actualizar no local, por isso mudar
+// um filtro navega directamente para a listagem já com esse filtro aplicado.
+const estado = lerEstadoFiltrosDaURL();
+
+function aoMudarFiltro() {
+  const query = paramsFiltros(estado).toString();
+  window.location.href = `index.html${query ? '?' + query : ''}`;
+}
+
 function obterCodigoDaURL() {
   return new URLSearchParams(window.location.search).get('codigo');
 }
 
 function construirURLListagem() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const filtros = new URLSearchParams();
-
-  // Passar todos os filtros que vieram da listagem de volta
-  if (urlParams.get('q')) filtros.set('q', urlParams.get('q'));
-  if (urlParams.get('marcaText')) filtros.set('marcaText', urlParams.get('marcaText'));
-  if (urlParams.get('cor')) filtros.set('cor', urlParams.get('cor'));
-  if (urlParams.get('tamanho')) filtros.set('tamanho', urlParams.get('tamanho'));
-  if (urlParams.get('marca')) filtros.set('marca', urlParams.get('marca'));
-  if (urlParams.get('genero')) filtros.set('genero', urlParams.get('genero'));
-  if (urlParams.get('modalidade')) filtros.set('modalidade', urlParams.get('modalidade'));
-  if (urlParams.get('familiaGrau4')) filtros.set('familiaGrau4', urlParams.get('familiaGrau4'));
-
-  return `index.html${filtros.toString() ? '?' + filtros.toString() : ''}`;
+  const query = paramsFiltros(estado).toString();
+  return `index.html${query ? '?' + query : ''}`;
 }
 
-// Filtros do cabeçalho (iguais aos da página principal): pré-preenchidos com
-// os filtros vindos da listagem, e ao premir Enter voltam à listagem já com o
-// filtro actualizado (mantém marca/género/modalidade/familiaGrau4 originais,
-// que não têm campo próprio neste cabeçalho compacto).
-function construirURLListagemComFiltros() {
-  const params = new URLSearchParams();
-  const q = document.getElementById('pesquisa-input').value.trim();
-  const marcaText = document.getElementById('pesquisa-marca').value.trim();
-  const cor = document.getElementById('pesquisa-cor').value.trim();
-  const tamanho = document.getElementById('pesquisa-tamanho').value.trim();
-  if (q) params.set('q', q);
-  if (marcaText) params.set('marcaText', marcaText);
-  if (cor) params.set('cor', cor);
-  if (tamanho) params.set('tamanho', tamanho);
-
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('marca')) params.set('marca', urlParams.get('marca'));
-  if (urlParams.get('genero')) params.set('genero', urlParams.get('genero'));
-  if (urlParams.get('modalidade')) params.set('modalidade', urlParams.get('modalidade'));
-  if (urlParams.get('familiaGrau4')) params.set('familiaGrau4', urlParams.get('familiaGrau4'));
-
-  return `index.html${params.toString() ? '?' + params.toString() : ''}`;
-}
-
-function inicializarFiltrosHeader() {
-  const urlParams = new URLSearchParams(window.location.search);
-  document.getElementById('pesquisa-input').value = urlParams.get('q') || '';
-  document.getElementById('pesquisa-marca').value = urlParams.get('marcaText') || '';
-  document.getElementById('pesquisa-cor').value = urlParams.get('cor') || '';
-  document.getElementById('pesquisa-tamanho').value = urlParams.get('tamanho') || '';
+function configurarPesquisaInputs() {
+  document.getElementById('pesquisa-input').value = estado.q || '';
+  document.getElementById('pesquisa-marca').value = estado.marcaText || '';
+  document.getElementById('pesquisa-cor').value = estado.cor || '';
+  document.getElementById('pesquisa-tamanho').value = estado.tamanho || '';
 
   ['pesquisa-input', 'pesquisa-marca', 'pesquisa-cor', 'pesquisa-tamanho'].forEach((id) => {
     document.getElementById(id).addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        window.location.href = construirURLListagemComFiltros();
+        estado.q = document.getElementById('pesquisa-input').value.trim() || null;
+        estado.marcaText = document.getElementById('pesquisa-marca').value.trim() || null;
+        estado.cor = document.getElementById('pesquisa-cor').value.trim() || null;
+        estado.tamanho = document.getElementById('pesquisa-tamanho').value.trim() || null;
+        aoMudarFiltro();
       }
     });
   });
@@ -67,28 +44,18 @@ function inicializarFiltrosHeader() {
 async function renderArtigo(a) {
   const imagemPrincipal = a.imagens[0] || '';
 
-  // Ler filtros da URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const qParam = urlParams.get('q') || '';
-  const marcaTextParam = urlParams.get('marcaText') || '';
-  const corParam = urlParams.get('cor') || '';
-  const tamanhoParam = urlParams.get('tamanho') || '';
-  const marcaParam = urlParams.get('marca') || '';
-  const generoParam = urlParams.get('genero') || '';
-  const modalidadeParam = urlParams.get('modalidade') || '';
-
   // Carregar artigos da mesma sub-família com filtros passados da listagem
   let artigosMesmaSub = [];
   let familiaInfo = null;
   try {
     const params = new URLSearchParams();
-    if (qParam) params.append('q', qParam);
-    if (marcaTextParam) params.append('marcaText', marcaTextParam);
-    if (corParam) params.append('cor', corParam);
-    if (tamanhoParam) params.append('tamanho', tamanhoParam);
-    if (marcaParam) params.append('marca', marcaParam);
-    if (generoParam) params.append('genero', generoParam);
-    if (modalidadeParam) params.append('modalidade', modalidadeParam);
+    if (estado.q) params.append('q', estado.q);
+    if (estado.marcaText) params.append('marcaText', estado.marcaText);
+    if (estado.cor) params.append('cor', estado.cor);
+    if (estado.tamanho) params.append('tamanho', estado.tamanho);
+    if (estado.marca) params.append('marca', estado.marca);
+    if (estado.genero) params.append('genero', estado.genero);
+    if (estado.modalidade) params.append('modalidade', estado.modalidade);
 
     const resultado = await apiGet(`/artigos/${a.codigo}/mesma-subfamilia${params.toString() ? '?' + params.toString() : ''}`);
     artigosMesmaSub = resultado.artigos || [];
@@ -112,12 +79,12 @@ async function renderArtigo(a) {
     </div>
     <div class="info-artigo">
       <a href="${construirURLListagem()}" class="botao-voltar">← Voltar</a>
-      ${a.emOutlet ? '<span class="badge-outlet">Outlet</span>' : ''}
+      ${a.emOutlet ? `<span class="badge-outlet">Outlet</span><span class="aviso-outlet">${mensagemPeriodoOutlet()}</span>` : ''}
       <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
       <h1>${a.descricao}</h1>
       <div class="precos">
         <span class="preco-actual">${formatarPreco(a.emOutlet ? a.precoOutlet : a.preco)}</span>
-        ${a.emOutlet ? `<span class="preco-original">${formatarPreco(a.preco)}</span>` : ''}
+        ${a.emOutlet ? `<span class="preco-original">${formatarPreco(a.preco)}</span><span class="desconto-percentagem">${formatarDesconto(a.preco, a.precoOutlet)}</span>` : ''}
       </div>
 
       <div class="selector-variante">
@@ -158,16 +125,9 @@ async function renderArtigo(a) {
             <button class="carousel-arrow carousel-arrow-esq" id="carousel-prev">‹</button>
             <div class="artigos-mesma-sub-scroll" id="artigos-carousel">
               ${artigosMesmaSub.map((art) => {
-                const urlParams = new URLSearchParams();
-                urlParams.set('codigo', art.codigo);
-                if (qParam) urlParams.set('q', qParam);
-                if (marcaTextParam) urlParams.set('marcaText', marcaTextParam);
-                if (corParam) urlParams.set('cor', corParam);
-                if (tamanhoParam) urlParams.set('tamanho', tamanhoParam);
-                if (marcaParam) urlParams.set('marca', marcaParam);
-                if (generoParam) urlParams.set('genero', generoParam);
-                if (modalidadeParam) urlParams.set('modalidade', modalidadeParam);
-                const urlArtigo = `artigo.html?${urlParams.toString()}`;
+                const paramsArtigo = paramsFiltros(estado);
+                paramsArtigo.set('codigo', art.codigo);
+                const urlArtigo = `artigo.html?${paramsArtigo.toString()}`;
                 return `
                 <a href="${urlArtigo}" class="link-artigo-sub-scroll">
                   <div class="imagem-sub" style="background-image: url('${art.imagem || ''}'); background-size: cover; background-position: center;"></div>
@@ -269,7 +229,8 @@ async function adicionarAoCarrinho() {
 }
 
 (async function init() {
-  inicializarFiltrosHeader();
+  configurarPesquisaInputs();
+  await inicializarCabecalho(estado, aoMudarFiltro);
   const codigo = obterCodigoDaURL();
   if (!codigo) {
     document.getElementById('layout-artigo').innerHTML = '<div class="vazio">Artigo não especificado.</div>';
