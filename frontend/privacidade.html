@@ -12,12 +12,37 @@
 <header class="topo">
   <div class="topo-linha1">
     <a href="index.html" class="logo"><img src="imagens/logo-transparente.png" alt="Clássico Desportivo" class="logo-icone">Clássico Desportivo</a>
-    <nav>
-      <a href="index.html?separador=todos">Todos os Artigos</a>
-      <a href="index.html?separador=novidades">Novidades</a>
-      <a href="index.html?separador=outlet">Outlet</a>
+    <nav class="nav-principal" id="nav-principal">
+      <div class="separadores" id="separadores"></div>
+      <div class="nav-dropdown" id="dropdown-marca">
+        <button class="nav-link nav-dropdown-trigger" type="button">Marca <span class="seta-dropdown">▾</span></button>
+        <div class="nav-dropdown-painel" id="painel-marca"></div>
+      </div>
+      <div class="nav-dropdown" id="dropdown-modalidade">
+        <button class="nav-link nav-dropdown-trigger" type="button">Modalidade <span class="seta-dropdown">▾</span></button>
+        <div class="nav-dropdown-painel" id="painel-modalidade"></div>
+      </div>
     </nav>
+  </div>
+
+  <div class="topo-linha2">
+    <div class="genero-pills" id="genero-pills"></div>
+    <div class="pesquisas-centro">
+      <div class="pesquisa-topo">
+        <input type="text" id="pesquisa-input" placeholder="Pesquisar artigos...">
+      </div>
+      <div class="pesquisa-topo">
+        <input type="text" id="pesquisa-marca" placeholder="Marca...">
+      </div>
+      <div class="pesquisa-topo">
+        <input type="text" id="pesquisa-cor" placeholder="Cor...">
+      </div>
+      <div class="pesquisa-topo">
+        <input type="text" id="pesquisa-tamanho" placeholder="Tamanho...">
+      </div>
+    </div>
     <div class="acoes">
+      <button id="limpar-filtros-header" class="botao-limpar-filtros">Limpar Filtros</button>
       <a href="admin.html" class="carrinho-icone" title="Admin"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></a>
       <a href="conta.html" class="carrinho-icone" title="A Minha Conta"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></a>
       <a href="carrinho.html" class="carrinho-icone">
@@ -25,6 +50,21 @@
         <span id="carrinho-badge" class="carrinho-badge" style="display:none">0</span>
       </a>
     </div>
+  </div>
+
+  <div class="topo-linha3" id="familias-cascata-header">
+    <select id="familia-grau1" class="select-familia">
+      <option value="">Seleccionar Familia...</option>
+    </select>
+    <select id="familia-grau2" class="select-familia" disabled style="display:none;">
+      <option value="">Seleccionar Sub-Familia1...</option>
+    </select>
+    <select id="familia-grau3" class="select-familia" disabled style="display:none;">
+      <option value="">Seleccionar Sub-Familia2...</option>
+    </select>
+    <select id="familia-grau4" class="select-familia" disabled style="display:none;">
+      <option value="">Seleccionar Sub-Familia3...</option>
+    </select>
   </div>
 </header>
 
@@ -69,7 +109,12 @@
 </footer>
 
 <script src="js/api.js"></script>
+<script src="js/cabecalho.js"></script>
 <script>
+const { estado, aoMudarFiltro } = criarNavegacaoParaListagem();
+configurarPesquisaInputsNavegacao(estado, aoMudarFiltro);
+inicializarCabecalho(estado, aoMudarFiltro);
+
 (async function () {
   try {
     const pagina = await apiGet('/paginas/privacidade');

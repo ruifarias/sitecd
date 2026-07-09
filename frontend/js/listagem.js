@@ -68,6 +68,7 @@ function renderProdutosSimples(artigos) {
     <a class="cartao-produto" href="${construirURLArtigo(a.codigo)}">
       <div class="imagem-wrap">
         ${a.emOutlet ? '<span class="tag-outlet">Outlet</span>' : ''}
+        ${a.emNovidade ? '<span class="tag-novidade">NEW</span>' : ''}
         <img src="${a.imagem || ''}" alt="${a.descricao}" loading="lazy" onerror="this.style.opacity=0">
       </div>
       <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
@@ -101,6 +102,7 @@ function renderProdutosAgrupadosPorGenero(artigos) {
       <a class="cartao-produto" href="${construirURLArtigo(a.codigo)}">
         <div class="imagem-wrap">
           ${a.emOutlet ? '<span class="tag-outlet">Outlet</span>' : ''}
+        ${a.emNovidade ? '<span class="tag-novidade">NEW</span>' : ''}
           <img src="${a.imagem || ''}" alt="${a.descricao}" loading="lazy" onerror="this.style.opacity=0">
         </div>
         <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
@@ -137,6 +139,7 @@ function renderProdutosAgrupadosPorModalidade(artigos) {
       <a class="cartao-produto" href="${construirURLArtigo(a.codigo)}">
         <div class="imagem-wrap">
           ${a.emOutlet ? '<span class="tag-outlet">Outlet</span>' : ''}
+        ${a.emNovidade ? '<span class="tag-novidade">NEW</span>' : ''}
           <img src="${a.imagem || ''}" alt="${a.descricao}" loading="lazy" onerror="this.style.opacity=0">
         </div>
         <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
@@ -184,6 +187,7 @@ function renderProdutosAgrupadosPorFamilia(artigos) {
       <a class="cartao-produto" href="${construirURLArtigo(a.codigo)}">
         <div class="imagem-wrap">
           ${a.emOutlet ? '<span class="tag-outlet">Outlet</span>' : ''}
+        ${a.emNovidade ? '<span class="tag-novidade">NEW</span>' : ''}
           <img src="${a.imagem || ''}" alt="${a.descricao}" loading="lazy" onerror="this.style.opacity=0">
         </div>
         <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
@@ -217,7 +221,7 @@ function renderBotaoCarregarMais(pagina, totalPaginas) {
   });
 }
 
-const TAMANHO_PAGINA = 50;
+const TAMANHO_PAGINA = 98;
 let artigosCarregados = [];
 
 async function carregarArtigos(acumular = false) {

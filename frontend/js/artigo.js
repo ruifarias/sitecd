@@ -6,12 +6,7 @@ let artigoActual = null;
 // Mesmo objecto de estado e cabeçalho de filtros da listagem (ver
 // cabecalho.js): aqui não há grelha para actualizar no local, por isso mudar
 // um filtro navega directamente para a listagem já com esse filtro aplicado.
-const estado = lerEstadoFiltrosDaURL();
-
-function aoMudarFiltro() {
-  const query = paramsFiltros(estado).toString();
-  window.location.href = `index.html${query ? '?' + query : ''}`;
-}
+const { estado, aoMudarFiltro } = criarNavegacaoParaListagem();
 
 function obterCodigoDaURL() {
   return new URLSearchParams(window.location.search).get('codigo');
@@ -20,25 +15,6 @@ function obterCodigoDaURL() {
 function construirURLListagem() {
   const query = paramsFiltros(estado).toString();
   return `index.html${query ? '?' + query : ''}`;
-}
-
-function configurarPesquisaInputs() {
-  document.getElementById('pesquisa-input').value = estado.q || '';
-  document.getElementById('pesquisa-marca').value = estado.marcaText || '';
-  document.getElementById('pesquisa-cor').value = estado.cor || '';
-  document.getElementById('pesquisa-tamanho').value = estado.tamanho || '';
-
-  ['pesquisa-input', 'pesquisa-marca', 'pesquisa-cor', 'pesquisa-tamanho'].forEach((id) => {
-    document.getElementById(id).addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        estado.q = document.getElementById('pesquisa-input').value.trim() || null;
-        estado.marcaText = document.getElementById('pesquisa-marca').value.trim() || null;
-        estado.cor = document.getElementById('pesquisa-cor').value.trim() || null;
-        estado.tamanho = document.getElementById('pesquisa-tamanho').value.trim() || null;
-        aoMudarFiltro();
-      }
-    });
-  });
 }
 
 async function renderArtigo(a) {
@@ -79,6 +55,7 @@ async function renderArtigo(a) {
     </div>
     <div class="info-artigo">
       <a href="${construirURLListagem()}" class="botao-voltar">← Voltar</a>
+      ${a.emNovidade ? '<span class="badge-novidade">NEW</span>' : ''}
       ${a.emOutlet ? `<span class="badge-outlet">Outlet</span><span class="aviso-outlet">${mensagemPeriodoOutlet()}</span>` : ''}
       <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
       <h1>${a.descricao}</h1>
@@ -130,9 +107,16 @@ async function renderArtigo(a) {
                 const urlArtigo = `artigo.html?${paramsArtigo.toString()}`;
                 return `
                 <a href="${urlArtigo}" class="link-artigo-sub-scroll">
-                  <div class="imagem-sub" style="background-image: url('${art.imagem || ''}'); background-size: cover; background-position: center;"></div>
+                  <div class="imagem-sub" style="background-image: url('${art.imagem || ''}'); background-size: cover; background-position: center;">
+                    ${art.emNovidade ? '<span class="tag-novidade">NEW</span>' : ''}
+                    ${art.emOutlet ? '<span class="tag-outlet">Outlet</span>' : ''}
+                  </div>
+                  <div class="marca-sub">${art.marca || ''} <span class="codigo-artigo">${art.codigo}</span></div>
                   <span class="nome-sub">${art.descricao}</span>
-                  <span class="preco-sub">${formatarPreco(art.emOutlet ? art.precoOutlet : art.preco)}</span>
+                  <div class="precos-sub">
+                    <span class="preco-sub">${formatarPreco(art.emOutlet ? art.precoOutlet : art.preco)}</span>
+                    ${art.emOutlet ? `<span class="preco-original">${formatarPreco(art.preco)}</span><span class="desconto-percentagem">${formatarDesconto(art.preco, art.precoOutlet)}</span>` : ''}
+                  </div>
                 </a>
               `;
               }).join('')}
@@ -229,7 +213,7 @@ async function adicionarAoCarrinho() {
 }
 
 (async function init() {
-  configurarPesquisaInputs();
+  configurarPesquisaInputsNavegacao(estado, aoMudarFiltro);
   await inicializarCabecalho(estado, aoMudarFiltro);
   const codigo = obterCodigoDaURL();
   if (!codigo) {

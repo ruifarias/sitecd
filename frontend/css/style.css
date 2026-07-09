@@ -411,6 +411,19 @@ header.topo {
   border-radius: 4px;
   z-index: 10;
 }
+.tag-novidade {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: var(--azul);
+  color: var(--branco);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  text-transform: uppercase;
+  border-radius: 4px;
+  z-index: 10;
+}
 .cartao-produto .marca {
   font-size: 11px;
   color: var(--cinza-texto);
@@ -470,7 +483,7 @@ header.topo {
   display: grid;
   grid-template-columns: 30% minmax(0, 1fr);
   gap: 48px;
-  max-width: 1400px;
+  max-width: 1700px;
   margin: 0 auto;
   padding: 32px 24px;
 }
@@ -517,6 +530,7 @@ header.topo {
 .info-artigo .preco-actual { font-size: 22px; }
 .info-artigo .botao-voltar,
 .info-artigo .badge-outlet,
+.info-artigo .badge-novidade,
 .info-artigo .aviso-outlet {
   vertical-align: middle;
 }
@@ -524,6 +538,17 @@ header.topo {
 .badge-outlet {
   display: inline-block;
   background: var(--vermelho);
+  color: var(--branco);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.badge-novidade {
+  display: inline-block;
+  background: var(--azul);
   color: var(--branco);
   font-size: 12px;
   font-weight: 700;
@@ -703,6 +728,7 @@ header.topo {
 }
 
 .imagem-sub {
+  position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
   background: var(--cinza-claro);
@@ -713,6 +739,23 @@ header.topo {
   font-size: 32px;
   margin-bottom: 8px;
 }
+.imagem-sub .tag-novidade {
+  top: 6px;
+  left: 6px;
+  font-size: 10px;
+  padding: 3px 6px;
+}
+.imagem-sub .tag-outlet {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.link-artigo-sub-scroll .marca-sub {
+  font-size: 11px;
+  color: var(--cinza-texto);
+  text-transform: uppercase;
+  font-weight: 600;
+}
 
 .link-artigo-sub-scroll .nome-sub {
   font-size: 12px;
@@ -722,10 +765,22 @@ header.topo {
   word-break: break-word;
 }
 
+.precos-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
+}
 .link-artigo-sub-scroll .preco-sub {
   font-size: 14px;
   font-weight: 600;
-  color: var(--vermelho);
+  color: var(--preto);
+}
+.precos-sub .preco-original {
+  font-size: 11px;
+}
+.precos-sub .desconto-percentagem {
+  font-size: 11px;
 }
 
 .sem-alternativas {

@@ -407,3 +407,34 @@ async function inicializarCabecalho(estado, aoMudar) {
   await inicializarFamiliaCascata(estado, aoMudar);
   document.getElementById('limpar-filtros-header').addEventListener('click', () => limparTodosFiltros(estado, aoMudar));
 }
+
+// Para páginas sem grelha própria (ficha de artigo, páginas institucionais):
+// mudar qualquer filtro do cabeçalho navega para a listagem já com esse
+// filtro aplicado, em vez de recarregar conteúdo no local.
+function criarNavegacaoParaListagem() {
+  const estado = lerEstadoFiltrosDaURL();
+  function aoMudarFiltro() {
+    const query = paramsFiltros(estado).toString();
+    window.location.href = `index.html${query ? '?' + query : ''}`;
+  }
+  return { estado, aoMudarFiltro };
+}
+
+function configurarPesquisaInputsNavegacao(estado, aoMudarFiltro) {
+  document.getElementById('pesquisa-input').value = estado.q || '';
+  document.getElementById('pesquisa-marca').value = estado.marcaText || '';
+  document.getElementById('pesquisa-cor').value = estado.cor || '';
+  document.getElementById('pesquisa-tamanho').value = estado.tamanho || '';
+
+  ['pesquisa-input', 'pesquisa-marca', 'pesquisa-cor', 'pesquisa-tamanho'].forEach((id) => {
+    document.getElementById(id).addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        estado.q = document.getElementById('pesquisa-input').value.trim() || null;
+        estado.marcaText = document.getElementById('pesquisa-marca').value.trim() || null;
+        estado.cor = document.getElementById('pesquisa-cor').value.trim() || null;
+        estado.tamanho = document.getElementById('pesquisa-tamanho').value.trim() || null;
+        aoMudarFiltro();
+      }
+    });
+  });
+}

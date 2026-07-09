@@ -11,6 +11,23 @@ const router = express.Router();
 // pago, o que ficava mal ordenado (secção 2.3).
 const PRECO_EFECTIVO = "CASE WHEN Em_Outlet = 1 THEN Preco_Outlet ELSE Preco END";
 
+// Mesma regra usada no separador "Novidades": Novidade_Manual = 1 força
+// incluir, = 0 força excluir, NULL segue a regra de Data_Ult_Compra (secção
+// 2.6/3). A comparação de datas fica inteiramente no SQL Server (não em JS)
+// porque o driver mssql desserializa DATETIME como se já fosse UTC, o que
+// desalinha comparações feitas em Node com GETDATE() local (ver nota no
+// bug do fuso-horário da confirmação de receção).
+function emNovidadeExpr(prefix = '') {
+  return `CASE WHEN ${prefix}Novidade_Manual = 1 OR (${prefix}Novidade_Manual IS NULL AND ${prefix}Data_Ult_Compra >= DATEADD(day, -@diasNovidades, GETDATE())) THEN 1 ELSE 0 END`;
+}
+
+async function obterDiasNovidades(pool) {
+  const configRes = await pool.request().query(
+    `SELECT Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave = 'NovidadesDias';`
+  );
+  return parseInt(configRes.recordset[0]?.Valor, 10) || parseInt(process.env.NOVIDADES_DIAS, 10) || 180;
+}
+
 const ORDENACOES = {
   descricao: 'Descritivo_Artigo ASC',
   preco_asc: `${PRECO_EFECTIVO} ASC`,
@@ -107,14 +124,12 @@ router.get('/', async (req, res) => {
       )`);
     }
 
+    const diasNovidades = await obterDiasNovidades(pool);
+    request.input('diasNovidades', sql.Int, diasNovidades);
+
     const separador = req.query.separador;
     if (separador === 'novidades') {
-      const configRes = await pool.request().query(
-        `SELECT Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave = 'NovidadesDias';`
-      );
-      const dias = parseInt(configRes.recordset[0]?.Valor, 10) || parseInt(process.env.NOVIDADES_DIAS, 10) || 180;
-      // Novidade_Manual = 1 força incluir, = 0 força excluir, NULL segue a regra de Data_Ult_Compra (secção 2.6/3)
-      condicoes.push(`(Novidade_Manual = 1 OR (Novidade_Manual IS NULL AND Data_Ult_Compra >= DATEADD(day, -${dias}, GETDATE())))`);
+      condicoes.push(`(${emNovidadeExpr()} = 1)`);
     } else if (separador === 'outlet') {
       condicoes.push('Em_Outlet = 1');
     }
@@ -132,6 +147,7 @@ router.get('/', async (req, res) => {
     const result = await request.query(`
       SELECT Codigo_Artigo, Descritivo_Artigo, Slug, Marca, Familia_Grau1, Familia_Grau2, Familia_Grau3, Familia_Grau4,
              Modalidade, Genero, Preco, Percentagem_Desconto, Preco_Outlet, Em_Outlet,
+             ${emNovidadeExpr()} AS Em_Novidade,
              (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = ZAPP_DBSiteCD_VCatalogo.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal,
              COUNT(*) OVER() AS Total
       FROM dbo.ZAPP_DBSiteCD_VCatalogo
@@ -161,6 +177,7 @@ router.get('/', async (req, res) => {
         percentagemDesconto: r.Percentagem_Desconto,
         precoOutlet: r.Preco_Outlet,
         emOutlet: !!r.Em_Outlet,
+        emNovidade: !!r.Em_Novidade,
         imagem: r.Imagem_Principal ? `${process.env.IMAGES_BASE_URL}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
       })),
     });
@@ -175,9 +192,12 @@ router.get('/:codigo', async (req, res) => {
   try {
     const pool = await getPool();
 
+    const diasNovidades = await obterDiasNovidades(pool);
+
     const artigoRes = await pool.request()
       .input('codigo', sql.VarChar(20), req.params.codigo)
-      .query(`SELECT * FROM dbo.ZAPP_DBSiteCD_VCatalogo WHERE Codigo_Artigo = @codigo AND Publicado = 1;`);
+      .input('diasNovidades', sql.Int, diasNovidades)
+      .query(`SELECT *, ${emNovidadeExpr()} AS Em_Novidade FROM dbo.ZAPP_DBSiteCD_VCatalogo WHERE Codigo_Artigo = @codigo AND Publicado = 1;`);
 
     if (artigoRes.recordset.length === 0) {
       return res.status(404).json({ erro: 'Artigo não encontrado.' });
@@ -213,6 +233,7 @@ router.get('/:codigo', async (req, res) => {
       percentagemDesconto: a.Percentagem_Desconto,
       precoOutlet: a.Preco_Outlet,
       emOutlet: !!a.Em_Outlet,
+      emNovidade: !!a.Em_Novidade,
       variantes: variantesRes.recordset.map((v) => ({
         codigoLote: v.Codigo_Lote,
         descricao: v.Descricao_Lote,
@@ -246,7 +267,9 @@ router.get('/:codigo/mesma-subfamilia', async (req, res) => {
     const request = pool.request();
     const condicoes = ['a.Codigo_Familia = @familia', 'a.Publicado = 1'];
 
+    const diasNovidades = await obterDiasNovidades(pool);
     request.input('familia', sql.VarChar(10), codigoFamilia);
+    request.input('diasNovidades', sql.Int, diasNovidades);
 
     // Aplicar filtros de cor e tamanho - exigem que o MESMO lote tenha cor E tamanho
     // (quando ambos indicados) E stock > 0 (Qtd_Disponivel/Qtd_Reservada vêm da tabela Stock)
@@ -327,6 +350,7 @@ router.get('/:codigo/mesma-subfamilia', async (req, res) => {
     const result = await request.query(`
       SELECT TOP 40 a.Codigo_Artigo, a.Descritivo_Artigo, a.Marca, a.Preco, a.Percentagem_Desconto, a.Preco_Outlet, a.Em_Outlet,
              a.Familia_Grau1, a.Familia_Grau2, a.Familia_Grau3, a.Familia_Grau4,
+             ${emNovidadeExpr('a.')} AS Em_Novidade,
              (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal
       FROM dbo.ZAPP_DBSiteCD_VCatalogo a
       WHERE ${whereClause}
@@ -360,6 +384,7 @@ router.get('/:codigo/mesma-subfamilia', async (req, res) => {
         percentagemDesconto: r.Percentagem_Desconto,
         precoOutlet: r.Preco_Outlet,
         emOutlet: !!r.Em_Outlet,
+        emNovidade: !!r.Em_Novidade,
         imagem: r.Imagem_Principal ? `${process.env.IMAGES_BASE_URL}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
       })),
     });
