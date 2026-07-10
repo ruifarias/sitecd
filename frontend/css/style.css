@@ -35,15 +35,15 @@ header.topo {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 10px 16px;
-  padding: 12px 24px;
-  min-height: 64px;
+  gap: 6px 16px;
+  padding: 8px 24px;
+  min-height: 52px;
 }
 
 .topo-linha2 {
   display: flex;
-  gap: 10px 16px;
-  padding: 10px 24px;
+  gap: 6px 16px;
+  padding: 6px 24px;
   background: #1a1a1a;
   flex-wrap: wrap;
   align-items: center;
@@ -60,7 +60,7 @@ header.topo {
 .topo-linha3 {
   display: flex;
   gap: 8px;
-  padding: 12px 24px;
+  padding: 6px 24px;
   background: #1a1a1a;
   flex-wrap: wrap;
   align-items: center;
@@ -69,13 +69,13 @@ header.topo {
 .topo-linha3 .select-familia {
   flex: 1;
   min-width: 180px;
-  height: 36px;
-  padding: 6px 8px;
+  height: 30px;
+  padding: 4px 8px;
   background: var(--branco);
   color: var(--preto);
   border: 1px solid var(--cinza-medio);
   border-radius: 2px;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
 }
 
@@ -98,7 +98,7 @@ header.topo {
   background: transparent;
   border: none;
   color: var(--branco);
-  padding: 8px 12px;
+  padding: 6px 10px;
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
@@ -141,8 +141,8 @@ header.topo {
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.4);
   color: var(--branco);
-  padding: 6px 14px;
-  border-radius: 16px;
+  padding: 4px 12px;
+  border-radius: 14px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -163,14 +163,14 @@ header.topo {
 }
 
 .logo-icone {
-  height: 34px;
+  height: 28px;
   width: auto;
   display: block;
 }
 
 .topo-linha1 .logo {
   font-weight: 800;
-  font-size: 22px;
+  font-size: 19px;
   letter-spacing: 1px;
   text-transform: uppercase;
   flex-shrink: 0;
@@ -186,8 +186,7 @@ header.topo {
   width: auto;
 }
 
-.topo-linha1 .acoes,
-.topo-linha2 .acoes {
+.topo-linha1 .acoes {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -198,7 +197,7 @@ header.topo {
   align-items: center;
   background: #222;
   border-radius: 3px;
-  padding: 5px 8px;
+  padding: 4px 8px;
 }
 .pesquisa-topo input {
   background: transparent;
@@ -220,7 +219,7 @@ header.topo {
   background: transparent;
   border: 1px solid var(--branco);
   color: var(--branco);
-  padding: 6px 14px;
+  padding: 5px 12px;
   font-size: 11px;
   cursor: pointer;
   text-transform: uppercase;
@@ -1016,8 +1015,9 @@ footer.rodape {
   .layout-artigo { grid-template-columns: minmax(0, 1fr); }
   .galeria-principal { max-width: 420px; margin: 0 auto; }
   header.topo nav { display: none; }
-  header.topo nav.nav-principal { display: flex; width: 100%; }
-  .topo-linha1 .logo { font-size: 16px; }
+  header.topo nav.nav-principal { display: flex; width: 100%; order: 3; }
+  .topo-linha1 .logo { font-size: 16px; order: 1; }
+  .topo-linha1 .acoes { order: 2; }
   .pesquisas-centro { flex: 1 1 100%; flex-direction: column; width: 100%; }
   .pesquisas-centro .pesquisa-topo { width: 100%; }
   .pesquisas-centro .pesquisa-topo input,

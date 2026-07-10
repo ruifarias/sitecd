@@ -99,3 +99,31 @@ async function actualizarBadgeCarrinho() {
 }
 
 document.addEventListener('DOMContentLoaded', actualizarBadgeCarrinho);
+
+// Mostra no rodapé (abaixo do aviso legal), no mesmo formato do site anterior
+// ("DD/MM/AAAA às HH:MM"): a última vez que os dados mudaram de facto
+// (#ultima-actualizacao) e a última vez que o serviço de sincronização correu
+// com sucesso (#ultima-sincronizacao, avança mesmo sem nada para actualizar).
+function formatarDataHora(iso) {
+  const d = new Date(iso);
+  const data = d.toLocaleDateString('pt-PT');
+  const hora = d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+  return `${data} às ${hora}`;
+}
+
+async function actualizarUltimaSincronizacao() {
+  const elActualizacao = document.getElementById('ultima-actualizacao');
+  const elSincronizacao = document.getElementById('ultima-sincronizacao');
+  if (!elActualizacao && !elSincronizacao) return;
+  try {
+    const { ultimaActualizacao, ultimaSincronizacao } = await apiGet('/ultima-sincronizacao');
+    if (elActualizacao && ultimaActualizacao) {
+      elActualizacao.textContent = `Última actualização: ${formatarDataHora(ultimaActualizacao)}`;
+    }
+    if (elSincronizacao && ultimaSincronizacao) {
+      elSincronizacao.textContent = `Última sincronização: ${formatarDataHora(ultimaSincronizacao)}`;
+    }
+  } catch (_) { /* silencioso */ }
+}
+
+document.addEventListener('DOMContentLoaded', actualizarUltimaSincronizacao);

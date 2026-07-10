@@ -40,4 +40,21 @@ async function getDBSiteCDPool() {
   return sitecdPool;
 }
 
-module.exports = { sql, getDBClassicoPool, getDBSiteCDPool };
+let lockPool = null;
+
+// Ligação dedicada (max:1) só para o sp_getapplock/sp_releaseapplock de exclusão
+// mútua entre processos (secção 2.6) - tem de ser sempre a MESMA ligação física,
+// por isso não pode vir do pool partilhado getDBSiteCDPool() (que roda entre várias).
+async function getLockConnection() {
+  if (!lockPool) {
+    lockPool = new sql.ConnectionPool({
+      ...makeConfig(process.env.DBSITECD_NAME),
+      pool: { max: 1, min: 1 },
+    });
+    await lockPool.connect();
+    lockPool.on('error', (err) => console.error('Erro na ligação de lock (não fatal):', err.message));
+  }
+  return lockPool;
+}
+
+module.exports = { sql, getDBClassicoPool, getDBSiteCDPool, getLockConnection };

@@ -26,13 +26,43 @@ async function logResultado(pool, tipoNome, sucesso, registos, mensagem) {
     .input('registos', registos)
     .input('mensagem', mensagem || null)
     .query(`
-      INSERT INTO dbo.ZAPP_DBSiteCD_SyncLog (Tipo, Sucesso, Registos_Processados, Mensagem)
-      VALUES (@tipo, @sucesso, @registos, @mensagem);
+      INSERT INTO dbo.ZAPP_DBSiteCD_SyncLog (Tipo, Sucesso, Registos_Processados, Mensagem, Data_Hora)
+      VALUES (@tipo, @sucesso, @registos, @mensagem, GETUTCDATE());
     `);
   log.tipo(tipoNome, sucesso, registos, mensagem);
   if (!sucesso) {
     await alertar(`Falha na sincronização de "${tipoNome}"`, mensagem || 'Sem detalhe.');
   }
+}
+
+// Busca os artigos que estavam a ser processados no momento da falha (melhor
+// esforço - se isto também falhar, ex. BD em baixo, ignora e segue sem eles),
+// para o erro no log dizer *quais* artigos, não só a mensagem genérica do SQL.
+async function obterCodigosAlterados(pool) {
+  try {
+    const r = await pool.request().query('SELECT Codigo_Artigo FROM dbo.ZAPP_DBSiteCD_SyncStaging_ChangedArtigos;');
+    return r.recordset.map((row) => row.Codigo_Artigo);
+  } catch {
+    return [];
+  }
+}
+
+// Enriquece a mensagem de erro com detalhe do SQL Server (número/linha do erro,
+// úteis para apontar a instrução exacta que falhou) e os artigos afectados,
+// para o log de sincronização deixar de mostrar só "Invalid column name 'X'."
+// sem contexto (secção 2.6.1) - truncado para caber em Mensagem NVARCHAR(500).
+function detalheErro(err, codigos = []) {
+  const partes = [err.message];
+  if (err.number) partes.push(`SQL#${err.number}`);
+  if (err.lineNumber) partes.push(`linha ${err.lineNumber}`);
+  if (codigos.length > 0) {
+    const max = 15;
+    const lista = codigos.slice(0, max).join(', ');
+    const resto = codigos.length > max ? ` (+${codigos.length - max} artigo(s))` : '';
+    partes.push(`artigos: ${lista}${resto}`);
+  }
+  const mensagem = partes.join(' | ');
+  return mensagem.length > 500 ? `${mensagem.slice(0, 497)}...` : mensagem;
 }
 
 async function syncMarcasModelos(pool) {
@@ -400,6 +430,23 @@ async function actualizarMarcador(pool) {
   `);
 }
 
+// "Última actualização" mostrada no rodapé do site (secção 2.6) - ao contrário
+// de "última sincronização" (que avança em todos os ciclos, mesmo sem nada para
+// fazer), isto só avança quando este ciclo teve mesmo dados novos/alterados a
+// processar (marcas/modelos ou artigos). Guardado como texto ISO com 'Z' (não
+// DATETIME do SQL) para não repetir o problema GETDATE()/UTC já corrigido acima.
+async function marcarUltimaActualizacao(pool) {
+  const agora = new Date().toISOString();
+  await pool.request()
+    .input('valor', agora)
+    .query(`
+      MERGE dbo.ZAPP_DBSiteCD_Config AS tgt
+      USING (SELECT 'UltimaActualizacaoDados' AS Chave) AS src ON tgt.Chave = src.Chave
+      WHEN MATCHED THEN UPDATE SET tgt.Valor = @valor
+      WHEN NOT MATCHED THEN INSERT (Chave, Valor) VALUES ('UltimaActualizacaoDados', @valor);
+    `);
+}
+
 async function runSync() {
   log.inicio();
   const pool = await getDBSiteCDPool();
@@ -413,11 +460,12 @@ async function runSync() {
     );
     const ultimaSincronizacao = ultimaRes.recordset[0]?.date || new Date('1900-01-01');
 
+    let nMarcas = 0;
     try {
-      const nMarcas = await syncMarcasModelos(pool);
+      nMarcas = await syncMarcasModelos(pool);
       await logResultado(pool, 'Marcas', true, nMarcas);
     } catch (err) {
-      await logResultado(pool, 'Marcas', false, 0, err.message);
+      await logResultado(pool, 'Marcas', false, 0, detalheErro(err));
     }
 
     const nAlterados = await popularAlteracoes(pool, ultimaSincronizacao);
@@ -427,6 +475,7 @@ async function runSync() {
       await logResultado(pool, 'ArtigosLotes', true, 0);
       await logResultado(pool, 'ArtigosSetNotInternet', true, 0);
       await logResultado(pool, 'ArtigosDeleted', true, 0);
+      if (nMarcas > 0) await marcarUltimaActualizacao(pool);
       return;
     }
 
@@ -434,7 +483,7 @@ async function runSync() {
       const nFamilias = await garantirFamilias(pool);
       await logResultado(pool, 'Familias', true, nFamilias, nFamilias > 0 ? `${nFamilias} familia(s) nova(s) por classificar (Modalidade/Genero) em Backoffice` : null);
     } catch (err) {
-      await logResultado(pool, 'Familias', false, 0, err.message);
+      await logResultado(pool, 'Familias', false, 0, detalheErro(err, await obterCodigosAlterados(pool)));
     }
 
     try {
@@ -447,7 +496,7 @@ async function runSync() {
         await logResultado(pool, 'Artigos', true, 0, `${nPrecoZero} artigo(s) despublicado(s) por ter preço a 0€ - ver alerta`);
       }
     } catch (err) {
-      await logResultado(pool, 'Artigos', false, 0, err.message);
+      await logResultado(pool, 'Artigos', false, 0, detalheErro(err, await obterCodigosAlterados(pool)));
     }
 
     let despublicados = [];
@@ -456,7 +505,7 @@ async function runSync() {
       await logResultado(pool, 'ArtigosSetNotInternet', true, despublicados.length);
       await logResultado(pool, 'ArtigosDeleted', true, 0); // distincao fina feita no UPDATE (Eliminado_Na_Origem)
     } catch (err) {
-      await logResultado(pool, 'ArtigosSetNotInternet', false, 0, err.message);
+      await logResultado(pool, 'ArtigosSetNotInternet', false, 0, detalheErro(err, await obterCodigosAlterados(pool)));
     }
 
     try {
@@ -478,9 +527,10 @@ async function runSync() {
         `${totalGravadas} gravada(s)/actualizada(s), ${totalRemovidas} removida(s) (${nImagensRemovidasDespublicacao} por despublicação, ${removidas} por remoção na origem)`
       );
     } catch (err) {
-      await logResultado(pool, 'Imagens', false, 0, err.message);
+      await logResultado(pool, 'Imagens', false, 0, detalheErro(err, await obterCodigosAlterados(pool)));
     }
 
+    await marcarUltimaActualizacao(pool);
     await actualizarMarcador(pool);
   } catch (err) {
     log.writeLine(`ERRO GERAL na sincronizacao: ${err.message}`);

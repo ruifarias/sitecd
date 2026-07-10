@@ -226,10 +226,13 @@ GO
 -- Log de sincronização (secção 2.6 - mesmas 7 categorias do Sincronizador actual)
 -- =============================================================================
 
+-- GETUTCDATE() (não GETDATE()) - esta data é lida em Node/mostrada no Backoffice
+-- como instante UTC; GETDATE() devolve hora local do servidor mas fica mal
+-- rotulada como UTC, desfasando a hora mostrada (ver nota em api/src/routes/admin.js)
 IF OBJECT_ID('dbo.ZAPP_DBSiteCD_SyncLog', 'U') IS NULL
 CREATE TABLE dbo.ZAPP_DBSiteCD_SyncLog (
     Id                      INT IDENTITY(1,1) PRIMARY KEY,
-    Data_Hora               DATETIME       NOT NULL DEFAULT GETDATE(),
+    Data_Hora               DATETIME       NOT NULL DEFAULT GETUTCDATE(),
     Tipo                     VARCHAR(30)   NOT NULL,   -- Marcas, Familias, Artigos, ArtigosLotes, ArtigosSetNotInternet, ArtigosDeleted, Imagens
     Sucesso                  BIT           NOT NULL,
     Registos_Processados     INT           NOT NULL DEFAULT 0,

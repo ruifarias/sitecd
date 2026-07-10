@@ -208,4 +208,30 @@ router.get('/paginas/:chave', async (req, res) => {
   }
 });
 
+// GET /api/ultima-sincronizacao - para o rodapé do site (secção 2.6):
+// - ultimaSincronizacao: última vez que o serviço correu com sucesso (avança
+//   em todos os ciclos, mesmo sem nada para actualizar);
+// - ultimaActualizacao: última vez que esse ciclo teve mesmo dados novos/
+//   alterados (marcas ou artigos) - só avança quando algo muda de facto.
+router.get('/ultima-sincronizacao', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const sincResultado = await pool.request().query(`
+      SELECT TOP 1 Data_Hora FROM dbo.ZAPP_DBSiteCD_SyncLog
+      WHERE Tipo = 'Artigos' AND Sucesso = 1
+      ORDER BY Id DESC;
+    `);
+    const actResultado = await pool.request().query(
+      `SELECT Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave = 'UltimaActualizacaoDados';`
+    );
+    res.json({
+      ultimaSincronizacao: sincResultado.recordset[0]?.Data_Hora || null,
+      ultimaActualizacao: actResultado.recordset[0]?.Valor || null,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter última sincronização.' });
+  }
+});
+
 module.exports = router;
