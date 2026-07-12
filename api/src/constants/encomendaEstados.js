@@ -37,7 +37,7 @@ const ESTADOS_LABELS = {
   PagamentoEfectuado: 'Pagamento Efectuado',
   EmPreparacao: 'Encomenda em Preparação',
   Enviada: 'Encomenda Enviada',
-  [ESTADO_RECEBIDA_CONFORME]: 'Recebida pelo Cliente e Estava Tudo Conforme, sem Necessidade de Devolução ou Troca',
+  [ESTADO_RECEBIDA_CONFORME]: 'Encomenda Recebida pelo Cliente',
   Anulada: 'Encomenda Anulada',
   [ESTADO_DEV_NOTA_EMITIDA]: 'Nota de Devolução Emitida',
   [ESTADO_DEV_RECEBIDA_ACEITE]: 'Devolução Recebida e Aceite',

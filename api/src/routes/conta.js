@@ -108,7 +108,7 @@ router.get('/encomendas', async (req, res) => {
       pontosGanhos: e.Pontos_Ganhos,
       metodoPagamento: e.Metodo_Pagamento,
       data: e.Data_Criacao,
-      podeDevolver: e.Estado === 'Enviada',
+      podeDevolver: e.Estado === 'Enviada' || e.Estado === ESTADO_RECEBIDA_CONFORME,
     })));
   } catch (err) {
     console.error(err);
@@ -149,7 +149,7 @@ router.get('/encomendas/:numero', async (req, res) => {
       `);
 
     const totalProdutos = linhas.recordset.reduce((s, l) => s + l.Preco_Unitario * l.Quantidade, 0);
-    const podeDevolver = e.Estado === 'Enviada';
+    const podeDevolver = e.Estado === 'Enviada' || e.Estado === ESTADO_RECEBIDA_CONFORME;
 
     let podeConfirmarRecepcao = false;
     let dataDisponivelConfirmacao = null;
@@ -454,23 +454,31 @@ router.get('/pontos', async (req, res) => {
   }
 });
 
-// GET /api/conta/vales - lista de vales do cliente
+// GET /api/conta/vales - lista de vales do cliente (todos os estados; o
+// checkout filtra do lado do cliente pelos "Activo"). estadoLabel traduz
+// "Utilizado" para "Descontado", já com o nº da encomenda onde foi gasto.
 router.get('/vales', async (req, res) => {
   try {
     const pool = await getPool();
     const resultado = await pool.request()
       .input('clienteId', sql.Int, req.cliente.id)
       .query(`
-        SELECT Codigo, Valor, Estado, Data_Criacao, Data_Utilizacao
-        FROM dbo.ZAPP_DBSiteCD_Vales
-        WHERE Cliente_Id = @clienteId
-        ORDER BY Data_Criacao DESC;
+        SELECT v.Id, v.Codigo, v.Valor, v.Estado, v.Data_Criacao, v.Data_Utilizacao, e.Numero AS Numero_Encomenda
+        FROM dbo.ZAPP_DBSiteCD_Vales v
+        LEFT JOIN dbo.ZAPP_DBSiteCD_Encomendas e ON e.Id = v.Encomenda_Utilizacao_Id
+        WHERE v.Cliente_Id = @clienteId
+        ORDER BY v.Data_Criacao DESC;
       `);
 
     res.json(resultado.recordset.map((v) => ({
+      id: v.Id,
       codigo: v.Codigo,
       valor: v.Valor,
       estado: v.Estado,
+      estadoLabel: v.Estado === 'Utilizado'
+        ? `Descontado${v.Numero_Encomenda ? ` (${v.Numero_Encomenda})` : ''}`
+        : v.Estado,
+      numeroEncomendaUtilizacao: v.Numero_Encomenda,
       data: v.Data_Criacao,
       dataUtilizacao: v.Data_Utilizacao,
     })));

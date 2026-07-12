@@ -222,7 +222,11 @@ async function verDetalheEncomenda(numero) {
 }
 
 async function confirmarRecepcaoEncomenda(numero) {
-  const confirmado = confirm(`Confirma a receção da encomenda? Confirma que estava tudo conforme e que não irá precisar devolver ou trocar nenhum dos artigos da encomenda ${numero}?`);
+  const confirmado = confirm(
+    `Confirma a receção da encomenda ${numero}?\n\n` +
+    `Esta confirmação irá disponibilizar de imediato os pontos relativos a esta encomenda.\n\n` +
+    `Confirma que está tudo correcto com a encomenda?`
+  );
   if (!confirmado) return;
 
   const btn = document.getElementById('btn-confirmar-recepcao');
@@ -390,7 +394,7 @@ async function carregarPontosEVales() {
         <thead><tr><th>Código</th><th>Valor</th><th>Estado</th><th>Criado em</th></tr></thead>
         <tbody>
           ${vales.map((v) => `
-            <tr><td>${v.codigo}</td><td>${formatarPreco(v.valor)}</td><td>${v.estado}</td><td>${new Date(v.data).toLocaleDateString('pt-PT')}</td></tr>
+            <tr><td>${v.codigo}</td><td>${formatarPreco(v.valor)}</td><td>${v.estadoLabel}</td><td>${new Date(v.data).toLocaleDateString('pt-PT')}</td></tr>
           `).join('')}
         </tbody>
       </table>
@@ -452,7 +456,16 @@ function mostrarAreaAutenticada() {
   document.getElementById('auth-conta').style.display = 'none';
   document.getElementById('conteudo-autenticado').style.display = 'block';
   inicializarMenu();
-  carregarEncomendas();
+
+  // permite chegar directamente à secção Pontos e Vales via link externo
+  // (ex: conta.html#pontos, usado no Checkout) - por omissão fica Encomendas
+  if (window.location.hash === '#pontos') {
+    document.querySelectorAll('.menu-item').forEach((i) => i.classList.toggle('activo', i.dataset.secao === 'pontos'));
+    document.querySelectorAll('.secao').forEach((s) => s.classList.toggle('activa', s.id === 'secao-pontos'));
+    carregarPontosEVales();
+  } else {
+    carregarEncomendas();
+  }
 }
 
 (async function init() {

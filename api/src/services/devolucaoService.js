@@ -9,7 +9,7 @@
 // o nome do 1º titular da conta são obrigatórios (usados para o reembolso) e
 // ficam registados em Devolucoes, ligados à Nota de Devolução criada.
 const { getPool, sql } = require('../db');
-const { ESTADO_DEV_NOTA_EMITIDA } = require('../constants/encomendaEstados');
+const { ESTADO_DEV_NOTA_EMITIDA, ESTADO_RECEBIDA_CONFORME } = require('../constants/encomendaEstados');
 const { enviarEmailEncomenda } = require('./email');
 const { validarIBAN } = require('../utils/iban');
 
@@ -52,7 +52,7 @@ async function registarDevolucao(numero, linhasDevolucao, { iban, nomeTitular, m
     }
     const encomenda = encRes.recordset[0];
 
-    if (encomenda.Estado !== 'Enviada') {
+    if (encomenda.Estado !== 'Enviada' && encomenda.Estado !== ESTADO_RECEBIDA_CONFORME) {
       await transaction.rollback();
       return { erro: 'Só é possível devolver artigos de encomendas já enviadas.', status: 400 };
     }

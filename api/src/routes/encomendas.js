@@ -14,7 +14,7 @@ const router = express.Router();
 const METODOS_ACTIVOS = ['Dinheiro'];
 
 router.post('/', requireAuth, async (req, res) => {
-  const { sessaoId, morada, metodoPagamento, valeCodigo } = req.body;
+  const { sessaoId, morada, metodoPagamento, valeCodigos } = req.body;
   const clienteId = req.cliente.id;
 
   if (!sessaoId || !morada?.morada || !morada?.localidade || !morada?.codigoPostal) {
@@ -89,28 +89,46 @@ router.post('/', requireAuth, async (req, res) => {
 
     const totalProdutos = carrinho.recordset.reduce((soma, l) => soma + (l.Preco || 0) * l.Quantidade, 0);
 
-    // vale opcional: tem de pertencer ao cliente autenticado e estar activo
-    let valeAplicado = null;
+    // vales opcionais: cada um tem de pertencer ao cliente autenticado e estar
+    // activo; regra de negócio - só pode aplicar 1 vale por cada 50€ de
+    // compras (validado aqui no servidor, nunca só no browser)
+    const valesAplicados = [];
     let desconto = 0;
-    if (valeCodigo) {
-      const valeReq = new sql.Request(transaction);
-      const valeRes = await valeReq
-        .input('codigo', sql.VarChar(20), valeCodigo)
-        .input('clienteId', sql.Int, clienteId)
-        .query(`
-          SELECT Id, Valor FROM dbo.ZAPP_DBSiteCD_Vales WITH (UPDLOCK, HOLDLOCK)
-          WHERE Codigo = @codigo AND Cliente_Id = @clienteId AND Estado = 'Activo';
-        `);
-      if (valeRes.recordset.length === 0) {
+    if (Array.isArray(valeCodigos) && valeCodigos.length > 0) {
+      const codigosUnicos = [...new Set(valeCodigos)];
+      if (codigosUnicos.length !== valeCodigos.length) {
         await transaction.rollback();
-        return res.status(400).json({ erro: 'Vale inválido, já utilizado ou não pertence a esta conta.' });
+        return res.status(400).json({ erro: 'Vale seleccionado mais do que uma vez.' });
       }
-      valeAplicado = valeRes.recordset[0];
-      desconto = valeAplicado.Valor;
+
+      const maxVales = Math.floor(totalProdutos / 50);
+      if (codigosUnicos.length > maxVales) {
+        await transaction.rollback();
+        return res.status(400).json({ erro: `Só pode aplicar ${maxVales} vale(s) para uma compra de ${totalProdutos.toFixed(2)}€ (1 vale por cada 50€).` });
+      }
+
+      for (const codigo of codigosUnicos) {
+        const valeReq = new sql.Request(transaction);
+        const valeRes = await valeReq
+          .input('codigo', sql.VarChar(20), codigo)
+          .input('clienteId', sql.Int, clienteId)
+          .query(`
+            SELECT Id, Valor FROM dbo.ZAPP_DBSiteCD_Vales WITH (UPDLOCK, HOLDLOCK)
+            WHERE Codigo = @codigo AND Cliente_Id = @clienteId AND Estado = 'Activo';
+          `);
+        if (valeRes.recordset.length === 0) {
+          await transaction.rollback();
+          return res.status(400).json({ erro: `Vale ${codigo} inválido, já utilizado ou não pertence a esta conta.` });
+        }
+        valesAplicados.push({ id: valeRes.recordset[0].Id, codigo, valor: valeRes.recordset[0].Valor });
+        desconto += valeRes.recordset[0].Valor;
+      }
     }
 
     const total = Math.max(0, Math.round((totalProdutos + portes - desconto) * 100) / 100);
-    const pontosGanhos = Math.floor(totalProdutos * pontosPorEuro);
+    // pontos calculados sobre o valor pago pelos artigos (Total a Pagar menos
+    // Portes = totalProdutos - desconto de vales), não sobre o preço cheio
+    const pontosGanhos = Math.floor(Math.max(0, totalProdutos - desconto) * pontosPorEuro);
 
     const moradaReq = new sql.Request(transaction);
     await moradaReq
@@ -128,7 +146,7 @@ router.post('/', requireAuth, async (req, res) => {
       .input('clienteId', sql.Int, clienteId)
       .input('total', sql.Money, total)
       .input('portes', sql.Money, portes)
-      .input('valeCodigo', sql.VarChar(20), valeCodigo || null)
+      .input('valeCodigo', sql.VarChar(200), valesAplicados.length > 0 ? valesAplicados.map((v) => v.codigo).join(', ') : null)
       .input('valeDesconto', sql.Money, desconto)
       .input('pontosGanhos', sql.Int, pontosGanhos)
       .input('metodo', sql.VarChar(30), metodoPagamento)
@@ -187,10 +205,10 @@ router.post('/', requireAuth, async (req, res) => {
         VALUES (@encomendaId, @metodo, 'A cobrar na entrega/levantamento');
       `);
 
-    if (valeAplicado) {
+    for (const vale of valesAplicados) {
       const marcarValeReq = new sql.Request(transaction);
       await marcarValeReq
-        .input('valeId', sql.Int, valeAplicado.Id)
+        .input('valeId', sql.Int, vale.id)
         .input('encomendaId', sql.Int, encomendaId)
         .query(`
           UPDATE dbo.ZAPP_DBSiteCD_Vales
@@ -227,6 +245,7 @@ router.post('/', requireAuth, async (req, res) => {
       total,
       portes,
       valeDesconto: desconto,
+      valesAplicados: valesAplicados.map((v) => v.codigo),
       pontosGanhos,
       metodoPagamento,
       estado: 'AguardarPagamento',

@@ -58,7 +58,7 @@ header.topo {
 }
 
 .topo-linha3 {
-  display: flex;
+  display: none; /* só aparece com família activa - ver inicializarFamiliaCascata em cabecalho.js */
   gap: 8px;
   padding: 6px 24px;
   background: #1a1a1a;
@@ -134,6 +134,64 @@ header.topo {
 
 .nav-dropdown-painel.aberto {
   display: block;
+}
+
+/* ---------- TESTE: menu de Família em cascata por hover (ver cabecalho.js) ---------- */
+/* protótipo isolado, não usado no cabeçalho definitivo - fácil de remover */
+.familia-flyout-nivel {
+  list-style: none;
+  width: auto;
+  min-width: 220px;
+  max-width: min(90vw, 340px);
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 6px;
+}
+
+.familia-flyout-nivel--1 {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  display: none;
+  z-index: 200;
+}
+
+.familia-flyout-nivel--1.aberto {
+  display: block;
+}
+
+.familia-flyout-item {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 13px;
+  color: #ccc;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.familia-flyout-item:hover,
+.familia-flyout-item.aberto {
+  background: #2a2a2a;
+  color: var(--branco);
+}
+
+.familia-flyout-seta {
+  font-size: 12px;
+  color: #888;
+  flex-shrink: 0;
+}
+
+/* níveis 2+ abrem para a direita do item-pai que está em hover */
+.familia-flyout-item > .familia-flyout-nivel {
+  position: absolute;
+  top: -7px;
+  left: 100%;
+  margin-left: 2px;
 }
 
 /* Pills de Género (topo-linha2) */
@@ -601,7 +659,7 @@ header.topo {
 
 .opcoes-variante {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 8px 10px;
   margin-bottom: 20px;
 }
@@ -639,10 +697,14 @@ header.topo {
 .secao-familia {
   grid-column: 1 / -1;
   min-width: 0;
-  margin-top: 48px;
-  padding: 32px 0;
+  margin-top: 20px;
+  padding: 20px 0;
   border-top: 1px solid var(--cinza-medio);
   border-bottom: 1px solid var(--cinza-medio);
+}
+
+.rotulo-alternativas {
+  color: var(--vermelho);
 }
 
 .titulo-familia-link {
@@ -836,6 +898,14 @@ header.topo {
   white-space: nowrap;
 }
 
+.linha-quantidade-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
 .qtd-selector { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
 .qtd-selector button {
   width: 32px; height: 32px; border: 1px solid var(--cinza-medio); background: var(--branco); cursor: pointer; font-size: 16px;
@@ -843,6 +913,26 @@ header.topo {
 .qtd-selector button:disabled { opacity: 0.35; cursor: not-allowed; }
 .qtd-selector span#qtd-valor { min-width: 24px; text-align: center; font-weight: 600; }
 .qtd-limite-aviso { font-size: 12px; color: var(--vermelho); }
+
+/* Botões de informação (Especificações, e futuros como Instruções de
+   Lavagem) - alinhados à direita da linha da quantidade */
+.botoes-info-artigo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.botao-info-artigo {
+  background: var(--branco);
+  border: 1px solid var(--cinza-medio);
+  color: var(--preto);
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.botao-info-artigo:hover { background: var(--cinza-claro); }
+.botao-info-artigo.activo { background: var(--preto); color: var(--branco); border-color: var(--preto); }
 
 .botao-principal {
   width: 100%;
@@ -903,6 +993,47 @@ header.topo {
 .linha-carrinho .variante { font-size: 12px; color: var(--cinza-texto); }
 .linha-carrinho .remover { font-size: 12px; text-decoration: underline; cursor: pointer; color: var(--cinza-texto); margin-top: 4px; }
 
+.linha-resumo-checkout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  padding: 6px 0;
+}
+.miniatura-resumo-checkout {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  background: var(--cinza-claro);
+  border-radius: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.descricao-resumo-checkout { flex: 1; min-width: 0; }
+
+.linha-portes-envio { display: inline-flex; align-items: center; gap: 10px; }
+.linha-portes-envio svg { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+.lightbox-imagem {
+  display: none; /* [hidden] tem menos prioridade que um display:flex definido aqui - por isso a abertura fica numa classe à parte */
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+  z-index: 1000;
+  padding: 24px;
+}
+.lightbox-imagem.aberta { display: flex; }
+.lightbox-imagem img {
+  max-width: min(90vw, 700px);
+  max-height: 90vh;
+  object-fit: contain;
+  background: var(--branco);
+  border-radius: 4px;
+}
+
 .resumo-total {
   display: flex;
   justify-content: space-between;
@@ -914,6 +1045,7 @@ header.topo {
 }
 
 form.checkout { display: flex; flex-direction: column; gap: 12px; }
+.resumo-vale-pagamento:not(:empty) { border: 1px solid var(--cinza-medio); padding: 16px; }
 form.checkout fieldset { border: 1px solid var(--cinza-medio); padding: 16px; }
 form.checkout legend { font-weight: 700; text-transform: uppercase; font-size: 13px; padding: 0 8px; }
 form.checkout label { display: block; font-size: 12px; margin-bottom: 4px; color: var(--cinza-texto); }
@@ -934,6 +1066,18 @@ form.checkout input, form.checkout select {
   font-size: 13px;
 }
 .metodo-pagamento.desactivado { opacity: 0.5; }
+
+.opcao-vale-checkout {
+  border: 1px solid var(--cinza-medio);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.opcao-vale-checkout:has(input:disabled) { opacity: 0.5; cursor: not-allowed; }
 
 .mensagem-erro { background: #ffe9e9; color: var(--vermelho); padding: 12px; font-size: 13px; margin-bottom: 12px; }
 .mensagem-sucesso { background: #eafbea; color: #1a7d1a; padding: 24px; font-size: 15px; text-align: center; }

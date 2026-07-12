@@ -288,6 +288,7 @@ function configurarFamiliaCascata(estado, aoMudar) {
       document.getElementById('familia-grau2').style.display = 'none';
       document.getElementById('familia-grau3').style.display = 'none';
       document.getElementById('familia-grau4').style.display = 'none';
+      document.getElementById('familias-cascata-header').style.display = 'none';
     }
 
     aoMudar();
@@ -334,7 +335,13 @@ async function inicializarFamiliaCascata(estado, aoMudar) {
   configurarFamiliaCascata(estado, aoMudar);
   await carregarFamiliasGrau1();
 
+  // a barra de família (topo-linha3) só aparece quando já há uma família
+  // seleccionada (vinda do menu "Família" ou do link "Alternativas" na ficha
+  // de artigo) - antes disso fica escondida, ver limparTodosFiltros abaixo
+  const barraFamilia = document.getElementById('familias-cascata-header');
+
   if (estado.familiaGrau1) {
+    barraFamilia.style.display = 'flex';
     document.getElementById('familia-grau1').value = estado.familiaGrau1;
     estado.familia = estado.familiaGrau1;
     await carregarFamiliasGrau2(estado.familiaGrau1);
@@ -388,6 +395,7 @@ function limparTodosFiltros(estado, aoMudar) {
   document.getElementById('familia-grau2').disabled = true;
   document.getElementById('familia-grau3').disabled = true;
   document.getElementById('familia-grau4').disabled = true;
+  document.getElementById('familias-cascata-header').style.display = 'none';
   aoMudar();
   renderSeparadores(estado, aoMudar);
 }

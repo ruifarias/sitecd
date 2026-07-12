@@ -78,22 +78,27 @@ async function renderArtigo(a) {
         </div>
       </div>
 
-      <div class="qtd-selector">
-        <button id="qtd-menos">−</button>
-        <span id="qtd-valor">1</span>
-        <button id="qtd-mais">+</button>
-        <span id="qtd-limite-aviso" class="qtd-limite-aviso"></span>
+      <div class="linha-quantidade-acoes">
+        <div class="qtd-selector">
+          <button id="qtd-menos">−</button>
+          <span id="qtd-valor">1</span>
+          <button id="qtd-mais">+</button>
+          <span id="qtd-limite-aviso" class="qtd-limite-aviso"></span>
+        </div>
+        <div class="botoes-info-artigo">
+          ${a.descricaoLonga ? '<button type="button" class="botao-info-artigo" data-painel="especificacoes">Especificações</button>' : ''}
+        </div>
       </div>
 
       <div id="mensagem-carrinho"></div>
       <button class="botao-principal" id="btn-adicionar" disabled>Selecciona uma Cor/Tamanho</button>
 
-      ${a.descricaoLonga ? `<div class="descricao-longa">${a.descricaoLonga}</div>` : ''}
+      ${a.descricaoLonga ? `<div class="descricao-longa" id="painel-especificacoes" hidden>${a.descricaoLonga}</div>` : ''}
     </div>
     ${familiaInfo && familiaInfo.grau4 ? `
       <div class="secao-familia">
         <h4>
-          Ver todos: <a href="index.html?familiaGrau1=${encodeURIComponent(familiaInfo.codigoGrau1)}&familiaGrau2=${encodeURIComponent(familiaInfo.codigoGrau2)}&familiaGrau3=${encodeURIComponent(familiaInfo.codigoGrau3)}&familiaGrau4=${encodeURIComponent(familiaInfo.codigoGrau4)}" class="titulo-familia-link">
+          <span class="rotulo-alternativas">ALTERNATIVAS:</span> <a href="index.html?familiaGrau1=${encodeURIComponent(familiaInfo.codigoGrau1)}&familiaGrau2=${encodeURIComponent(familiaInfo.codigoGrau2)}&familiaGrau3=${encodeURIComponent(familiaInfo.codigoGrau3)}&familiaGrau4=${encodeURIComponent(familiaInfo.codigoGrau4)}" class="titulo-familia-link">
             ${[familiaInfo.grau1, familiaInfo.grau2, familiaInfo.grau3, familiaInfo.grau4].filter(g => g).join(' > ')}
           </a>
         </h4>
@@ -142,6 +147,23 @@ async function renderArtigo(a) {
       carouselContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     });
   }
+
+  // Botões de informação (Especificações, e outros que venham a ser
+  // adicionados) - cada botão tem data-painel="x" e mostra/esconde
+  // #painel-x, fechando os restantes para não abrir vários ao mesmo tempo.
+  document.querySelectorAll('.botao-info-artigo').forEach((botao) => {
+    botao.addEventListener('click', () => {
+      const painel = document.getElementById(`painel-${botao.dataset.painel}`);
+      if (!painel) return;
+      const aFechar = !painel.hidden;
+      document.querySelectorAll('.botao-info-artigo').forEach((b) => b.classList.remove('activo'));
+      document.querySelectorAll('.info-artigo [id^="painel-"]').forEach((p) => { p.hidden = true; });
+      if (!aFechar) {
+        painel.hidden = false;
+        botao.classList.add('activo');
+      }
+    });
+  });
 
   // Botão para mostrar/ocultar variantes sem stock
   const botaoMostrarSemStock = document.getElementById('mostrar-sem-stock');
