@@ -604,6 +604,25 @@ async function consultarExtratoCliente() {
           </table>
         </div>
       `}
+
+      <h4 style="margin-top:20px">Vales Emitidos</h4>
+      ${dados.vales.length === 0 ? '<p class="descricao">Sem vales emitidos no período seleccionado.</p>' : `
+        <div class="tabela-scroll-painel" style="max-height:300px">
+          <table class="sync-table">
+            <thead><tr><th>Data</th><th>Código</th><th>Valor</th><th>Estado</th></tr></thead>
+            <tbody>
+              ${dados.vales.map((v) => `
+                <tr>
+                  <td>${new Date(v.data).toLocaleDateString('pt-PT')}</td>
+                  <td>${v.codigo}</td>
+                  <td>${formatarPreco(v.valor)}</td>
+                  <td><span class="badge-estado ${v.estado}">${v.estadoLabel}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `}
     `;
   } catch (err) {
     msg.textContent = '✗ ' + err.message;
@@ -838,6 +857,63 @@ async function guardarNovidades() {
   }
 }
 
+// ========== MÉTODOS DE PAGAMENTO ==========
+async function carregarMetodosPagamento() {
+  const loader = document.getElementById('loader-metodos-pagamento');
+  const tbody = document.getElementById('metodos-pagamento-tbody');
+
+  loader.style.display = 'block';
+  tbody.innerHTML = '';
+
+  try {
+    const metodos = await apiGet('/admin/metodos-pagamento');
+
+    if (metodos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sem métodos de pagamento</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = metodos.map((m) => `
+      <tr>
+        <td><input type="number" class="metodo-ordem" data-codigo="${m.codigo}" value="${m.ordem}" min="1" step="1"></td>
+        <td><input type="text" class="metodo-designacao" data-codigo="${m.codigo}" value="${m.designacao}"></td>
+        <td><input type="text" class="metodo-detalhe" data-codigo="${m.codigo}" value="${m.detalhe || ''}"></td>
+        <td><input type="checkbox" class="metodo-activo" data-codigo="${m.codigo}" ${m.activo ? 'checked' : ''}></td>
+        <td><button class="btn-guardar-metodo" data-codigo="${m.codigo}">Guardar</button></td>
+      </tr>
+    `).join('');
+
+    document.querySelectorAll('.btn-guardar-metodo').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const codigo = btn.dataset.codigo;
+        const designacao = document.querySelector(`.metodo-designacao[data-codigo="${codigo}"]`).value.trim();
+        const detalhe = document.querySelector(`.metodo-detalhe[data-codigo="${codigo}"]`).value.trim();
+        const activo = document.querySelector(`.metodo-activo[data-codigo="${codigo}"]`).checked;
+        const ordem = parseInt(document.querySelector(`.metodo-ordem[data-codigo="${codigo}"]`).value, 10) || 0;
+
+        if (!designacao) {
+          alert('A designação é obrigatória.');
+          return;
+        }
+
+        btn.disabled = true;
+        try {
+          await apiPut(`/admin/metodos-pagamento/${codigo}`, { designacao, detalhe, activo, ordem });
+          btn.textContent = '✓';
+          setTimeout(() => { btn.textContent = 'Guardar'; btn.disabled = false; }, 2000);
+        } catch (err) {
+          alert('Erro: ' + err.message);
+          btn.disabled = false;
+        }
+      });
+    });
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Erro: ${err.message}</td></tr>`;
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
 // ========== VISIBILIDADE DE FAMÍLIAS ==========
 async function carregarFamilias() {
   const loader = document.getElementById('loader-familias');
@@ -1062,6 +1138,9 @@ function inicializarMenu() {
           break;
         case 'portes-envio':
           carregarConfigPortes();
+          break;
+        case 'metodos-pagamento':
+          carregarMetodosPagamento();
           break;
         case 'pontos-vales':
           carregarConfigPontos();

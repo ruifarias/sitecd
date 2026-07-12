@@ -79,7 +79,7 @@ body {
 .menu-item {
   background: transparent;
   border: none;
-  color: var(--cinza-texto);
+  color: var(--branco);
   padding: 14px 18px;
   text-align: left;
   cursor: pointer;
@@ -106,7 +106,7 @@ body {
   background: transparent;
   border: none;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
-  color: var(--cinza-texto);
+  color: var(--branco);
   padding: 16px 24px;
   text-align: left;
   cursor: pointer;
@@ -441,6 +441,11 @@ body {
 .badge-estado.DevolucaoRecebidaNaoAceite { background: #f8d7da; color: #721c24; }
 .badge-estado.DevolucaoPaga { background: #d6d8db; color: #383d41; }
 
+/* Estados de Vales (extracto de cliente) */
+.badge-estado.Activo { background: #d4edda; color: #155724; }
+.badge-estado.Utilizado { background: #cce5ff; color: #004085; }
+.badge-estado.Cancelado { background: #f8d7da; color: #721c24; }
+
 .acoes-encomenda {
   display: flex;
   gap: 6px;
@@ -451,6 +456,19 @@ body {
   padding: 7px 14px;
   white-space: nowrap;
 }
+
+/* Métodos de Pagamento */
+.metodos-pagamento-table .col-ordem { width: 70px; }
+.metodos-pagamento-table .col-detalhe { min-width: 340px; }
+.metodos-pagamento-table .metodo-ordem { width: 50px; text-align: center; }
+.metodos-pagamento-table .metodo-designacao,
+.metodos-pagamento-table .metodo-detalhe {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--cinza-medio);
+  font-size: 13px;
+}
+.metodos-pagamento-table .metodo-detalhe { min-width: 320px; }
 
 /* Tabelas de Famílias */
 .familias-table,

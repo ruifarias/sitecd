@@ -1,7 +1,5 @@
-// TESTE - protótipo isolado para avaliação: menu "Família" que abre em cascata
-// por hover (grau1 -> grau2 -> grau3 -> grau4), em vez dos 4 comboboxes actuais
-// (topo-linha3). Não substitui nada do cabeçalho existente - só usado em
-// index.html, ficheiro à parte para ser fácil de remover depois da avaliação.
+// Menu "Família" em cascata por hover (grau1 -> grau2 -> grau3 -> grau4),
+// partilhado por todas as páginas que incluem o cabeçalho (ver cabecalho.js).
 // Reutiliza os mesmos endpoints /familias/grauN já usados em cabecalho.js.
 
 const NOME_PARAM_GRAU = { 1: 'familiaGrau1', 2: 'familiaGrau2', 3: 'familiaGrau3', 4: 'familiaGrau4' };
@@ -21,6 +19,8 @@ function irParaFamilia(caminho) {
     else params.delete(NOME_PARAM_GRAU[g]);
   }
   params.set('familia', caminho[caminho.length - 1]);
+  // ao filtrar por família via este menu, ordenar por família por defeito
+  params.set('ordenar', 'familia');
   const queryActual = window.location.search.replace(/^\?/, '');
   const queryNova = params.toString();
   // se a query calculada for igual à actual, atribuir location.href não recarrega
@@ -106,9 +106,9 @@ function renderNivelFamilia(itens, grau, caminhoPai) {
   return ul;
 }
 
-async function inicializarFamiliaFlyoutTeste() {
-  const dropdown = document.getElementById('dropdown-familia-teste');
-  const painel = document.getElementById('painel-familia-teste');
+async function inicializarFamiliaFlyout() {
+  const dropdown = document.getElementById('dropdown-familia');
+  const painel = document.getElementById('painel-familia');
   if (!dropdown || !painel) return;
 
   try {
@@ -137,8 +137,8 @@ async function inicializarFamiliaFlyoutTeste() {
       });
     }
   } catch (err) {
-    console.error('Erro ao inicializar menu de família (teste):', err);
+    console.error('Erro ao inicializar menu de família:', err);
   }
 }
 
-document.addEventListener('DOMContentLoaded', inicializarFamiliaFlyoutTeste);
+document.addEventListener('DOMContentLoaded', inicializarFamiliaFlyout);

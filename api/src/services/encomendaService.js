@@ -16,11 +16,12 @@ async function obterEncomendaCompleta(numero) {
     .input('numero', sql.VarChar(30), numero)
     .query(`
       SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
-             e.Metodo_Pagamento, e.Data_Criacao, e.Data_Actualizacao, e.Motivo_Anulacao,
+             e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, mp.Detalhe AS Metodo_Pagamento_Detalhe, e.Data_Criacao, e.Data_Actualizacao, e.Motivo_Anulacao,
              e.Morada_Entrega, e.Localidade_Entrega, e.Codigo_Postal_Entrega,
              c.Nome AS Cliente_Nome, c.Email AS Cliente_Email, c.Telefone AS Cliente_Telefone, c.NIF AS Cliente_Nif, c.Codigo_Cliente
       FROM dbo.ZAPP_DBSiteCD_Encomendas e
       LEFT JOIN dbo.ZAPP_DBSiteCD_Clientes c ON c.Id = e.Cliente_Id
+      LEFT JOIN dbo.ZAPP_DBSiteCD_MetodosPagamento mp ON mp.Codigo = e.Metodo_Pagamento
       WHERE e.Numero = @numero;
     `);
 
@@ -62,7 +63,8 @@ async function obterEncomendaCompleta(numero) {
     valeCodigo: e.Vale_Codigo,
     valeDesconto: e.Vale_Desconto,
     pontosGanhos: e.Pontos_Ganhos,
-    metodoPagamento: e.Metodo_Pagamento,
+    metodoPagamento: e.Metodo_Pagamento_Designacao || e.Metodo_Pagamento,
+    metodoPagamentoDetalhe: e.Metodo_Pagamento_Detalhe,
     data: e.Data_Criacao,
     dataActualizacao: e.Data_Actualizacao,
     motivoAnulacao: e.Motivo_Anulacao,

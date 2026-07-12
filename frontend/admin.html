@@ -38,6 +38,9 @@
       <button class="menu-item" data-secao="portes-envio">
         Portes de Envio
       </button>
+      <button class="menu-item" data-secao="metodos-pagamento">
+        Métodos de Pagamento
+      </button>
       <button class="menu-item" data-secao="pontos-vales">
         Pontos e Vales
       </button>
@@ -62,7 +65,7 @@
     <!-- Encomendas -->
     <section id="secao-encomendas" class="secao activa">
       <h1>Encomendas</h1>
-      <p class="descricao">Seguimento do estado das encomendas: Confirmação e a Aguardar Pagamento → Pagamento Efectuado → Encomenda em Preparação → Encomenda Enviada → Recebida pelo Cliente. Os pontos de fidelização só são atribuídos ao cliente quando este confirma a receção da encomenda na sua área de cliente.</p>
+      <p class="descricao">Seguimento do estado das encomendas: A Aguardar Pagamento → Pagamento Efectuado → Encomenda em Preparação → Encomenda Enviada → Recebida pelo Cliente. Os pontos de fidelização só são atribuídos ao cliente quando este confirma a receção da encomenda na sua área de cliente.</p>
 
       <div class="loader" id="loader-encomendas" style="display:none;">A carregar encomendas...</div>
 
@@ -70,7 +73,7 @@
         <label for="filtro-estado-encomendas">Filtrar por Estado:</label>
         <select id="filtro-estado-encomendas">
           <option value="">Todos os Estados</option>
-          <option value="AguardarPagamento">Confirmação e a Aguardar Pagamento</option>
+          <option value="AguardarPagamento">A Aguardar Pagamento</option>
           <option value="PagamentoEfectuado">Pagamento Efectuado</option>
           <option value="EmPreparacao">Encomenda em Preparação</option>
           <option value="Enviada">Encomenda Enviada</option>
@@ -206,6 +209,29 @@
       <div class="acoes">
         <button id="btn-guardar-portes" class="botao-principal">Guardar</button>
         <span id="msg-portes" class="mensagem"></span>
+      </div>
+    </section>
+
+    <!-- Métodos de Pagamento -->
+    <section id="secao-metodos-pagamento" class="secao">
+      <h1>Métodos de Pagamento</h1>
+      <p class="descricao">Active/desactive os métodos disponíveis no checkout e edite a designação e o detalhe (ex: IBAN, número de telemóvel) apresentados ao cliente. A "Ordem" controla a posição em que aparecem no checkout (menor aparece primeiro).</p>
+
+      <div class="loader" id="loader-metodos-pagamento" style="display:none;">A carregar métodos de pagamento...</div>
+
+      <div class="tabela-scroll-painel">
+        <table id="metodos-pagamento-table" class="sync-table metodos-pagamento-table">
+          <thead>
+            <tr>
+              <th class="col-ordem">Ordem</th>
+              <th>Designação</th>
+              <th class="col-detalhe">Detalhe (ex: IBAN, nº telemóvel)</th>
+              <th>Activo</th>
+              <th>Acção</th>
+            </tr>
+          </thead>
+          <tbody id="metodos-pagamento-tbody"></tbody>
+        </table>
       </div>
     </section>
 

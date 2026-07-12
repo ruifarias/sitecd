@@ -190,181 +190,6 @@ function configurarDropdown(dropdownId) {
   });
 }
 
-// Gerir comboboxes em cascata de famílias
-async function carregarFamiliasGrau1() {
-  try {
-    const familias = await apiGet('/familias/grau1');
-    const select = document.getElementById('familia-grau1');
-    select.innerHTML = '<option value="">Seleccionar Familia...</option>';
-    familias.forEach((f) => {
-      const option = document.createElement('option');
-      option.value = f.codigo;
-      option.textContent = `${f.codigo} - ${f.nome}`;
-      select.appendChild(option);
-    });
-  } catch (err) {
-    console.error('Erro ao carregar famílias Grau 1:', err);
-  }
-}
-
-async function carregarFamiliasGrau2(grau1) {
-  try {
-    const familias = await apiGet(`/familias/grau2?grau1=${grau1}`);
-    const select = document.getElementById('familia-grau2');
-    select.innerHTML = '<option value="">Seleccionar Sub-Familia1...</option>';
-    familias.forEach((f) => {
-      const option = document.createElement('option');
-      option.value = f.codigo;
-      option.textContent = `${f.codigo} - ${f.nome}`;
-      select.appendChild(option);
-    });
-    select.disabled = false;
-    select.style.display = 'block';
-
-    // Limpar Grau 3 e 4
-    document.getElementById('familia-grau3').innerHTML = '<option value="">Seleccionar Sub-Familia2...</option>';
-    document.getElementById('familia-grau3').disabled = true;
-    document.getElementById('familia-grau3').style.display = 'none';
-    document.getElementById('familia-grau4').innerHTML = '<option value="">Seleccionar Sub-Familia3...</option>';
-    document.getElementById('familia-grau4').disabled = true;
-    document.getElementById('familia-grau4').style.display = 'none';
-  } catch (err) {
-    console.error('Erro ao carregar famílias Grau 2:', err);
-  }
-}
-
-async function carregarFamiliasGrau3(grau2) {
-  try {
-    const familias = await apiGet(`/familias/grau3?grau2=${grau2}`);
-    const select = document.getElementById('familia-grau3');
-    select.innerHTML = '<option value="">Seleccionar Sub-Familia2...</option>';
-    familias.forEach((f) => {
-      const option = document.createElement('option');
-      option.value = f.codigo;
-      option.textContent = `${f.codigo} - ${f.nome}`;
-      select.appendChild(option);
-    });
-    select.disabled = false;
-    select.style.display = 'block';
-
-    // Limpar Grau 4
-    document.getElementById('familia-grau4').innerHTML = '<option value="">Seleccionar Sub-Familia3...</option>';
-    document.getElementById('familia-grau4').disabled = true;
-    document.getElementById('familia-grau4').style.display = 'none';
-  } catch (err) {
-    console.error('Erro ao carregar famílias Grau 3:', err);
-  }
-}
-
-async function carregarFamiliasGrau4(grau3) {
-  try {
-    const familias = await apiGet(`/familias/grau4?grau3=${grau3}`);
-    const select = document.getElementById('familia-grau4');
-    select.innerHTML = '<option value="">Seleccionar Sub-Familia3...</option>';
-    familias.forEach((f) => {
-      const option = document.createElement('option');
-      option.value = f.codigo;
-      option.textContent = `${f.codigo} - ${f.nome}`;
-      select.appendChild(option);
-    });
-    select.disabled = false;
-    select.style.display = 'block';
-  } catch (err) {
-    console.error('Erro ao carregar famílias Grau 4:', err);
-  }
-}
-
-function configurarFamiliaCascata(estado, aoMudar) {
-  document.getElementById('familia-grau1').addEventListener('change', (e) => {
-    estado.familiaGrau1 = e.target.value;
-    estado.familiaGrau2 = null;
-    estado.familiaGrau3 = null;
-    estado.familiaGrau4 = null;
-    estado.familia = e.target.value || null;
-
-    if (estado.familiaGrau1) {
-      carregarFamiliasGrau2(estado.familiaGrau1);
-    } else {
-      document.getElementById('familia-grau2').style.display = 'none';
-      document.getElementById('familia-grau3').style.display = 'none';
-      document.getElementById('familia-grau4').style.display = 'none';
-      document.getElementById('familias-cascata-header').style.display = 'none';
-    }
-
-    aoMudar();
-  });
-
-  document.getElementById('familia-grau2').addEventListener('change', (e) => {
-    estado.familiaGrau2 = e.target.value;
-    estado.familiaGrau3 = null;
-    estado.familiaGrau4 = null;
-    estado.familia = e.target.value || null;
-
-    if (estado.familiaGrau2) {
-      carregarFamiliasGrau3(estado.familiaGrau2);
-    } else {
-      document.getElementById('familia-grau3').style.display = 'none';
-      document.getElementById('familia-grau4').style.display = 'none';
-    }
-
-    aoMudar();
-  });
-
-  document.getElementById('familia-grau3').addEventListener('change', (e) => {
-    estado.familiaGrau3 = e.target.value;
-    estado.familiaGrau4 = null;
-    estado.familia = e.target.value || null;
-
-    if (estado.familiaGrau3) {
-      carregarFamiliasGrau4(estado.familiaGrau3);
-    } else {
-      document.getElementById('familia-grau4').style.display = 'none';
-    }
-
-    aoMudar();
-  });
-
-  document.getElementById('familia-grau4').addEventListener('change', (e) => {
-    estado.familiaGrau4 = e.target.value;
-    estado.familia = e.target.value || null;
-    aoMudar();
-  });
-}
-
-async function inicializarFamiliaCascata(estado, aoMudar) {
-  configurarFamiliaCascata(estado, aoMudar);
-  await carregarFamiliasGrau1();
-
-  // a barra de família (topo-linha3) só aparece quando já há uma família
-  // seleccionada (vinda do menu "Família" ou do link "Alternativas" na ficha
-  // de artigo) - antes disso fica escondida, ver limparTodosFiltros abaixo
-  const barraFamilia = document.getElementById('familias-cascata-header');
-
-  if (estado.familiaGrau1) {
-    barraFamilia.style.display = 'flex';
-    document.getElementById('familia-grau1').value = estado.familiaGrau1;
-    estado.familia = estado.familiaGrau1;
-    await carregarFamiliasGrau2(estado.familiaGrau1);
-
-    if (estado.familiaGrau2) {
-      document.getElementById('familia-grau2').value = estado.familiaGrau2;
-      estado.familia = estado.familiaGrau2;
-      await carregarFamiliasGrau3(estado.familiaGrau2);
-
-      if (estado.familiaGrau3) {
-        document.getElementById('familia-grau3').value = estado.familiaGrau3;
-        estado.familia = estado.familiaGrau3;
-        await carregarFamiliasGrau4(estado.familiaGrau3);
-
-        if (estado.familiaGrau4) {
-          document.getElementById('familia-grau4').value = estado.familiaGrau4;
-          estado.familia = estado.familiaGrau4;
-        }
-      }
-    }
-  }
-}
-
 function limparTodosFiltros(estado, aoMudar) {
   estado.separador = 'todos';
   estado.marca = null;
@@ -385,24 +210,15 @@ function limparTodosFiltros(estado, aoMudar) {
   document.getElementById('pesquisa-tamanho').value = '';
   document.querySelectorAll('.filtro-lista input:checked').forEach((i) => { i.checked = false; });
   document.querySelectorAll('#genero-pills button.activo').forEach((b) => { b.classList.remove('activo'); });
-  document.getElementById('familia-grau1').value = '';
-  document.getElementById('familia-grau2').value = '';
-  document.getElementById('familia-grau3').value = '';
-  document.getElementById('familia-grau4').value = '';
-  document.getElementById('familia-grau2').style.display = 'none';
-  document.getElementById('familia-grau3').style.display = 'none';
-  document.getElementById('familia-grau4').style.display = 'none';
-  document.getElementById('familia-grau2').disabled = true;
-  document.getElementById('familia-grau3').disabled = true;
-  document.getElementById('familia-grau4').disabled = true;
-  document.getElementById('familias-cascata-header').style.display = 'none';
+  document.querySelector('#dropdown-familia .nav-dropdown-trigger')?.classList.remove('activo');
   aoMudar();
   renderSeparadores(estado, aoMudar);
 }
 
-// Ponto de entrada único: renderiza separadores, dropdowns de marca/modalidade,
-// pills de género e a cascata de família - igual em qualquer página que inclua
-// este ficheiro antes do seu próprio script de inicialização.
+// Ponto de entrada único: renderiza separadores, dropdowns de marca/modalidade
+// e pills de género - igual em qualquer página que inclua este ficheiro antes
+// do seu próprio script de inicialização. O menu "Família" em cascata
+// inicializa-se sozinho (ver familia-flyout.js).
 async function inicializarCabecalho(estado, aoMudar) {
   renderSeparadores(estado, aoMudar);
   configurarDropdown('dropdown-marca');
@@ -412,7 +228,6 @@ async function inicializarCabecalho(estado, aoMudar) {
     renderFiltroMarca(estado, aoMudar),
     renderFiltroModalidade(estado, aoMudar),
   ]);
-  await inicializarFamiliaCascata(estado, aoMudar);
   document.getElementById('limpar-filtros-header').addEventListener('click', () => limparTodosFiltros(estado, aoMudar));
 }
 

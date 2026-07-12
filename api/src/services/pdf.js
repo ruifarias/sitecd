@@ -140,19 +140,30 @@ async function gerarPdfEncomenda(numero) {
   doc.font('Helvetica').fontSize(9).text('Sub-total dos Artigos', xLabelTotais, y, { width: larguraLabelTotais, align: 'left' });
   doc.text(formatarPreco(totalProdutos), xValorTotais, y, { width: larguraValorTotais, align: 'right' });
   let yDireita = y + 14;
-  if (encomenda.valeDesconto > 0) {
-    doc.text(`Desconto (vale ${encomenda.valeCodigo})`, xLabelTotais, yDireita, { width: larguraLabelTotais });
-    doc.text(`-${formatarPreco(encomenda.valeDesconto)}`, xValorTotais, yDireita, { width: larguraValorTotais, align: 'right' });
-    yDireita += 14;
-  }
+
   doc.text('Portes', xLabelTotais, yDireita, { width: larguraLabelTotais });
   doc.text(formatarPreco(encomenda.portes), xValorTotais, yDireita, { width: larguraValorTotais, align: 'right' });
   yDireita += 18;
+
   doc.fontSize(11).font('Helvetica-Bold').text('Total', xLabelTotais, yDireita, { width: larguraLabelTotais });
-  doc.text(formatarPreco(encomenda.total), xValorTotais, yDireita, { width: larguraValorTotais, align: 'right' });
-  doc.fontSize(9).font('Helvetica').fillColor('#777').text('IVA incluído nos preços', xLabelTotais, yDireita + 16);
+  doc.text(formatarPreco(totalProdutos + encomenda.portes), xValorTotais, yDireita, { width: larguraValorTotais, align: 'right' });
+  doc.fontSize(9).font('Helvetica');
+  yDireita += 18;
+
+  if (encomenda.valeDesconto > 0) {
+    doc.text(`Desconto (vale ${encomenda.valeCodigo})`, xLabelTotais, yDireita, { width: larguraLabelTotais });
+    doc.text(`-${formatarPreco(encomenda.valeDesconto)}`, xValorTotais, yDireita, { width: larguraValorTotais, align: 'right' });
+    yDireita += 18;
+
+    doc.fontSize(11).font('Helvetica-Bold').text('Total a Pagar', xLabelTotais, yDireita, { width: larguraLabelTotais });
+    doc.text(formatarPreco(encomenda.total), xValorTotais, yDireita, { width: larguraValorTotais, align: 'right' });
+    doc.fontSize(9).font('Helvetica');
+    yDireita += 18;
+  }
+
+  doc.fillColor('#777').text('IVA incluído nos preços', xLabelTotais, yDireita + 2);
   if (ehEstadoDevolucao(encomenda.estado)) {
-    doc.text('Os portes de envio não são devolvidos nem estão sujeitos a crédito.', xLabelTotais, yDireita + 30, { width: larguraUtil - (xLabelTotais - 40) });
+    doc.text('Os portes de envio não são devolvidos nem estão sujeitos a crédito.', xLabelTotais, yDireita + 16, { width: larguraUtil - (xLabelTotais - 40) });
   }
   doc.fillColor('#000');
 
@@ -182,8 +193,14 @@ async function gerarPdfEncomenda(numero) {
 
   doc.font('Helvetica-Bold').text('Método de Pagamento', 40, y);
   doc.font('Helvetica').text(encomenda.metodoPagamento, 40, y + 14);
+  if (encomenda.metodoPagamentoDetalhe) {
+    doc.fontSize(8).fillColor('#777').text(encomenda.metodoPagamentoDetalhe, 40, y + 27, { width: larguraUtil });
+    doc.fontSize(9).fillColor('#000');
+    y += 48;
+  } else {
+    y += 36;
+  }
 
-  y += 36;
   const estadoLabel = ESTADOS_LABELS[encomenda.estado] || encomenda.estado;
   doc.font('Helvetica-Bold').text('Estado Actual', 40, y);
   doc.font('Helvetica').text(estadoLabel, 40, y + 14);

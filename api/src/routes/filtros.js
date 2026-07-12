@@ -189,6 +189,27 @@ router.get('/config-publico', async (req, res) => {
   }
 });
 
+// GET /api/metodos-pagamento - só os métodos activos, ordenados para o
+// checkout (ver frontend/js/checkout.js) - designação/detalhe/ordem geridos
+// no Backoffice (secção "Métodos de Pagamento").
+router.get('/metodos-pagamento', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request().query(`
+      SELECT Codigo, Designacao, Detalhe FROM dbo.ZAPP_DBSiteCD_MetodosPagamento
+      WHERE Activo = 1 ORDER BY Ordem, Id;
+    `);
+    res.json(resultado.recordset.map((m) => ({
+      codigo: m.Codigo,
+      designacao: m.Designacao,
+      detalhe: m.Detalhe,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter métodos de pagamento.' });
+  }
+});
+
 // GET /api/paginas/:chave - conteúdo público de uma página informativa
 // (rodapé "Links Úteis"), editável no Backoffice.
 router.get('/paginas/:chave', async (req, res) => {

@@ -93,10 +93,11 @@ router.get('/encomendas', async (req, res) => {
     const resultado = await pool.request()
       .input('clienteId', sql.Int, req.cliente.id)
       .query(`
-        SELECT Numero, Estado, Total, Portes, Pontos_Ganhos, Metodo_Pagamento, Data_Criacao
-        FROM dbo.ZAPP_DBSiteCD_Encomendas
-        WHERE Cliente_Id = @clienteId
-        ORDER BY Data_Criacao DESC;
+        SELECT e.Numero, e.Estado, e.Total, e.Portes, e.Pontos_Ganhos, e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, e.Data_Criacao
+        FROM dbo.ZAPP_DBSiteCD_Encomendas e
+        LEFT JOIN dbo.ZAPP_DBSiteCD_MetodosPagamento mp ON mp.Codigo = e.Metodo_Pagamento
+        WHERE e.Cliente_Id = @clienteId
+        ORDER BY e.Data_Criacao DESC;
       `);
 
     res.json(resultado.recordset.map((e) => ({
@@ -106,7 +107,7 @@ router.get('/encomendas', async (req, res) => {
       total: e.Total,
       portes: e.Portes,
       pontosGanhos: e.Pontos_Ganhos,
-      metodoPagamento: e.Metodo_Pagamento,
+      metodoPagamento: e.Metodo_Pagamento_Designacao || e.Metodo_Pagamento,
       data: e.Data_Criacao,
       podeDevolver: e.Estado === 'Enviada' || e.Estado === ESTADO_RECEBIDA_CONFORME,
     })));
@@ -124,9 +125,11 @@ router.get('/encomendas/:numero', async (req, res) => {
       .input('numero', sql.VarChar(30), req.params.numero)
       .input('clienteId', sql.Int, req.cliente.id)
       .query(`
-        SELECT Id, Numero, Estado, Total, Portes, Vale_Codigo, Vale_Desconto, Pontos_Ganhos, Metodo_Pagamento, Data_Criacao, Data_Actualizacao, Motivo_Anulacao
-        FROM dbo.ZAPP_DBSiteCD_Encomendas
-        WHERE Numero = @numero AND Cliente_Id = @clienteId;
+        SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
+               e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, e.Data_Criacao, e.Data_Actualizacao, e.Motivo_Anulacao
+        FROM dbo.ZAPP_DBSiteCD_Encomendas e
+        LEFT JOIN dbo.ZAPP_DBSiteCD_MetodosPagamento mp ON mp.Codigo = e.Metodo_Pagamento
+        WHERE e.Numero = @numero AND e.Cliente_Id = @clienteId;
       `);
 
     if (encomenda.recordset.length === 0) {
@@ -186,7 +189,7 @@ router.get('/encomendas/:numero', async (req, res) => {
       valeCodigo: e.Vale_Codigo,
       valeDesconto: e.Vale_Desconto,
       pontosGanhos: e.Pontos_Ganhos,
-      metodoPagamento: e.Metodo_Pagamento,
+      metodoPagamento: e.Metodo_Pagamento_Designacao || e.Metodo_Pagamento,
       data: e.Data_Criacao,
       motivoAnulacao: e.Motivo_Anulacao,
       devolucao,

@@ -33,7 +33,7 @@ const TRANSICOES_DEVOLUCAO = {
 };
 
 const ESTADOS_LABELS = {
-  AguardarPagamento: 'Confirmação e a Aguardar Pagamento',
+  AguardarPagamento: 'A Aguardar Pagamento',
   PagamentoEfectuado: 'Pagamento Efectuado',
   EmPreparacao: 'Encomenda em Preparação',
   Enviada: 'Encomenda Enviada',

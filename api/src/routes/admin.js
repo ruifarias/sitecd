@@ -61,6 +61,52 @@ router.put('/config/:chave', async (req, res) => {
   }
 });
 
+// ---- Métodos de Pagamento ----
+router.get('/metodos-pagamento', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request().query(`
+      SELECT Codigo, Designacao, Detalhe, Activo, Ordem FROM dbo.ZAPP_DBSiteCD_MetodosPagamento ORDER BY Ordem, Id;
+    `);
+    res.json(resultado.recordset.map((m) => ({
+      codigo: m.Codigo,
+      designacao: m.Designacao,
+      detalhe: m.Detalhe,
+      activo: m.Activo,
+      ordem: m.Ordem,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter métodos de pagamento.' });
+  }
+});
+
+router.put('/metodos-pagamento/:codigo', async (req, res) => {
+  const { designacao, detalhe, activo, ordem } = req.body;
+  if (!designacao) return res.status(400).json({ erro: 'designacao é obrigatória.' });
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('codigo', sql.VarChar(30), req.params.codigo)
+      .input('designacao', sql.NVarChar(100), designacao)
+      .input('detalhe', sql.NVarChar(400), detalhe || null)
+      .input('activo', sql.Bit, !!activo)
+      .input('ordem', sql.Int, Number.isInteger(ordem) ? ordem : 0)
+      .query(`
+        UPDATE dbo.ZAPP_DBSiteCD_MetodosPagamento
+        SET Designacao = @designacao, Detalhe = @detalhe, Activo = @activo, Ordem = @ordem
+        WHERE Codigo = @codigo;
+      `);
+    if (resultado.rowsAffected[0] === 0) {
+      return res.status(404).json({ erro: 'Método de pagamento não encontrado.' });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao actualizar método de pagamento.' });
+  }
+});
+
 // ---- Log de sincronização ----
 router.get('/sync-log', async (req, res) => {
   try {
@@ -440,10 +486,11 @@ router.get('/encomendas', async (req, res) => {
     const whereClause = condicoes.length > 0 ? `WHERE ${condicoes.join(' AND ')}` : '';
 
     const resultado = await request.query(`
-      SELECT e.Numero, e.Estado, e.Total, e.Portes, e.Pontos_Ganhos, e.Metodo_Pagamento, e.Data_Criacao, e.Data_Actualizacao,
+      SELECT e.Numero, e.Estado, e.Total, e.Portes, e.Pontos_Ganhos, e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, e.Data_Criacao, e.Data_Actualizacao,
              c.Nome AS Cliente_Nome, c.Email AS Cliente_Email, c.Codigo_Cliente
       FROM dbo.ZAPP_DBSiteCD_Encomendas e
       LEFT JOIN dbo.ZAPP_DBSiteCD_Clientes c ON c.Id = e.Cliente_Id
+      LEFT JOIN dbo.ZAPP_DBSiteCD_MetodosPagamento mp ON mp.Codigo = e.Metodo_Pagamento
       ${whereClause}
       ORDER BY e.Data_Criacao DESC;
     `);
@@ -455,7 +502,7 @@ router.get('/encomendas', async (req, res) => {
       total: e.Total,
       portes: e.Portes,
       pontosGanhos: e.Pontos_Ganhos,
-      metodoPagamento: e.Metodo_Pagamento,
+      metodoPagamento: e.Metodo_Pagamento_Designacao || e.Metodo_Pagamento,
       data: e.Data_Criacao,
       dataActualizacao: e.Data_Actualizacao,
       clienteNome: e.Cliente_Nome,
@@ -480,10 +527,11 @@ router.get('/encomendas/:numero', async (req, res) => {
       .input('numero', sql.VarChar(30), req.params.numero)
       .query(`
         SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
-               e.Metodo_Pagamento, e.Data_Criacao, e.Data_Actualizacao, e.Motivo_Anulacao,
+               e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, e.Data_Criacao, e.Data_Actualizacao, e.Motivo_Anulacao,
                c.Nome AS Cliente_Nome, c.Email AS Cliente_Email, c.Codigo_Cliente
         FROM dbo.ZAPP_DBSiteCD_Encomendas e
         LEFT JOIN dbo.ZAPP_DBSiteCD_Clientes c ON c.Id = e.Cliente_Id
+        LEFT JOIN dbo.ZAPP_DBSiteCD_MetodosPagamento mp ON mp.Codigo = e.Metodo_Pagamento
         WHERE e.Numero = @numero;
       `);
 
@@ -532,7 +580,7 @@ router.get('/encomendas/:numero', async (req, res) => {
       valeCodigo: e.Vale_Codigo,
       valeDesconto: e.Vale_Desconto,
       pontosGanhos: e.Pontos_Ganhos,
-      metodoPagamento: e.Metodo_Pagamento,
+      metodoPagamento: e.Metodo_Pagamento_Designacao || e.Metodo_Pagamento,
       data: e.Data_Criacao,
       dataActualizacao: e.Data_Actualizacao,
       motivoAnulacao: e.Motivo_Anulacao,
@@ -1020,9 +1068,11 @@ router.get('/clientes/:codigo/extrato', async (req, res) => {
     const condicoesData = [];
     const encReq = pool.request().input('clienteId', sql.Int, cliente.Id);
     const pontosReq = pool.request().input('clienteId', sql.Int, cliente.Id);
+    const valesReq = pool.request().input('clienteId', sql.Int, cliente.Id);
     if (desde) {
       encReq.input('desde', sql.DateTime, new Date(desde));
       pontosReq.input('desde', sql.DateTime, new Date(desde));
+      valesReq.input('desde', sql.DateTime, new Date(desde));
       condicoesData.push('Data_Criacao >= @desde');
     }
     if (ate) {
@@ -1030,6 +1080,7 @@ router.get('/clientes/:codigo/extrato', async (req, res) => {
       ateFim.setHours(23, 59, 59, 999);
       encReq.input('ate', sql.DateTime, ateFim);
       pontosReq.input('ate', sql.DateTime, ateFim);
+      valesReq.input('ate', sql.DateTime, ateFim);
       condicoesData.push('Data_Criacao <= @ate');
     }
     const whereData = condicoesData.length > 0 ? `AND ${condicoesData.join(' AND ')}` : '';
@@ -1046,6 +1097,14 @@ router.get('/clientes/:codigo/extrato', async (req, res) => {
       FROM dbo.ZAPP_DBSiteCD_PontosLedger
       WHERE Cliente_Id = @clienteId ${whereData}
       ORDER BY Data_Criacao DESC;
+    `);
+
+    const valesRes = await valesReq.query(`
+      SELECT v.Codigo, v.Valor, v.Estado, v.Data_Criacao, v.Data_Utilizacao, e.Numero AS Numero_Encomenda
+      FROM dbo.ZAPP_DBSiteCD_Vales v
+      LEFT JOIN dbo.ZAPP_DBSiteCD_Encomendas e ON e.Id = v.Encomenda_Utilizacao_Id
+      WHERE v.Cliente_Id = @clienteId ${whereData.replace(/Data_Criacao/g, 'v.Data_Criacao')}
+      ORDER BY v.Data_Criacao DESC;
     `);
 
     const saldoRes = await pool.request()
@@ -1097,6 +1156,16 @@ router.get('/clientes/:codigo/extrato', async (req, res) => {
         acumulado: p.acumulado,
         descricao: p.descricao,
         data: p.data,
+      })),
+      vales: valesRes.recordset.map((v) => ({
+        codigo: v.Codigo,
+        valor: v.Valor,
+        estado: v.Estado,
+        estadoLabel: v.Estado === 'Utilizado'
+          ? `Descontado${v.Numero_Encomenda ? ` (${v.Numero_Encomenda})` : ''}`
+          : v.Estado,
+        data: v.Data_Criacao,
+        dataUtilizacao: v.Data_Utilizacao,
       })),
     });
   } catch (err) {

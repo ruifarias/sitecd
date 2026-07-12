@@ -70,6 +70,32 @@ function formatarDesconto(precoOriginal, precoComDesconto) {
   return `-${percentagem}%`;
 }
 
+// Lightbox simples: clicar numa imagem amplia-a num overlay ao centro do
+// ecrã; clicar de novo na imagem original, clicar no overlay ou premir
+// Escape fecha-o. Partilhado por qualquer página que inclua este ficheiro.
+function mostrarImagemAmpliada(src, alt) {
+  let overlay = document.getElementById('lightbox-imagem');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'lightbox-imagem';
+    overlay.className = 'lightbox-imagem';
+    overlay.innerHTML = '<img alt="">';
+    overlay.addEventListener('click', fecharImagemAmpliada);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') fecharImagemAmpliada();
+    });
+    document.body.appendChild(overlay);
+  }
+  overlay.querySelector('img').src = src;
+  overlay.querySelector('img').alt = alt || '';
+  overlay.classList.add('aberta');
+}
+
+function fecharImagemAmpliada() {
+  const overlay = document.getElementById('lightbox-imagem');
+  if (overlay) overlay.classList.remove('aberta');
+}
+
 function mensagemPeriodoOutlet() {
   const hoje = new Date();
   const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);

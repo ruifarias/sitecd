@@ -150,19 +150,23 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
               <td style="text-align:left;padding:2px 0">Sub-total dos Artigos</td>
               <td style="text-align:right;padding:2px 0;white-space:nowrap">${formatarPreco(totalProdutos)}</td>
             </tr>
-            ${encomenda.valeDesconto > 0 ? `
-            <tr>
-              <td style="text-align:left;padding:2px 0">Desconto (vale ${encomenda.valeCodigo})</td>
-              <td style="text-align:right;padding:2px 0;white-space:nowrap">-${formatarPreco(encomenda.valeDesconto)}</td>
-            </tr>` : ''}
             <tr>
               <td style="text-align:left;padding:2px 0">Portes</td>
               <td style="text-align:right;padding:2px 0;white-space:nowrap">${formatarPreco(encomenda.portes)}</td>
             </tr>
             <tr>
               <td style="text-align:left;padding-top:6px;border-top:1px solid #ddd;font-weight:700;font-size:15px">Total</td>
-              <td style="text-align:right;padding-top:6px;border-top:1px solid #ddd;font-weight:700;font-size:15px;white-space:nowrap">${formatarPreco(encomenda.total)}</td>
+              <td style="text-align:right;padding-top:6px;border-top:1px solid #ddd;font-weight:700;font-size:15px;white-space:nowrap">${formatarPreco(totalProdutos + encomenda.portes)}</td>
             </tr>
+            ${encomenda.valeDesconto > 0 ? `
+            <tr>
+              <td style="text-align:left;padding:2px 0">Desconto (vale ${encomenda.valeCodigo})</td>
+              <td style="text-align:right;padding:2px 0;white-space:nowrap">-${formatarPreco(encomenda.valeDesconto)}</td>
+            </tr>
+            <tr>
+              <td style="text-align:left;padding-top:6px;border-top:1px solid #ddd;font-weight:700;font-size:15px">Total a Pagar</td>
+              <td style="text-align:right;padding-top:6px;border-top:1px solid #ddd;font-weight:700;font-size:15px;white-space:nowrap">${formatarPreco(encomenda.total)}</td>
+            </tr>` : ''}
             <tr>
               <td></td>
               <td style="text-align:right;color:#777;font-size:12px">IVA incluído</td>
@@ -200,6 +204,7 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
     <div style="border-top:1px solid #ddd;padding-top:12px;margin-bottom:16px">
       <strong>Método de Pagamento</strong><br>
       ${encomenda.metodoPagamento}
+      ${encomenda.metodoPagamentoDetalhe ? `<br><span style="color:#777;font-size:12px">${encomenda.metodoPagamentoDetalhe}</span>` : ''}
     </div>
 
     <div style="border-top:1px solid #ddd;padding-top:12px;margin-bottom:16px">

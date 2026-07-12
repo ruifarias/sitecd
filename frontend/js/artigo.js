@@ -17,6 +17,24 @@ function construirURLListagem() {
   return `index.html${query ? '?' + query : ''}`;
 }
 
+// Link para um grau específico da família (ex: clicar em "CACHECOL" no
+// breadcrumb "ACESSORIOS TEXTIL > CACHECOL > ..." vai directo a esse grau,
+// sem arrastar os graus mais profundos que o utilizador ainda não escolheu).
+function construirLinkFamiliaGrau(familiaInfo, ateGrau) {
+  const params = new URLSearchParams();
+  for (let g = 1; g <= ateGrau; g++) params.set(`familiaGrau${g}`, familiaInfo[`codigoGrau${g}`]);
+  params.set('familia', familiaInfo[`codigoGrau${ateGrau}`]);
+  params.set('ordenar', 'familia');
+  return `index.html?${params.toString()}`;
+}
+
+function construirBreadcrumbFamilia(familiaInfo) {
+  return [1, 2, 3, 4]
+    .filter((g) => familiaInfo[`grau${g}`])
+    .map((g) => `<a href="${construirLinkFamiliaGrau(familiaInfo, g)}" class="titulo-familia-link">${familiaInfo[`grau${g}`]}</a>`)
+    .join(' <span class="separador-familia">&gt;</span> ');
+}
+
 async function renderArtigo(a) {
   const imagemPrincipal = a.imagens[0] || '';
 
@@ -98,9 +116,7 @@ async function renderArtigo(a) {
     ${familiaInfo && familiaInfo.grau4 ? `
       <div class="secao-familia">
         <h4>
-          <span class="rotulo-alternativas">ALTERNATIVAS:</span> <a href="index.html?familiaGrau1=${encodeURIComponent(familiaInfo.codigoGrau1)}&familiaGrau2=${encodeURIComponent(familiaInfo.codigoGrau2)}&familiaGrau3=${encodeURIComponent(familiaInfo.codigoGrau3)}&familiaGrau4=${encodeURIComponent(familiaInfo.codigoGrau4)}" class="titulo-familia-link">
-            ${[familiaInfo.grau1, familiaInfo.grau2, familiaInfo.grau3, familiaInfo.grau4].filter(g => g).join(' > ')}
-          </a>
+          <span class="rotulo-alternativas">ALTERNATIVAS:</span> ${construirBreadcrumbFamilia(familiaInfo)}
         </h4>
         ${artigosMesmaSub.length > 0 ? `
           <div class="carousel-container">
@@ -132,6 +148,21 @@ async function renderArtigo(a) {
       </div>
     ` : ''}
   `;
+
+  // Clicar na imagem principal amplia-a num overlay ao centro do ecrã;
+  // clicar de novo na imagem, no overlay ou premir Escape fecha-o.
+  const imagemPrincipalEl = document.getElementById('imagem-principal');
+  if (imagemPrincipalEl && imagemPrincipalEl.getAttribute('src')) {
+    imagemPrincipalEl.addEventListener('click', () => {
+      const overlay = document.getElementById('lightbox-imagem');
+      const jaAbertaComEstaImagem = overlay && overlay.classList.contains('aberta') && overlay.querySelector('img').src === imagemPrincipalEl.src;
+      if (jaAbertaComEstaImagem) {
+        fecharImagemAmpliada();
+      } else {
+        mostrarImagemAmpliada(imagemPrincipalEl.src, imagemPrincipalEl.alt);
+      }
+    });
+  }
 
   // Carousel controls
   const carouselPrev = document.getElementById('carousel-prev');

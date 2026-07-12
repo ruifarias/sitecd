@@ -57,35 +57,6 @@ header.topo {
   align-items: center;
 }
 
-.topo-linha3 {
-  display: none; /* só aparece com família activa - ver inicializarFamiliaCascata em cabecalho.js */
-  gap: 8px;
-  padding: 6px 24px;
-  background: #1a1a1a;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.topo-linha3 .select-familia {
-  flex: 1;
-  min-width: 180px;
-  height: 30px;
-  padding: 4px 8px;
-  background: var(--branco);
-  color: var(--preto);
-  border: 1px solid var(--cinza-medio);
-  border-radius: 2px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.topo-linha3 .select-familia:disabled {
-  background: #f9f9f9;
-  color: #999;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
 /* Nav principal: separadores (Todos/Novidades/Outlet) + dropdowns de Marca/Modalidade */
 .nav-principal {
   display: flex;
@@ -136,8 +107,7 @@ header.topo {
   display: block;
 }
 
-/* ---------- TESTE: menu de Família em cascata por hover (ver cabecalho.js) ---------- */
-/* protótipo isolado, não usado no cabeçalho definitivo - fácil de remover */
+/* ---------- Menu "Família" em cascata por hover (ver js/familia-flyout.js) ---------- */
 .familia-flyout-nivel {
   list-style: none;
   width: auto;
@@ -396,29 +366,6 @@ header.topo {
   font-size: 13px;
 }
 
-.familias-cascata {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.select-familia {
-  border: 1px solid var(--cinza-medio);
-  padding: 6px 8px;
-  font-size: 13px;
-  flex: 1;
-  min-width: 150px;
-  background: var(--branco);
-  cursor: pointer;
-}
-
-.select-familia:disabled {
-  background: #f9f9f9;
-  color: #999;
-  cursor: not-allowed;
-}
-
 .grelha-produtos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -559,6 +506,7 @@ header.topo {
   height: 100%;
   object-fit: contain;
   display: block;
+  cursor: zoom-in;
 }
 
 .info-artigo {
@@ -717,6 +665,10 @@ header.topo {
 .titulo-familia-link:hover {
   color: var(--vermelho);
   text-decoration: underline;
+}
+
+.separador-familia {
+  color: var(--cinza-texto);
 }
 
 .carousel-container {
@@ -948,6 +900,9 @@ header.topo {
 }
 .botao-principal:hover { background: #333; }
 .botao-principal:disabled { background: var(--cinza-medio); cursor: not-allowed; }
+
+#btn-trocar-vale { background: var(--vermelho); }
+#btn-trocar-vale:hover { background: #b8001a; }
 .botao-secundario {
   width: 100%;
   padding: 14px;
@@ -1027,8 +982,11 @@ header.topo {
 }
 .lightbox-imagem.aberta { display: flex; }
 .lightbox-imagem img {
-  max-width: min(90vw, 700px);
-  max-height: 90vh;
+  /* width/height (em vez de max-width/max-height) para forçar a ampliação
+     mesmo quando a imagem original é pequena - max-width/max-height só
+     limitam o tamanho, nunca ampliam além da resolução original */
+  width: min(95vw, 1400px);
+  height: min(95vh, 1400px);
   object-fit: contain;
   background: var(--branco);
   border-radius: 4px;
@@ -1067,6 +1025,10 @@ form.checkout input, form.checkout select {
 }
 .metodo-pagamento.desactivado { opacity: 0.5; }
 
+.campo-telemovel-mbway { margin: -4px 0 8px 12px; }
+.campo-telemovel-mbway label { display: block; font-size: 12px; margin-bottom: 4px; color: var(--cinza-texto); }
+.campo-telemovel-mbway input { width: 100%; max-width: 220px; padding: 8px; border: 1px solid var(--cinza-medio); font-size: 14px; }
+
 .opcao-vale-checkout {
   border: 1px solid var(--cinza-medio);
   padding: 10px 12px;
@@ -1081,6 +1043,7 @@ form.checkout input, form.checkout select {
 
 .mensagem-erro { background: #ffe9e9; color: var(--vermelho); padding: 12px; font-size: 13px; margin-bottom: 12px; }
 .mensagem-sucesso { background: #eafbea; color: #1a7d1a; padding: 24px; font-size: 15px; text-align: center; }
+.mensagem-sucesso-inline { background: #eafbea; color: #1a7d1a; padding: 12px; font-size: 13px; }
 
 .auth-caixa { max-width: 420px; margin: 0 auto; }
 .auth-tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid var(--cinza-medio); }

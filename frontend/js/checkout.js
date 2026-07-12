@@ -59,32 +59,6 @@ async function renderResumo() {
   return true;
 }
 
-// Lightbox simples: clicar numa miniatura de artigo no resumo amplia a
-// imagem num overlay; clicar de novo na miniatura, clicar no overlay ou
-// premir Escape fecha-o.
-function mostrarImagemAmpliada(src, alt) {
-  let overlay = document.getElementById('lightbox-imagem');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'lightbox-imagem';
-    overlay.className = 'lightbox-imagem';
-    overlay.innerHTML = '<img alt="">';
-    overlay.addEventListener('click', fecharImagemAmpliada);
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') fecharImagemAmpliada();
-    });
-    document.body.appendChild(overlay);
-  }
-  overlay.querySelector('img').src = src;
-  overlay.querySelector('img').alt = alt || '';
-  overlay.classList.add('aberta');
-}
-
-function fecharImagemAmpliada() {
-  const overlay = document.getElementById('lightbox-imagem');
-  if (overlay) overlay.classList.remove('aberta');
-}
-
 async function renderFormulario() {
   let perfil = {};
   try {
@@ -107,6 +81,14 @@ async function renderFormulario() {
   // regra de negócio: 1 vale por cada 50€ de compras (validado outra vez no
   // servidor ao gravar - isto é só para orientar a selecção no formulário)
   const maxVales = Math.floor(totalProdutosCheckout / 50);
+
+  // Métodos de pagamento geridos no Backoffice (activo/designação/ordem) -
+  // ver secção "Métodos de Pagamento". "MBWAY" é o único com um campo extra
+  // (telemóvel) e integração automática; os restantes são só informativos.
+  let metodosPagamento = [];
+  try {
+    metodosPagamento = await apiGet('/metodos-pagamento');
+  } catch (_) { /* checkout falha na validação do servidor se não houver métodos */ }
 
   document.getElementById('conteudo-checkout').innerHTML = `
     <form class="checkout" id="form-checkout">
@@ -143,13 +125,18 @@ async function renderFormulario() {
 
       <fieldset>
         <legend>Método de Pagamento</legend>
-        <label class="metodo-pagamento">
-          <input type="radio" name="metodoPagamento" value="Dinheiro" checked>
-          <span><strong>A Dinheiro</strong> — pago na entrega/levantamento (modo de teste)</span>
-        </label>
-        <label class="metodo-pagamento desactivado">
-          <input type="radio" disabled> <span>MB WAY (brevemente)</span>
-        </label>
+        ${metodosPagamento.map((m, i) => `
+          <label class="metodo-pagamento">
+            <input type="radio" name="metodoPagamento" value="${m.codigo}" ${i === 0 ? 'checked' : ''}>
+            <span><strong>${m.designacao}</strong>${m.detalhe ? ` — ${m.detalhe}` : ''}</span>
+          </label>
+          ${m.codigo === 'MBWAY' ? `
+            <div id="campo-telemovel-mbway" class="campo-telemovel-mbway" hidden>
+              <label>Número de Telemóvel (MB WAY) *</label>
+              <input type="tel" name="telemovel" placeholder="9XXXXXXXX" maxlength="9">
+            </div>
+          ` : ''}
+        `).join('')}
         <label class="metodo-pagamento desactivado">
           <input type="radio" disabled> <span>Cartão de Crédito (brevemente)</span>
         </label>
@@ -163,13 +150,29 @@ async function renderFormulario() {
   `;
 
   configurarLimiteVales(maxVales);
+  configurarMetodoPagamento();
   document.getElementById('form-checkout').addEventListener('submit', submeterEncomenda);
 }
 
+// Mostra/exige o campo de telemóvel só quando MB WAY (Ifthenpay) está
+// seleccionado - só existe se esse método estiver activo no Backoffice.
+function configurarMetodoPagamento() {
+  const campoTelemovel = document.getElementById('campo-telemovel-mbway');
+  const inputTelemovel = document.querySelector('input[name="telemovel"]');
+  if (!campoTelemovel || !inputTelemovel) return;
+  document.querySelectorAll('input[name="metodoPagamento"]').forEach((radio) => {
+    radio.addEventListener('change', () => {
+      const ehMbway = radio.value === 'MBWAY' && radio.checked;
+      campoTelemovel.hidden = !ehMbway;
+      inputTelemovel.required = ehMbway;
+    });
+  });
+}
+
 // Impede seleccionar mais vales do que a regra permite (1 por cada 50€):
-// ao atingir o limite, desactiva as caixas ainda não marcadas. Também
-// mantém o desconto/valor a pagar actualizados a cada alteração, antes do
-// Método de Pagamento (e sincroniza o total no resumo do topo).
+// ao atingir o limite, desactiva as caixas ainda não marcadas. Actualiza o
+// desconto/valor a pagar a cada alteração - o "Total" do resumo (artigos +
+// portes) nunca muda aqui, só o "Valor a pagar" reflecte o desconto de vales.
 function configurarLimiteVales(maxVales) {
   const checkboxes = document.querySelectorAll('input[name="valeSeleccionado"]');
   const aviso = document.getElementById('aviso-limite-vales');
@@ -191,9 +194,6 @@ function configurarLimiteVales(maxVales) {
       </div>
       <div class="resumo-total"><span>Valor a pagar</span><span>${formatarPreco(totalAPagar)}</span></div>
     ` : '';
-
-    const valorTotalResumo = document.getElementById('valor-total-resumo');
-    if (valorTotalResumo) valorTotalResumo.textContent = formatarPreco(totalAPagar);
   };
 
   checkboxes.forEach((cb) => cb.addEventListener('change', actualizar));
@@ -220,6 +220,7 @@ async function submeterEncomenda(e) {
       codigoPostal: form.codigoPostal.value,
     },
     metodoPagamento: form.metodoPagamento.value,
+    telemovel: form.metodoPagamento.value === 'MBWAY' ? form.telemovel.value.trim() : undefined,
     valeCodigos: valeCodigos.length > 0 ? valeCodigos : undefined,
   };
 
@@ -235,15 +236,85 @@ async function submeterEncomenda(e) {
         <p><strong>Total:</strong> ${formatarPreco(encomenda.total)}</p>
         <p><strong>Pontos ganhos:</strong> ${encomenda.pontosGanhos}</p>
         <p style="margin-top:10px">${encomenda.mensagemPagamento}</p>
+        ${encomenda.metodoPagamento === 'MBWAY' ? '<div id="estado-mbway" style="margin-top:10px"></div>' : ''}
         <a href="conta.html" style="display:inline-block;margin-top:16px;text-decoration:underline">Ver as minhas encomendas</a><br>
         <a href="index.html" style="display:inline-block;margin-top:8px;text-decoration:underline">Continuar a comprar</a>
       </div>
     `;
+    if (encomenda.metodoPagamento === 'MBWAY') acompanharPagamentoMbway(encomenda.numero, encomenda.mbway);
     actualizarBadgeCarrinho();
   } catch (err) {
     document.getElementById('erro-checkout').innerHTML = `<div class="mensagem-erro">${err.message}</div>`;
     botao.disabled = false;
     botao.textContent = 'Confirmar Encomenda';
+  }
+}
+
+// Acompanha o pagamento MB WAY depois da encomenda criada: se o pedido inicial
+// falhou, oferece "Reenviar"; caso contrário, consulta periodicamente
+// /mbway/estado até o cliente confirmar (ou o pedido expirar/ser rejeitado) na
+// app - a app MB WAY dá ao cliente cerca de 4 minutos para aceitar.
+const INTERVALO_POLLING_MBWAY_MS = 3000;
+const MAX_TENTATIVAS_POLLING_MBWAY = 100; // ~5 minutos
+
+function acompanharPagamentoMbway(numero, mbway) {
+  const container = document.getElementById('estado-mbway');
+  if (!container) return;
+
+  function renderAguardar() {
+    container.innerHTML = '<p>📱 Aceite o pedido na app MB WAY para confirmar o pagamento (tem cerca de 4 minutos)...</p>';
+  }
+
+  function renderErro(mensagem) {
+    container.innerHTML = `
+      <div class="mensagem-erro">${mensagem}</div>
+      <button type="button" id="btn-reenviar-mbway" class="botao-principal" style="margin-top:8px">Reenviar Pedido MB WAY</button>
+    `;
+    document.getElementById('btn-reenviar-mbway').addEventListener('click', async () => {
+      container.innerHTML = '<p>A reenviar...</p>';
+      try {
+        await apiPost(`/encomendas/${numero}/mbway/reenviar`, {});
+        renderAguardar();
+        iniciarPolling();
+      } catch (err) {
+        renderErro(err.message);
+      }
+    });
+  }
+
+  function iniciarPolling() {
+    let tentativas = 0;
+    const intervalo = setInterval(async () => {
+      tentativas++;
+      try {
+        const { estadoPagamento } = await apiGet(`/encomendas/${numero}/mbway/estado`);
+        if (estadoPagamento === 'Pago') {
+          clearInterval(intervalo);
+          container.innerHTML = '<p class="mensagem-sucesso-inline">✅ Pagamento confirmado! Obrigado.</p>';
+        } else if (estadoPagamento === 'Rejeitado') {
+          clearInterval(intervalo);
+          renderErro('Pagamento rejeitado na app MB WAY. Pode tentar novamente.');
+        } else if (estadoPagamento === 'Expirado') {
+          clearInterval(intervalo);
+          renderErro('O pedido expirou (tempo esgotado na app MB WAY). Pode tentar novamente.');
+        } else if (estadoPagamento === 'Recusado') {
+          clearInterval(intervalo);
+          renderErro('Pagamento recusado. Verifique o número de telemóvel e tente novamente.');
+        } else if (tentativas >= MAX_TENTATIVAS_POLLING_MBWAY) {
+          clearInterval(intervalo);
+          renderErro('Não foi possível confirmar o pagamento a tempo. Pode tentar novamente.');
+        }
+      } catch (err) {
+        console.error('Erro ao consultar estado MB WAY:', err.message); // falha pontual de rede - não pára o polling
+      }
+    }, INTERVALO_POLLING_MBWAY_MS);
+  }
+
+  if (mbway && mbway.enviado === false) {
+    renderErro(mbway.erro || 'Não foi possível enviar o pedido de pagamento MB WAY.');
+  } else {
+    renderAguardar();
+    iniciarPolling();
   }
 }
 

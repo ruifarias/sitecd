@@ -34,10 +34,9 @@
   </div>
 
   <div class="topo-linha2">
-    <!-- TESTE: menu de Família em cascata por hover, ver js/familia-flyout-teste.js - para avaliação, não é o definitivo -->
-    <div class="nav-dropdown" id="dropdown-familia-teste">
+    <div class="nav-dropdown" id="dropdown-familia">
       <button class="nav-link nav-dropdown-trigger" type="button">Família <span class="seta-dropdown">▾</span></button>
-      <div id="painel-familia-teste"></div>
+      <div id="painel-familia"></div>
     </div>
     <div class="genero-pills" id="genero-pills"></div>
     <div class="pesquisas-centro">
@@ -55,21 +54,6 @@
       </div>
     </div>
     <button id="limpar-filtros-header" class="botao-limpar-filtros">Limpar Filtros</button>
-  </div>
-
-  <div class="topo-linha3" id="familias-cascata-header">
-    <select id="familia-grau1" class="select-familia">
-      <option value="">Seleccionar Familia...</option>
-    </select>
-    <select id="familia-grau2" class="select-familia" disabled style="display:none;">
-      <option value="">Seleccionar Sub-Familia1...</option>
-    </select>
-    <select id="familia-grau3" class="select-familia" disabled style="display:none;">
-      <option value="">Seleccionar Sub-Familia2...</option>
-    </select>
-    <select id="familia-grau4" class="select-familia" disabled style="display:none;">
-      <option value="">Seleccionar Sub-Familia3...</option>
-    </select>
   </div>
 </header>
 
@@ -118,6 +102,6 @@
 <script src="js/api.js"></script>
 <script src="js/cabecalho.js"></script>
 <script src="js/artigo.js"></script>
-<script src="js/familia-flyout-teste.js"></script>
+<script src="js/familia-flyout.js"></script>
 </body>
 </html>
