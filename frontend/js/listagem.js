@@ -163,24 +163,32 @@ function renderProdutosAgrupadosPorFamilia(artigos) {
   artigos.forEach((a) => {
     const chave = `${a.familiaGrau1 || 'Sem Família'}|${a.familiaGrau2 || ''}|${a.familiaGrau3 || ''}|${a.familiaGrau4 || ''}`;
     if (!grupos[chave]) {
+      const codigoFamilia = a.codigoFamilia || '';
       grupos[chave] = {
         grau1: a.familiaGrau1 || 'Sem Família',
         grau2: a.familiaGrau2 || '',
         grau3: a.familiaGrau3 || '',
         grau4: a.familiaGrau4 || '',
+        // Códigos por nível derivados por prefixo do código completo, tal
+        // como no resto do site (ver /familias/grauN e mesma-subfamilia).
+        codigoGrau1: codigoFamilia.substring(0, 1),
+        codigoGrau2: codigoFamilia.substring(0, 2),
+        codigoGrau3: codigoFamilia.substring(0, 3),
+        codigoGrau4: codigoFamilia,
         artigos: [],
       };
     }
     grupos[chave].artigos.push(a);
   });
 
-  // Renderizar com cabeçalhos de família
+  // Renderizar com cabeçalhos de família (um link por grau, tal como nas
+  // "Alternativas" da ficha de artigo - ver construirBreadcrumbFamilia em cabecalho.js)
   let html = '';
   Object.keys(grupos).forEach((chave) => {
     const familia = grupos[chave];
-    const familiaLabel = [familia.grau1, familia.grau2, familia.grau3, familia.grau4]
-      .filter(g => g)
-      .join(' > ');
+    const familiaLabel = familia.grau1 === 'Sem Família'
+      ? 'Sem Família'
+      : construirBreadcrumbFamilia(familia);
 
     html += `<div class="grupo-titulo grupo-familia">${familiaLabel}</div>`;
     html += familia.artigos.map((a) => `

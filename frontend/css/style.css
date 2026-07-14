@@ -57,6 +57,13 @@ header.topo {
   align-items: center;
 }
 
+/* Botão "Filtros" e painel colapsável só existem visualmente em ecrã de
+   telemóvel (ver @media 800px) - em ecrã grande o painel fica "invisível"
+   ao layout (display:contents), para os filtros continuarem a ser itens
+   directos do flex do topo-linha2, tal como antes de existir este wrapper. */
+.botao-toggle-filtros { display: none; }
+.filtros-colapsaveis { display: contents; }
+
 /* Nav principal: separadores (Todos/Novidades/Outlet) + dropdowns de Marca/Modalidade */
 .nav-principal {
   display: flex;
@@ -111,8 +118,8 @@ header.topo {
 .familia-flyout-nivel {
   list-style: none;
   width: auto;
-  min-width: 220px;
-  max-width: min(90vw, 340px);
+  min-width: 230px;
+  max-width: min(90vw, 420px);
   background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 4px;
@@ -151,9 +158,12 @@ header.topo {
 }
 
 .familia-flyout-seta {
-  font-size: 12px;
-  color: #888;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--vermelho);
   flex-shrink: 0;
+  padding: 4px 6px;
+  margin: -4px -6px;
 }
 
 /* níveis 2+ abrem para a direita do item-pai que está em hover */
@@ -668,7 +678,8 @@ header.topo {
 }
 
 .separador-familia {
-  color: var(--cinza-texto);
+  color: var(--vermelho);
+  font-weight: 700;
 }
 
 .carousel-container {
@@ -935,6 +946,8 @@ header.topo {
 .pagina-conteudo .actualizado { font-size: 12px; color: var(--cinza-texto); margin-bottom: 24px; }
 .pagina-conteudo a { color: var(--vermelho); text-decoration: underline; }
 
+.link-destaque { color: var(--vermelho); text-decoration: underline; }
+
 .linha-carrinho {
   display: grid;
   grid-template-columns: 90px 1fr auto auto;
@@ -1122,7 +1135,8 @@ footer.rodape {
   .layout-artigo { grid-template-columns: minmax(0, 1fr); }
   .galeria-principal { max-width: 420px; margin: 0 auto; }
   header.topo nav { display: none; }
-  header.topo nav.nav-principal { display: flex; width: 100%; order: 3; }
+  header.topo nav.nav-principal { display: flex; width: 100%; order: 3; gap: 2px; }
+  header.topo nav.nav-principal .nav-link { padding: 6px 6px; font-size: 12px; }
   .topo-linha1 .logo { font-size: 16px; order: 1; }
   .topo-linha1 .acoes { order: 2; }
   .pesquisas-centro { flex: 1 1 100%; flex-direction: column; width: 100%; }
@@ -1130,4 +1144,53 @@ footer.rodape {
   .pesquisas-centro .pesquisa-topo input,
   #pesquisa-input, #pesquisa-marca, #pesquisa-cor, #pesquisa-tamanho { width: 100%; }
   .rodape-principal { grid-template-columns: 1fr; }
+
+  /* Filtros (Família, Marca, Modalidade, Género, pesquisas) escondidos atrás
+     de "Filtros" - o botão fica junto aos separadores (Todos os Artigos/
+     Novidades/Outlet) na mesma linha, encostado à esquerda. Ver
+     configurarFiltrosResponsivos() em cabecalho.js, que move Marca/Modalidade
+     para dentro deste painel. */
+  .botao-toggle-filtros {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    order: -1;
+    background: transparent;
+    border: none;
+    color: var(--branco);
+    padding: 6px 6px 6px 0;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .topo-linha2 { flex-direction: column; align-items: stretch; padding: 0; }
+  .filtros-colapsaveis {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 24px;
+  }
+  .filtros-colapsaveis.aberto { display: flex; }
+  .filtros-colapsaveis .nav-dropdown { width: 100%; }
+
+  /* Menu Família: em ecrã estreito os submenus deixam de abrir para o lado
+     (pensado para rato, sai do ecrã ao 2º/3º nível) e passam a abrir por
+     baixo, indentados, tipo acordeão - a tocar (ver familia-flyout.js).
+     .familia-flyout-item é display:flex (nome + seta lado a lado) - o
+     submenu precisa de flex-basis:100% + flex-wrap no pai para "quebrar"
+     para a linha seguinte em vez de ficar espremido ao lado do nome. */
+  .familia-flyout-nivel--1 { max-width: min(95vw, 400px); }
+  .familia-flyout-item { flex-wrap: wrap; }
+  .familia-flyout-item > .familia-flyout-nivel {
+    position: static;
+    flex: 1 1 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 6px 0 2px 14px;
+  }
 }

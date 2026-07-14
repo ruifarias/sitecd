@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:3001/api';
+// Mesmo hostname da página (não fixo a "localhost") - permite abrir o site
+// por IP da rede local (ex: no telemóvel) e continuar a chegar à API certa.
+const API_BASE = `http://${window.location.hostname}:3001/api`;
 
 // Header Authorization: Bearer <token> em todos os pedidos quando existe uma
 // sessão de cliente (localStorage 'clienteToken' - ver auth.js). Rotas públicas

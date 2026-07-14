@@ -145,7 +145,7 @@ router.get('/', async (req, res) => {
     request.input('pageSize', sql.Int, pageSize);
 
     const result = await request.query(`
-      SELECT Codigo_Artigo, Descritivo_Artigo, Slug, Marca, Familia_Grau1, Familia_Grau2, Familia_Grau3, Familia_Grau4,
+      SELECT Codigo_Artigo, Descritivo_Artigo, Slug, Marca, Familia_Grau1, Familia_Grau2, Familia_Grau3, Familia_Grau4, Codigo_Familia,
              Modalidade, Genero, Preco, Percentagem_Desconto, Preco_Outlet, Em_Outlet,
              ${emNovidadeExpr()} AS Em_Novidade,
              (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = ZAPP_DBSiteCD_VCatalogo.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal,
@@ -171,6 +171,7 @@ router.get('/', async (req, res) => {
         familiaGrau2: r.Familia_Grau2,
         familiaGrau3: r.Familia_Grau3,
         familiaGrau4: r.Familia_Grau4,
+        codigoFamilia: r.Codigo_Familia,
         modalidade: r.Modalidade,
         genero: r.Genero,
         preco: r.Preco,

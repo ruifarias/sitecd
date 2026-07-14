@@ -106,7 +106,7 @@ async function renderFormulario() {
 
       <fieldset>
         <legend>Pontos e Vales</legend>
-        <p class="descricao">Você tem <strong>${saldoPontos} pontos</strong>. Vá a <a href="conta.html#pontos" target="_blank">Pontos e Vales</a> para criar novos vales.</p>
+        <p class="descricao">Você tem <strong>${saldoPontos} pontos</strong>. Vá a <a href="conta.html#pontos" target="_blank" class="link-destaque">Pontos e Vales</a> para criar novos vales.</p>
         ${valesActivos.length === 0 ? '<p class="descricao">Ainda não tem vales activos.</p>' : `
           <p class="descricao">Pode seleccionar até <strong>${maxVales}</strong> vale${maxVales === 1 ? '' : 's'} (1 por cada 50€ de compras).</p>
           <div id="lista-vales-checkout">

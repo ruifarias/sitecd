@@ -41,6 +41,12 @@ async function obterFamiliasGrau(grau, codigoPai) {
 function renderNivelFamilia(itens, grau, caminhoPai) {
   const ul = document.createElement('ul');
   ul.className = `familia-flyout-nivel familia-flyout-nivel--${grau}`;
+  // Sem rato (telemóvel/touch) não há "hover" - clicar num item com filhos
+  // (grau < 4) abre/fecha a subfamília em vez de navegar logo; só um item-folha
+  // (grau4, sem seta) navega ao clicar. Com rato, mantém-se o comportamento
+  // actual: hover abre a subfamília, clique navega para qualquer nível.
+  const suportaHover = window.matchMedia('(hover: hover)').matches;
+
   itens.forEach((f) => {
     const caminho = [...caminhoPai, f.codigo];
 
@@ -53,53 +59,82 @@ function renderNivelFamilia(itens, grau, caminhoPai) {
     nome.textContent = f.nome;
     li.appendChild(nome);
 
+    let seta = null;
     if (grau < 4) {
-      const seta = document.createElement('span');
+      seta = document.createElement('span');
       seta.className = 'familia-flyout-seta';
       seta.textContent = '›';
       li.appendChild(seta);
     }
 
-    li.addEventListener('click', (e) => {
-      e.stopPropagation();
-      irParaFamilia(caminho);
-    });
-
-    let temporizadorAbrir = null;
-    let temporizadorFechar = null;
     let submenuAberto = null;
 
-    li.addEventListener('mouseenter', () => {
-      clearTimeout(temporizadorFechar);
-      if (grau >= 4) return;
-      temporizadorAbrir = setTimeout(async () => {
-        try {
-          const filhas = await obterFamiliasGrau(grau + 1, f.codigo);
-          if (!li.isConnected || filhas.length === 0) return;
-          // remove qualquer submenu anterior deste item (evita duplicar em re-hover)
-          li.querySelectorAll(':scope > .familia-flyout-nivel').forEach((n) => n.remove());
-          submenuAberto = renderNivelFamilia(filhas, grau + 1, caminho);
-          li.appendChild(submenuAberto);
-          li.classList.add('aberto');
-        } catch (err) {
-          console.error(`Erro ao carregar famílias Grau ${grau + 1}:`, err);
-        }
-      }, ATRASO_HOVER_MS);
-    });
+    async function abrirSubmenu() {
+      try {
+        const filhas = await obterFamiliasGrau(grau + 1, f.codigo);
+        if (!li.isConnected || filhas.length === 0) return;
+        // remove qualquer submenu anterior deste item (evita duplicar em re-abertura)
+        li.querySelectorAll(':scope > .familia-flyout-nivel').forEach((n) => n.remove());
+        submenuAberto = renderNivelFamilia(filhas, grau + 1, caminho);
+        li.appendChild(submenuAberto);
+        li.classList.add('aberto');
+      } catch (err) {
+        console.error(`Erro ao carregar famílias Grau ${grau + 1}:`, err);
+      }
+    }
 
-    li.addEventListener('mouseleave', () => {
-      clearTimeout(temporizadorAbrir);
-      // só fecha passado ATRASO_FECHO_MS - se o rato voltar a entrar (neste
-      // item ou no submenu, que é filho no DOM, não dispara mouseleave) a
-      // tempo, este temporizador é cancelado e nada fecha
-      temporizadorFechar = setTimeout(() => {
-        li.classList.remove('aberto');
-        if (submenuAberto) {
-          submenuAberto.remove();
-          submenuAberto = null;
-        }
-      }, ATRASO_FECHO_MS);
-    });
+    function fecharSubmenu() {
+      li.classList.remove('aberto');
+      if (submenuAberto) {
+        submenuAberto.remove();
+        submenuAberto = null;
+      }
+    }
+
+    if (suportaHover) {
+      li.addEventListener('click', (e) => {
+        e.stopPropagation();
+        irParaFamilia(caminho);
+      });
+
+      let temporizadorAbrir = null;
+      let temporizadorFechar = null;
+
+      li.addEventListener('mouseenter', () => {
+        clearTimeout(temporizadorFechar);
+        if (grau >= 4) return;
+        temporizadorAbrir = setTimeout(abrirSubmenu, ATRASO_HOVER_MS);
+      });
+
+      li.addEventListener('mouseleave', () => {
+        clearTimeout(temporizadorAbrir);
+        // só fecha passado ATRASO_FECHO_MS - se o rato voltar a entrar (neste
+        // item ou no submenu, que é filho no DOM, não dispara mouseleave) a
+        // tempo, este temporizador é cancelado e nada fecha
+        temporizadorFechar = setTimeout(fecharSubmenu, ATRASO_FECHO_MS);
+      });
+    } else {
+      // Sem rato: clicar no nome filtra sempre por esta família (mesmo
+      // não sendo grau4); clicar na seta apenas expande/recolhe a
+      // subfamília seguinte - assim ambas as acções ficam acessíveis
+      // (antes, clicar no item de grau1-3 só abria o submenu e nunca
+      // filtrava por esse grau).
+      li.addEventListener('click', (e) => {
+        e.stopPropagation();
+        irParaFamilia(caminho);
+      });
+
+      if (seta) {
+        seta.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (li.classList.contains('aberto')) {
+            fecharSubmenu();
+          } else {
+            await abrirSubmenu();
+          }
+        });
+      }
+    }
 
     ul.appendChild(li);
   });

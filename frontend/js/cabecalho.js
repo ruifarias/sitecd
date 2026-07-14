@@ -9,6 +9,26 @@
 // recarrega a grelha no local; a ficha de artigo navega para a listagem já
 // com esse filtro aplicado (não há grelha nesta página para actualizar).
 
+// Link para um grau específico da família (ex: clicar em "CACHECOL" no
+// breadcrumb "ACESSORIOS TEXTIL > CACHECOL > ..." vai directo a esse grau,
+// sem arrastar os graus mais profundos que o utilizador ainda não escolheu).
+// Usado nas "Alternativas" da ficha de artigo e nos cabeçalhos de grupo da
+// listagem quando ordenada por Família.
+function construirLinkFamiliaGrau(familiaInfo, ateGrau) {
+  const params = new URLSearchParams();
+  for (let g = 1; g <= ateGrau; g++) params.set(`familiaGrau${g}`, familiaInfo[`codigoGrau${g}`]);
+  params.set('familia', familiaInfo[`codigoGrau${ateGrau}`]);
+  params.set('ordenar', 'familia');
+  return `index.html?${params.toString()}`;
+}
+
+function construirBreadcrumbFamilia(familiaInfo) {
+  return [1, 2, 3, 4]
+    .filter((g) => familiaInfo[`grau${g}`])
+    .map((g) => `<a href="${construirLinkFamiliaGrau(familiaInfo, g)}" class="titulo-familia-link">${familiaInfo[`grau${g}`]}</a>`)
+    .join(' <span class="separador-familia">&gt;</span> ');
+}
+
 function lerEstadoFiltrosDaURL() {
   const params = new URLSearchParams(window.location.search);
   return {
@@ -190,6 +210,44 @@ function configurarDropdown(dropdownId) {
   });
 }
 
+// Em ecrã de telemóvel, os filtros (Família, Marca, Modalidade, Género,
+// pesquisas) ficam escondidos atrás do botão "Filtros" - só o essencial
+// (logo, separadores, ícones) fica sempre visível. Marca/Modalidade vivem
+// normalmente no topo-linha1 (nav-principal); em ecrã pequeno são movidos
+// (os mesmos elementos, não uma cópia) para dentro do painel de filtros
+// colapsável, entre "Família" e os pills de Género - e voltam para o sítio
+// original em ecrã grande. Página sem estes elementos (ex: carrinho.html)
+// sai logo, sem efeito.
+function configurarFiltrosResponsivos() {
+  const filtrosColapsaveis = document.getElementById('filtros-colapsaveis');
+  const btnToggle = document.getElementById('btn-toggle-filtros');
+  const navPrincipal = document.getElementById('nav-principal');
+  const dropdownFamilia = document.getElementById('dropdown-familia');
+  const dropdownMarca = document.getElementById('dropdown-marca');
+  const dropdownModalidade = document.getElementById('dropdown-modalidade');
+  if (!filtrosColapsaveis || !navPrincipal || !dropdownFamilia || !dropdownMarca || !dropdownModalidade) return;
+
+  const mql = window.matchMedia('(max-width: 800px)');
+
+  function reposicionar(ehMobile) {
+    if (ehMobile) {
+      dropdownFamilia.insertAdjacentElement('afterend', dropdownModalidade);
+      dropdownFamilia.insertAdjacentElement('afterend', dropdownMarca);
+    } else {
+      navPrincipal.appendChild(dropdownMarca);
+      navPrincipal.appendChild(dropdownModalidade);
+      filtrosColapsaveis.classList.remove('aberto');
+    }
+  }
+
+  reposicionar(mql.matches);
+  mql.addEventListener('change', (e) => reposicionar(e.matches));
+
+  if (btnToggle) {
+    btnToggle.addEventListener('click', () => filtrosColapsaveis.classList.toggle('aberto'));
+  }
+}
+
 function limparTodosFiltros(estado, aoMudar) {
   estado.separador = 'todos';
   estado.marca = null;
@@ -223,6 +281,7 @@ async function inicializarCabecalho(estado, aoMudar) {
   renderSeparadores(estado, aoMudar);
   configurarDropdown('dropdown-marca');
   configurarDropdown('dropdown-modalidade');
+  configurarFiltrosResponsivos();
   await Promise.all([
     renderFiltroGenero(estado, aoMudar),
     renderFiltroMarca(estado, aoMudar),

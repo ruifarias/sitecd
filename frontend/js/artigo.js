@@ -17,23 +17,9 @@ function construirURLListagem() {
   return `index.html${query ? '?' + query : ''}`;
 }
 
-// Link para um grau específico da família (ex: clicar em "CACHECOL" no
-// breadcrumb "ACESSORIOS TEXTIL > CACHECOL > ..." vai directo a esse grau,
-// sem arrastar os graus mais profundos que o utilizador ainda não escolheu).
-function construirLinkFamiliaGrau(familiaInfo, ateGrau) {
-  const params = new URLSearchParams();
-  for (let g = 1; g <= ateGrau; g++) params.set(`familiaGrau${g}`, familiaInfo[`codigoGrau${g}`]);
-  params.set('familia', familiaInfo[`codigoGrau${ateGrau}`]);
-  params.set('ordenar', 'familia');
-  return `index.html?${params.toString()}`;
-}
-
-function construirBreadcrumbFamilia(familiaInfo) {
-  return [1, 2, 3, 4]
-    .filter((g) => familiaInfo[`grau${g}`])
-    .map((g) => `<a href="${construirLinkFamiliaGrau(familiaInfo, g)}" class="titulo-familia-link">${familiaInfo[`grau${g}`]}</a>`)
-    .join(' <span class="separador-familia">&gt;</span> ');
-}
+// construirLinkFamiliaGrau/construirBreadcrumbFamilia (link por grau da
+// família) vivem em cabecalho.js - partilhadas com listagem.js (cabeçalhos
+// de grupo quando ordenado por Família).
 
 async function renderArtigo(a) {
   const imagemPrincipal = a.imagens[0] || '';
