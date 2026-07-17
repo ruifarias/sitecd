@@ -307,9 +307,40 @@ document.getElementById('pesquisa-marca').addEventListener('input', (e) => {
   }, 350);
 });
 
+// Ao abrir a ficha de um artigo, guardar a posição da listagem para a repor
+// quando o utilizador fizer "Voltar" (navegação completa, sem history.back()).
+document.getElementById('grelha-produtos').addEventListener('click', (e) => {
+  if (!e.target.closest('a.cartao-produto')) return;
+  sessionStorage.setItem('listagemPosicao', JSON.stringify({
+    filtros: paramsFiltros(estado).toString(),
+    page: estado.page,
+    scrollY: window.scrollY,
+  }));
+});
+
+function lerPosicaoGuardada() {
+  const bruto = sessionStorage.getItem('listagemPosicao');
+  if (!bruto) return null;
+  sessionStorage.removeItem('listagemPosicao');
+  try {
+    return JSON.parse(bruto);
+  } catch {
+    return null;
+  }
+}
+
 (async function init() {
   lerParametrosURL();
   document.getElementById('aviso-outlet').textContent = mensagemPeriodoOutlet();
   await inicializarCabecalho(estado, aoMudarFiltro);
   await carregarArtigos();
+
+  const guardado = lerPosicaoGuardada();
+  if (guardado && guardado.filtros === paramsFiltros(estado).toString()) {
+    for (let p = 2; p <= guardado.page; p++) {
+      estado.page = p;
+      await carregarArtigos(true);
+    }
+    requestAnimationFrame(() => window.scrollTo(0, guardado.scrollY));
+  }
 })();

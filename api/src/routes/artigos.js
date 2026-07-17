@@ -11,6 +11,12 @@ const router = express.Router();
 // pago, o que ficava mal ordenado (secção 2.3).
 const PRECO_EFECTIVO = "CASE WHEN Em_Outlet = 1 THEN Preco_Outlet ELSE Preco END";
 
+// A BD usa Latin1_General_CI_AS (distingue acentos), mas os descritivos tanto
+// aparecem com acentos como sem ("CALÇÃO"/"CALCAO") e o utilizador escreve das
+// duas formas - as pesquisas de texto livre comparam com collation AI
+// (accent-insensitive) para apanhar ambos.
+const AI = 'COLLATE Latin1_General_CI_AI';
+
 // Mesma regra usada no separador "Novidades": Novidade_Manual = 1 força
 // incluir, = 0 força excluir, NULL segue a regra de Data_Ult_Compra (secção
 // 2.6/3). A comparação de datas fica inteiramente no SQL Server (não em JS)
@@ -54,7 +60,7 @@ router.get('/', async (req, res) => {
       request.input('marca', sql.VarChar(3), req.query.marca);
     }
     if (req.query.marcaText) {
-      condicoes.push('Marca LIKE @marcaText');
+      condicoes.push(`Marca ${AI} LIKE @marcaText`);
       request.input('marcaText', sql.NVarChar(100), `%${req.query.marcaText}%`);
     }
     if (req.query.modalidade) {
@@ -72,9 +78,9 @@ router.get('/', async (req, res) => {
     if (req.query.q) {
       // pesquisa livre: descricao do artigo, codigo, ou texto do lote (cor/tamanho - secção 2.3, sem parsing)
       condicoes.push(`(
-        Descritivo_Artigo LIKE @q
+        Descritivo_Artigo ${AI} LIKE @q
         OR Codigo_Artigo LIKE @q
-        OR EXISTS (SELECT 1 FROM dbo.ZAPP_DBSiteCD_Variantes v WHERE v.Codigo_Artigo = ZAPP_DBSiteCD_VCatalogo.Codigo_Artigo AND v.Descricao_Lote LIKE @q)
+        OR EXISTS (SELECT 1 FROM dbo.ZAPP_DBSiteCD_Variantes v WHERE v.Codigo_Artigo = ZAPP_DBSiteCD_VCatalogo.Codigo_Artigo AND v.Descricao_Lote ${AI} LIKE @q)
       )`);
       request.input('q', sql.NVarChar(100), `%${req.query.q}%`);
     }
@@ -106,7 +112,7 @@ router.get('/', async (req, res) => {
           'castanha': "(v.Descricao_Lote LIKE N'%castanho%' OR v.Descricao_Lote LIKE N'%castanha%' OR v.Descricao_Lote LIKE N'%marrom%')",
         };
         request.input('corFiltro', sql.NVarChar(100), `%${cor}%`);
-        condicoesVariante.push(coresVariacoes[cor] || `v.Descricao_Lote LIKE @corFiltro`);
+        condicoesVariante.push(coresVariacoes[cor] || `v.Descricao_Lote ${AI} LIKE @corFiltro`);
       }
 
       if (req.query.tamanho) {
@@ -300,7 +306,7 @@ router.get('/:codigo/mesma-subfamilia', async (req, res) => {
       if (req.query.cor) {
         const cor = req.query.cor.trim().toLowerCase();
         request.input('corFiltroSub', sql.NVarChar(100), `%${cor}%`);
-        condicoesVariante.push(coresVariacoes[cor] || `v.Descricao_Lote LIKE @corFiltroSub`);
+        condicoesVariante.push(coresVariacoes[cor] || `v.Descricao_Lote ${AI} LIKE @corFiltroSub`);
       }
 
       if (req.query.tamanho) {
@@ -320,12 +326,12 @@ router.get('/:codigo/mesma-subfamilia', async (req, res) => {
 
     if (req.query.q) {
       request.input('q', sql.NVarChar(100), `%${req.query.q}%`);
-      condicoes.push('a.Descritivo_Artigo LIKE @q');
+      condicoes.push(`a.Descritivo_Artigo ${AI} LIKE @q`);
     }
 
     if (req.query.marcaText) {
       request.input('marcaText', sql.NVarChar(100), `%${req.query.marcaText}%`);
-      condicoes.push('a.Marca LIKE @marcaText');
+      condicoes.push(`a.Marca ${AI} LIKE @marcaText`);
     }
 
     if (req.query.marca) {
