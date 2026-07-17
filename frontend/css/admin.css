@@ -91,6 +91,11 @@ body {
   text-overflow: ellipsis;
 }
 
+a.menu-item {
+  display: block;
+  text-decoration: none;
+}
+
 .menu-item:hover {
   background: rgba(255, 255, 255, 0.1);
   color: var(--branco);

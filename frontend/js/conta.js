@@ -425,7 +425,8 @@ async function trocarPontosPorVale() {
 
 // ========== MENU LATERAL ==========
 function inicializarMenu() {
-  const items = document.querySelectorAll('.menu-item');
+  // só os itens de secção - o link Backoffice (a.menu-item) navega para admin.html
+  const items = document.querySelectorAll('.menu-item[data-secao]');
 
   items.forEach((item) => {
     item.addEventListener('click', function () {
@@ -452,10 +453,22 @@ function inicializarMenu() {
 }
 
 // ========== INIT ==========
+// O perfil de conta (/conta/perfil) não expõe IsAdmin - é /auth/perfil que o
+// devolve (o mesmo que o admin.html usa para validar o acesso).
+async function mostrarBotaoBackofficeSeAdmin() {
+  try {
+    const perfil = await apiGet('/auth/perfil');
+    if (perfil.isAdmin) document.getElementById('btn-backoffice').style.display = '';
+  } catch {
+    // sem sessão válida ou erro de rede - o botão simplesmente não aparece
+  }
+}
+
 function mostrarAreaAutenticada() {
   document.getElementById('auth-conta').style.display = 'none';
   document.getElementById('conteudo-autenticado').style.display = 'block';
   inicializarMenu();
+  mostrarBotaoBackofficeSeAdmin();
 
   // permite chegar directamente à secção Pontos e Vales via link externo
   // (ex: conta.html#pontos, usado no Checkout) - por omissão fica Encomendas
