@@ -11,3 +11,4 @@ yarn-error.log*
 dist/
 build/
 nssm.exe
+instalar_servicos_site_resultado.txt
