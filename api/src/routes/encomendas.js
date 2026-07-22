@@ -17,11 +17,14 @@ const router = express.Router();
 const REGEX_TELEMOVEL_PT = /^9\d{8}$/;
 
 router.post('/', requireAuth, async (req, res) => {
-  const { sessaoId, morada, metodoPagamento, telemovel, valeCodigos } = req.body;
+  const { sessaoId, morada, metodoPagamento, telemovel, valeCodigos, tipoEnvio } = req.body;
   const clienteId = req.cliente.id;
 
   if (!sessaoId || !morada?.morada || !morada?.localidade || !morada?.codigoPostal) {
     return res.status(400).json({ erro: 'sessaoId e morada (morada, localidade, codigoPostal) são obrigatórios.' });
+  }
+  if (!tipoEnvio) {
+    return res.status(400).json({ erro: 'tipoEnvio é obrigatório.' });
   }
 
   const pool = await getPool();
@@ -32,6 +35,14 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ erro: 'Método de pagamento indisponível. Actualize a página e tente novamente.' });
   }
   const metodoInfo = metodoRes.recordset[0];
+
+  const tipoEnvioRes = await pool.request()
+    .input('codigo', sql.VarChar(30), tipoEnvio)
+    .query(`SELECT Designacao, Custo FROM dbo.ZAPP_DBSiteCD_TiposEnvio WHERE Codigo = @codigo AND Activo = 1;`);
+  if (tipoEnvioRes.recordset.length === 0) {
+    return res.status(400).json({ erro: 'Tipo de envio indisponível. Actualize a página e tente novamente.' });
+  }
+  const tipoEnvioInfo = tipoEnvioRes.recordset[0];
 
   if (metodoPagamento === 'MBWAY' && !REGEX_TELEMOVEL_PT.test(telemovel || '')) {
     return res.status(400).json({ erro: 'Indique um número de telemóvel português válido (9 dígitos, a começar por 9) para o pedido MB WAY.' });
@@ -87,14 +98,15 @@ router.post('/', requireAuth, async (req, res) => {
       }
     }
 
-    // configuração de portes e pontos (Config já genérico, sem endpoint dedicado)
+    // configuração de pontos (Config já genérico, sem endpoint dedicado); os
+    // portes vêm do tipo de envio escolhido (validado acima, fora da transacção)
     const configReq = new sql.Request(transaction);
     const configRes = await configReq.query(`
-      SELECT Chave, Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave IN ('PortesEnvio', 'PontosPorEuro');
+      SELECT Chave, Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave = 'PontosPorEuro';
     `);
     const config = {};
     configRes.recordset.forEach((r) => { config[r.Chave] = r.Valor; });
-    const portes = parseFloat(config.PortesEnvio) || 0;
+    const portes = parseFloat(tipoEnvioInfo.Custo) || 0;
     const pontosPorEuro = parseFloat(config.PontosPorEuro) || 1;
 
     const totalProdutos = carrinho.recordset.reduce((soma, l) => soma + (l.Preco || 0) * l.Quantidade, 0);
@@ -156,6 +168,7 @@ router.post('/', requireAuth, async (req, res) => {
       .input('clienteId', sql.Int, clienteId)
       .input('total', sql.Money, total)
       .input('portes', sql.Money, portes)
+      .input('tipoEnvio', sql.VarChar(30), tipoEnvio)
       .input('valeCodigo', sql.VarChar(200), valesAplicados.length > 0 ? valesAplicados.map((v) => v.codigo).join(', ') : null)
       .input('valeDesconto', sql.Money, desconto)
       .input('pontosGanhos', sql.Int, pontosGanhos)
@@ -165,9 +178,9 @@ router.post('/', requireAuth, async (req, res) => {
       .input('codigoPostal', sql.VarChar(10), morada.codigoPostal)
       .query(`
         INSERT INTO dbo.ZAPP_DBSiteCD_Encomendas
-          (Numero, Cliente_Id, Estado, Total, Portes, Vale_Codigo, Vale_Desconto, Pontos_Ganhos, Metodo_Pagamento, Data_Actualizacao, Morada_Entrega, Localidade_Entrega, Codigo_Postal_Entrega)
+          (Numero, Cliente_Id, Estado, Total, Portes, Tipo_Envio, Vale_Codigo, Vale_Desconto, Pontos_Ganhos, Metodo_Pagamento, Data_Actualizacao, Morada_Entrega, Localidade_Entrega, Codigo_Postal_Entrega)
         OUTPUT inserted.Id
-        VALUES ('TEMP', @clienteId, 'AguardarPagamento', @total, @portes, @valeCodigo, @valeDesconto, @pontosGanhos, @metodo, GETDATE(), @morada, @localidade, @codigoPostal);
+        VALUES ('TEMP', @clienteId, 'AguardarPagamento', @total, @portes, @tipoEnvio, @valeCodigo, @valeDesconto, @pontosGanhos, @metodo, GETDATE(), @morada, @localidade, @codigoPostal);
       `);
     const encomendaId = encomenda.recordset[0].Id;
 
@@ -294,6 +307,7 @@ router.post('/', requireAuth, async (req, res) => {
       numero,
       total,
       portes,
+      tipoEnvio: tipoEnvioInfo.Designacao,
       valeDesconto: desconto,
       valesAplicados: valesAplicados.map((v) => v.codigo),
       pontosGanhos,

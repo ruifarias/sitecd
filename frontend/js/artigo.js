@@ -23,6 +23,9 @@ function construirURLListagem() {
 
 async function renderArtigo(a) {
   const imagemPrincipal = a.imagens[0] || '';
+  // Passado ao lightbox para poder percorrer as imagens com as setas/←→
+  // sem depender da miniatura seleccionada no momento (ver mostrarImagemAmpliada).
+  const galeriaLightbox = a.imagens.map((img, i) => ({ src: img, alt: `${a.descricao} - imagem ${i + 1}` }));
 
   // Carregar artigos da mesma sub-família com filtros passados da listagem
   let artigosMesmaSub = [];
@@ -54,8 +57,17 @@ async function renderArtigo(a) {
   }
 
   document.getElementById('layout-artigo').innerHTML = `
-    <div class="galeria-principal">
-      <img src="${imagemPrincipal}" alt="${a.descricao}" id="imagem-principal" onerror="this.style.opacity=0">
+    <div class="galeria-artigo">
+      ${a.imagens.length > 1 ? `
+        <div class="galeria-miniaturas" id="galeria-miniaturas">
+          ${a.imagens.map((img, i) => `
+            <img src="${img}" alt="${a.descricao} - imagem ${i + 1}" class="miniatura-galeria ${i === 0 ? 'activa' : ''}" data-src="${img}">
+          `).join('')}
+        </div>
+      ` : ''}
+      <div class="galeria-principal">
+        <img src="${imagemPrincipal}" alt="${a.descricao}" id="imagem-principal" onerror="this.style.opacity=0">
+      </div>
     </div>
     <div class="info-artigo">
       <a href="${construirURLListagem()}" class="botao-voltar">← Voltar</a>
@@ -145,10 +157,21 @@ async function renderArtigo(a) {
       if (jaAbertaComEstaImagem) {
         fecharImagemAmpliada();
       } else {
-        mostrarImagemAmpliada(imagemPrincipalEl.src, imagemPrincipalEl.alt);
+        mostrarImagemAmpliada(imagemPrincipalEl.src, imagemPrincipalEl.alt, { imagens: galeriaLightbox });
       }
     });
   }
+
+  // Miniaturas: clicar troca a imagem principal (e a legenda usada na
+  // ampliação) sem recarregar a página.
+  document.querySelectorAll('.miniatura-galeria').forEach((miniatura) => {
+    miniatura.addEventListener('click', () => {
+      if (!imagemPrincipalEl) return;
+      document.querySelectorAll('.miniatura-galeria').forEach((m) => m.classList.remove('activa'));
+      miniatura.classList.add('activa');
+      imagemPrincipalEl.src = miniatura.dataset.src;
+    });
+  });
 
   // Carousel controls
   const carouselPrev = document.getElementById('carousel-prev');

@@ -357,6 +357,16 @@ a.menu-item {
   border-radius: 6px;
 }
 
+/* "As Minhas Encomendas" (área de cliente) - caixa baixa, mostra ~2 linhas e
+   usa a scrollbar interna para o resto do histórico, em vez de ocupar a
+   página toda. */
+.lista-encomendas-compacta {
+  max-height: 230px;
+  /* reserva sempre o espaço da scrollbar - sem isto, a scrollbar nativa
+     desenha-se por cima do canto arredondado do cabeçalho sticky */
+  scrollbar-gutter: stable;
+}
+
 /* Sync Table */
 .sync-table {
   width: 100%;
@@ -474,6 +484,20 @@ a.menu-item {
   font-size: 13px;
 }
 .metodos-pagamento-table .metodo-detalhe { min-width: 320px; }
+
+/* Tipos de Envio */
+.metodos-pagamento-table .col-designacao-envio { min-width: 340px; }
+.metodos-pagamento-table .col-custo-envio { width: 110px; }
+.metodos-pagamento-table .tipo-envio-ordem { width: 50px; text-align: center; }
+.metodos-pagamento-table .tipo-envio-designacao,
+.metodos-pagamento-table .tipo-envio-custo {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--cinza-medio);
+  font-size: 13px;
+}
+.metodos-pagamento-table .tipo-envio-designacao { min-width: 320px; }
+.metodos-pagamento-table .tipo-envio-custo { width: 90px; text-align: right; }
 
 /* Tabelas de Famílias */
 .familias-table,

@@ -1,12 +1,16 @@
 let portesEnvio = 0;
 let totalProdutosCheckout = 0;
+let tiposEnvioDisponiveis = [];
+// Preenchida por configurarLimiteVales() - chamada também quando o tipo de
+// envio muda, para o "Valor a pagar" (com desconto de vales) acompanhar o
+// novo valor de portes.
+let actualizarResumoPagamento = () => {};
 
-async function obterPortesEnvio() {
+async function obterTiposEnvio() {
   try {
-    const config = await apiGet('/config-publico');
-    return parseFloat(config.PortesEnvio) || 0;
+    return await apiGet('/tipos-envio');
   } catch (_) {
-    return 0;
+    return [];
   }
 }
 
@@ -18,8 +22,9 @@ async function renderResumo() {
     return false;
   }
 
-  portesEnvio = await obterPortesEnvio();
+  tiposEnvioDisponiveis = await obterTiposEnvio();
   totalProdutosCheckout = total;
+  portesEnvio = tiposEnvioDisponiveis.length > 0 ? parseFloat(tiposEnvioDisponiveis[0].custo) || 0 : 0;
   const totalComPortes = total + portesEnvio;
 
   document.getElementById('resumo-checkout').innerHTML = `
@@ -32,12 +37,12 @@ async function renderResumo() {
           <span>${formatarPreco(l.subtotal)}</span>
         </div>
       `).join('')}
-      <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:#555">
+      <div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:4px 0;color:#555">
         <span class="linha-portes-envio">
           <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
-          Portes de envio
+          <span>Portes de envio<span id="designacao-tipo-envio-resumo">${tiposEnvioDisponiveis.length > 0 ? ` (${tiposEnvioDisponiveis[0].designacao})` : ''}</span></span>
         </span>
-        <span>${formatarPreco(portesEnvio)}</span>
+        <span id="valor-portes-resumo" style="flex-shrink:0;white-space:nowrap">${formatarPreco(portesEnvio)}</span>
       </div>
       <div class="resumo-total"><span>Total</span><span id="valor-total-resumo">${formatarPreco(totalComPortes)}</span></div>
     </fieldset>
@@ -93,6 +98,16 @@ async function renderFormulario() {
   document.getElementById('conteudo-checkout').innerHTML = `
     <form class="checkout" id="form-checkout">
       <div id="erro-checkout"></div>
+
+      <fieldset>
+        <legend>Tipo de Envio</legend>
+        ${tiposEnvioDisponiveis.map((t, i) => `
+          <label class="metodo-pagamento">
+            <input type="radio" name="tipoEnvio" value="${t.codigo}" data-custo="${t.custo}" ${i === 0 ? 'checked' : ''}>
+            <span><strong>${t.designacao}</strong> — ${formatarPreco(t.custo)}</span>
+          </label>
+        `).join('')}
+      </fieldset>
 
       <fieldset>
         <legend>Morada de Entrega</legend>
@@ -151,7 +166,24 @@ async function renderFormulario() {
 
   configurarLimiteVales(maxVales);
   configurarMetodoPagamento();
+  configurarTipoEnvio();
   document.getElementById('form-checkout').addEventListener('submit', submeterEncomenda);
+}
+
+// Ao trocar o tipo de envio, o valor dos portes muda - actualiza o resumo
+// (portes e total) e, se houver vales seleccionados, o "Valor a pagar".
+function configurarTipoEnvio() {
+  document.querySelectorAll('input[name="tipoEnvio"]').forEach((radio) => {
+    radio.addEventListener('change', () => {
+      if (!radio.checked) return;
+      portesEnvio = parseFloat(radio.dataset.custo) || 0;
+      const tipoSeleccionado = tiposEnvioDisponiveis.find((t) => t.codigo === radio.value);
+      document.getElementById('valor-portes-resumo').textContent = formatarPreco(portesEnvio);
+      document.getElementById('designacao-tipo-envio-resumo').textContent = tipoSeleccionado ? ` (${tipoSeleccionado.designacao})` : '';
+      document.getElementById('valor-total-resumo').textContent = formatarPreco(totalProdutosCheckout + portesEnvio);
+      actualizarResumoPagamento();
+    });
+  });
 }
 
 // Mostra/exige o campo de telemóvel só quando MB WAY (Ifthenpay) está
@@ -197,6 +229,7 @@ function configurarLimiteVales(maxVales) {
   };
 
   checkboxes.forEach((cb) => cb.addEventListener('change', actualizar));
+  actualizarResumoPagamento = actualizar;
   actualizar();
 }
 
@@ -219,6 +252,7 @@ async function submeterEncomenda(e) {
       localidade: form.localidade.value,
       codigoPostal: form.codigoPostal.value,
     },
+    tipoEnvio: form.tipoEnvio.value,
     metodoPagamento: form.metodoPagamento.value,
     telemovel: form.metodoPagamento.value === 'MBWAY' ? form.telemovel.value.trim() : undefined,
     valeCodigos: valeCodigos.length > 0 ? valeCodigos : undefined,
@@ -231,6 +265,7 @@ async function submeterEncomenda(e) {
       <div class="mensagem-sucesso">
         <h2 style="margin-bottom:10px">Encomenda confirmada!</h2>
         <p><strong>Número:</strong> ${encomenda.numero}</p>
+        <p><strong>Tipo de Envio:</strong> ${encomenda.tipoEnvio}</p>
         <p><strong>Portes:</strong> ${formatarPreco(encomenda.portes)}</p>
         ${encomenda.valeDesconto > 0 ? `<p><strong>Desconto de vale${encomenda.valesAplicados.length === 1 ? '' : 's'} (${encomenda.valesAplicados.join(', ')}):</strong> -${formatarPreco(encomenda.valeDesconto)}</p>` : ''}
         <p><strong>Total:</strong> ${formatarPreco(encomenda.total)}</p>

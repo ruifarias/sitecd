@@ -2,6 +2,7 @@
 // sem exigir login). Ver PLANO_PROJETO.md secção 2.2/3 Fase 2.
 const express = require('express');
 const { getPool, sql } = require('../db');
+const { imagensBaseUrl } = require('../utils/imagens');
 
 const router = express.Router();
 
@@ -40,7 +41,7 @@ router.get('/:sessaoId', async (req, res) => {
         emOutlet: !!r.Em_Outlet,
         disponivel: r.Disponivel,
         subtotal: precoEfetivo != null ? Math.round(precoEfetivo * r.Quantidade * 100) / 100 : null,
-        imagem: r.Imagem ? `${process.env.IMAGES_BASE_URL}/${r.Imagem.replace(/^imagens\//, '')}` : null,
+        imagem: r.Imagem ? `${imagensBaseUrl(req)}/${r.Imagem.replace(/^imagens\//, '')}` : null,
       };
     });
 

@@ -179,7 +179,7 @@ router.get('/config-publico', async (req, res) => {
   try {
     const pool = await getPool();
     const result = await pool.request()
-      .query(`SELECT Chave, Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave IN ('PortesEnvio', 'PontosPorEuro', 'PontosParaVale', 'ValorVale');`);
+      .query(`SELECT Chave, Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave IN ('PontosPorEuro', 'PontosParaVale', 'ValorVale');`);
     const config = {};
     result.recordset.forEach((r) => { config[r.Chave] = r.Valor; });
     res.json(config);
@@ -207,6 +207,27 @@ router.get('/metodos-pagamento', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao obter métodos de pagamento.' });
+  }
+});
+
+// GET /api/tipos-envio - só os tipos activos, ordenados para o checkout (ver
+// frontend/js/checkout.js) - designação/custo/ordem geridos no Backoffice
+// (secção "Tipos de Envio").
+router.get('/tipos-envio', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request().query(`
+      SELECT Codigo, Designacao, Custo FROM dbo.ZAPP_DBSiteCD_TiposEnvio
+      WHERE Activo = 1 ORDER BY Ordem, Id;
+    `);
+    res.json(resultado.recordset.map((t) => ({
+      codigo: t.Codigo,
+      designacao: t.Designacao,
+      custo: t.Custo,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter tipos de envio.' });
   }
 });
 

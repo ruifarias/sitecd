@@ -93,7 +93,7 @@ async function carregarEncomendas() {
       return;
     }
     container.innerHTML = `
-      <div class="tabela-scroll-painel">
+      <div class="tabela-scroll-painel lista-encomendas-compacta">
         <table class="sync-table">
           <thead>
             <tr><th>Data</th><th>Número</th><th>Estado</th><th>Total</th><th>Pontos</th><th>Acções</th></tr>
@@ -109,6 +109,7 @@ async function carregarEncomendas() {
                 <td>
                   <div class="acoes-encomenda">
                     <button class="botao-secundario btn-ver-encomenda" data-numero="${e.numero}">Ver detalhe</button>
+                    ${e.podeConfirmarRecepcao ? `<button class="botao-principal btn-confirmar-recepcao-lista" data-numero="${e.numero}">Confirmar Receção da Encomenda</button>` : ''}
                     ${e.podeDevolver ? `<button class="botao-secundario btn-devolver-encomenda" data-numero="${e.numero}">Devolução</button>` : ''}
                   </div>
                 </td>
@@ -123,6 +124,9 @@ async function carregarEncomendas() {
     });
     container.querySelectorAll('.btn-devolver-encomenda').forEach((btn) => {
       btn.addEventListener('click', () => abrirDevolucaoCliente(btn.dataset.numero));
+    });
+    container.querySelectorAll('.btn-confirmar-recepcao-lista').forEach((btn) => {
+      btn.addEventListener('click', () => confirmarRecepcaoEncomendaLista(btn.dataset.numero, btn));
     });
   } catch (err) {
     container.innerHTML = `<div class="mensagem-erro">${err.message}</div>`;
@@ -164,7 +168,7 @@ async function verDetalheEncomenda(numero) {
         </table>
         <div class="resumo-encomenda-totais">
           <div><span>Sub-total dos Artigos</span><span>${formatarPreco(e.totalProdutos)}</span></div>
-          <div><span>Portes</span><span>${formatarPreco(e.portes)}</span></div>
+          <div><span>Portes${e.tipoEnvio ? ` (${e.tipoEnvio})` : ''}</span><span>${formatarPreco(e.portes)}</span></div>
           ${e.valeDesconto > 0 ? `<div><span>Vale aplicado (${e.valeCodigo})</span><span>-${formatarPreco(e.valeDesconto)}</span></div>` : ''}
           <div class="resumo-total-final"><span>Total</span><span>${formatarPreco(e.total)}</span></div>
         </div>
@@ -221,11 +225,33 @@ async function verDetalheEncomenda(numero) {
   }
 }
 
+// Variante de confirmarRecepcaoEncomenda() para a lista "As Minhas
+// Encomendas": ali pode haver uma linha por encomenda elegível, por isso
+// opera sobre o botão clicado em vez de ids fixos (#btn-confirmar-recepcao só
+// existe uma vez, no detalhe).
+async function confirmarRecepcaoEncomendaLista(numero, btn) {
+  const confirmado = confirm(
+    `Confirma a receção da encomenda ${numero}?\n\n` +
+    `Esta confirmação irá disponibilizar de imediato os pontos relativos a esta encomenda.`
+  );
+  if (!confirmado) return;
+
+  btn.disabled = true;
+  btn.textContent = 'A processar...';
+  try {
+    await apiPut(`/conta/encomendas/${numero}/confirmar-recepcao`, {});
+    await carregarEncomendas();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Confirmar Receção da Encomenda';
+  }
+}
+
 async function confirmarRecepcaoEncomenda(numero) {
   const confirmado = confirm(
     `Confirma a receção da encomenda ${numero}?\n\n` +
-    `Esta confirmação irá disponibilizar de imediato os pontos relativos a esta encomenda.\n\n` +
-    `Confirma que está tudo correcto com a encomenda?`
+    `Esta confirmação irá disponibilizar de imediato os pontos relativos a esta encomenda.`
   );
   if (!confirmado) return;
 

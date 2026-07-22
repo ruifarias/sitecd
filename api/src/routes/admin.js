@@ -4,6 +4,7 @@
 // Acesso restrito a clientes com IsAdmin = 1 (ver migração 016 e middleware/auth.js).
 const express = require('express');
 const { getPool, sql } = require('../db');
+const { imagensBaseUrl } = require('../utils/imagens');
 const {
   SEQUENCIA_ESTADOS,
   ESTADO_ANULADA,
@@ -104,6 +105,121 @@ router.put('/metodos-pagamento/:codigo', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao actualizar método de pagamento.' });
+  }
+});
+
+// ---- Tipos de Envio ----
+router.get('/tipos-envio', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request().query(`
+      SELECT Codigo, Designacao, Custo, Activo, Ordem FROM dbo.ZAPP_DBSiteCD_TiposEnvio ORDER BY Ordem, Id;
+    `);
+    res.json(resultado.recordset.map((t) => ({
+      codigo: t.Codigo,
+      designacao: t.Designacao,
+      custo: t.Custo,
+      activo: t.Activo,
+      ordem: t.Ordem,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter tipos de envio.' });
+  }
+});
+
+router.put('/tipos-envio/:codigo', async (req, res) => {
+  const { designacao, custo, activo, ordem } = req.body;
+  if (!designacao) return res.status(400).json({ erro: 'designacao é obrigatória.' });
+  if (custo == null || custo < 0) return res.status(400).json({ erro: 'custo é obrigatório e não pode ser negativo.' });
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('codigo', sql.VarChar(30), req.params.codigo)
+      .input('designacao', sql.NVarChar(100), designacao)
+      .input('custo', sql.Money, custo)
+      .input('activo', sql.Bit, !!activo)
+      .input('ordem', sql.Int, Number.isInteger(ordem) ? ordem : 0)
+      .query(`
+        UPDATE dbo.ZAPP_DBSiteCD_TiposEnvio
+        SET Designacao = @designacao, Custo = @custo, Activo = @activo, Ordem = @ordem
+        WHERE Codigo = @codigo;
+      `);
+    if (resultado.rowsAffected[0] === 0) {
+      return res.status(404).json({ erro: 'Tipo de envio não encontrado.' });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao actualizar tipo de envio.' });
+  }
+});
+
+// ---- Artigos Reservados ----
+// Uma linha por encomenda que ainda detém a reserva (estados antes de
+// "Enviada" - ver SEQUENCIA_ESTADOS); a reserva é libertada ao avançar para
+// Enviada ou ao anular (ver Qtd_Reservada em /avancar e /anular acima).
+router.get('/artigos-reservados', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const estadosComReserva = SEQUENCIA_ESTADOS.filter((estado) => estado !== 'Enviada');
+    const request = pool.request();
+    estadosComReserva.forEach((estado, i) => request.input(`estado${i}`, sql.VarChar(30), estado));
+    const resultado = await request.query(`
+      SELECT e.Numero, l.Codigo_Artigo, l.Codigo_Lote, l.Quantidade, a.Descritivo_Artigo, v.Descricao_Lote,
+             (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = l.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal
+      FROM dbo.ZAPP_DBSiteCD_EncomendasLinhas l
+      INNER JOIN dbo.ZAPP_DBSiteCD_Encomendas e ON e.Id = l.Encomenda_Id
+      INNER JOIN dbo.ZAPP_DBSiteCD_Artigos a ON a.Codigo_Artigo = l.Codigo_Artigo
+      LEFT JOIN dbo.ZAPP_DBSiteCD_Variantes v ON v.Codigo_Artigo = l.Codigo_Artigo AND v.Codigo_Lote = l.Codigo_Lote
+      -- só mostra se ainda houver reserva real no Stock (não fica "presa" na
+      -- lista depois de um Apagar - ver POST /artigos-reservados/libertar)
+      INNER JOIN dbo.ZAPP_DBSiteCD_Stock s ON s.Codigo_Artigo = l.Codigo_Artigo AND s.Codigo_Lote = l.Codigo_Lote AND s.Codigo_Armazem = '001' AND s.Qtd_Reservada > 0
+      WHERE e.Estado IN (${estadosComReserva.map((_, i) => `@estado${i}`).join(', ')})
+      ORDER BY a.Descritivo_Artigo, l.Codigo_Lote, e.Numero;
+    `);
+    res.json(resultado.recordset.map((r) => ({
+      numeroEncomenda: r.Numero,
+      codigo: r.Codigo_Artigo,
+      codigoLote: r.Codigo_Lote,
+      descricao: r.Descritivo_Artigo,
+      imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+      lote: r.Descricao_Lote || r.Codigo_Lote,
+      quantidadeReservada: r.Quantidade,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter artigos reservados.' });
+  }
+});
+
+// POST /admin/artigos-reservados/libertar - repõe a Qtd_Reservada a 0 para um
+// artigo/lote (ferramenta manual para reservas presas, ex: encomenda nunca
+// avançou nem foi anulada). Afecta TODAS as encomendas que reservem este
+// artigo/lote, não só a que aparece na linha - é uma reposição do stock, não
+// uma alteração à encomenda em si.
+router.post('/artigos-reservados/libertar', async (req, res) => {
+  const { codigoArtigo, codigoLote } = req.body;
+  if (!codigoArtigo || !codigoLote) {
+    return res.status(400).json({ erro: 'codigoArtigo e codigoLote são obrigatórios.' });
+  }
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('codigoArtigo', sql.VarChar(20), codigoArtigo)
+      .input('codigoLote', sql.VarChar(50), codigoLote)
+      .query(`
+        UPDATE dbo.ZAPP_DBSiteCD_Stock
+        SET Qtd_Reservada = 0
+        WHERE Codigo_Artigo = @codigoArtigo AND Codigo_Lote = @codigoLote AND Codigo_Armazem = '001';
+      `);
+    if (resultado.rowsAffected[0] === 0) {
+      return res.status(404).json({ erro: 'Stock não encontrado para este artigo/lote.' });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao libertar stock reservado.' });
   }
 });
 
@@ -387,7 +503,7 @@ router.get('/marcas/:codigo/artigos', async (req, res) => {
     res.json(result.recordset.map((r) => ({
       codigo: r.Codigo_Artigo,
       descricao: r.Descritivo_Artigo,
-      imagem: r.Imagem_Principal ? `${process.env.IMAGES_BASE_URL}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+      imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
       existencia: r.Existencia,
     })));
   } catch (err) {
@@ -486,11 +602,12 @@ router.get('/encomendas', async (req, res) => {
     const whereClause = condicoes.length > 0 ? `WHERE ${condicoes.join(' AND ')}` : '';
 
     const resultado = await request.query(`
-      SELECT e.Numero, e.Estado, e.Total, e.Portes, e.Pontos_Ganhos, e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, e.Data_Criacao, e.Data_Actualizacao,
+      SELECT e.Numero, e.Estado, e.Total, e.Portes, e.Tipo_Envio, te.Designacao AS Tipo_Envio_Designacao, e.Pontos_Ganhos, e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, e.Data_Criacao, e.Data_Actualizacao,
              c.Nome AS Cliente_Nome, c.Email AS Cliente_Email, c.Codigo_Cliente
       FROM dbo.ZAPP_DBSiteCD_Encomendas e
       LEFT JOIN dbo.ZAPP_DBSiteCD_Clientes c ON c.Id = e.Cliente_Id
       LEFT JOIN dbo.ZAPP_DBSiteCD_MetodosPagamento mp ON mp.Codigo = e.Metodo_Pagamento
+      LEFT JOIN dbo.ZAPP_DBSiteCD_TiposEnvio te ON te.Codigo = e.Tipo_Envio
       ${whereClause}
       ORDER BY e.Data_Criacao DESC;
     `);
@@ -501,6 +618,7 @@ router.get('/encomendas', async (req, res) => {
       estadoLabel: ESTADOS_LABELS[e.Estado] || e.Estado,
       total: e.Total,
       portes: e.Portes,
+      tipoEnvio: e.Tipo_Envio_Designacao || e.Tipo_Envio,
       pontosGanhos: e.Pontos_Ganhos,
       metodoPagamento: e.Metodo_Pagamento_Designacao || e.Metodo_Pagamento,
       data: e.Data_Criacao,
@@ -526,12 +644,13 @@ router.get('/encomendas/:numero', async (req, res) => {
     const encomenda = await pool.request()
       .input('numero', sql.VarChar(30), req.params.numero)
       .query(`
-        SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
+        SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Tipo_Envio, te.Designacao AS Tipo_Envio_Designacao, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
                e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, e.Data_Criacao, e.Data_Actualizacao, e.Motivo_Anulacao,
                c.Nome AS Cliente_Nome, c.Email AS Cliente_Email, c.Codigo_Cliente
         FROM dbo.ZAPP_DBSiteCD_Encomendas e
         LEFT JOIN dbo.ZAPP_DBSiteCD_Clientes c ON c.Id = e.Cliente_Id
         LEFT JOIN dbo.ZAPP_DBSiteCD_MetodosPagamento mp ON mp.Codigo = e.Metodo_Pagamento
+        LEFT JOIN dbo.ZAPP_DBSiteCD_TiposEnvio te ON te.Codigo = e.Tipo_Envio
         WHERE e.Numero = @numero;
       `);
 
@@ -577,6 +696,7 @@ router.get('/encomendas/:numero', async (req, res) => {
       total: e.Total,
       totalProdutos,
       portes: e.Portes,
+      tipoEnvio: e.Tipo_Envio_Designacao || e.Tipo_Envio,
       valeCodigo: e.Vale_Codigo,
       valeDesconto: e.Vale_Desconto,
       pontosGanhos: e.Pontos_Ganhos,
@@ -786,6 +906,14 @@ router.put('/encomendas/:numero/avancar', async (req, res) => {
       .query('UPDATE dbo.ZAPP_DBSiteCD_Encomendas SET Estado = @estado, Data_Actualizacao = GETUTCDATE() WHERE Id = @id;');
 
     if (novoEstado === 'Enviada') {
+      // Data_Envio fica fixa neste momento (ao contrário de Data_Actualizacao,
+      // que volta a mudar quando o cliente confirma a receção) - é a partir
+      // dela que se conta o prazo de devolução do cliente (ver routes/conta.js).
+      const dataEnvioReq = new sql.Request(transaction);
+      await dataEnvioReq
+        .input('id', sql.Int, encomenda.Id)
+        .query('UPDATE dbo.ZAPP_DBSiteCD_Encomendas SET Data_Envio = GETUTCDATE() WHERE Id = @id;');
+
       // A encomenda já foi facturada no sistema central e o stock real já foi
       // deduzido lá - a reserva local (Qtd_Reservada) deixa de fazer sentido e
       // é libertada, para não ficar contabilizada em duplicado.

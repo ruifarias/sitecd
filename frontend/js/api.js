@@ -73,23 +73,60 @@ function formatarDesconto(precoOriginal, precoComDesconto) {
 }
 
 // Lightbox simples: clicar numa imagem amplia-a num overlay ao centro do
-// ecrã; clicar de novo na imagem original, clicar no overlay ou premir
-// Escape fecha-o. Partilhado por qualquer página que inclua este ficheiro.
-function mostrarImagemAmpliada(src, alt) {
+// ecrã; clicar de novo na imagem, no fundo do overlay ou premir Escape
+// fecha-o. Quando há mais do que uma imagem (ex: galeria da ficha de
+// artigo, passada em opcoes.imagens), mostra setas de navegação (e aceita
+// as teclas ←/→) para percorrer as imagens sem fechar o lightbox. Partilhado
+// por qualquer página que inclua este ficheiro.
+let lightboxImagens = [];
+let lightboxIndice = 0;
+
+function actualizarImagemLightbox() {
+  const overlay = document.getElementById('lightbox-imagem');
+  const item = lightboxImagens[lightboxIndice];
+  if (!overlay || !item) return;
+  const img = overlay.querySelector('img');
+  img.src = item.src;
+  img.alt = item.alt || '';
+  overlay.querySelector('.lightbox-contador').textContent = `${lightboxIndice + 1}/${lightboxImagens.length}`;
+  overlay.classList.toggle('tem-navegacao', lightboxImagens.length > 1);
+}
+
+function navegarImagemLightbox(delta) {
+  if (lightboxImagens.length < 2) return;
+  lightboxIndice = (lightboxIndice + delta + lightboxImagens.length) % lightboxImagens.length;
+  actualizarImagemLightbox();
+}
+
+function mostrarImagemAmpliada(src, alt, opcoes = {}) {
+  lightboxImagens = opcoes.imagens && opcoes.imagens.length > 0 ? opcoes.imagens : [{ src, alt }];
+  lightboxIndice = Math.max(0, lightboxImagens.findIndex((img) => img.src === src));
+
   let overlay = document.getElementById('lightbox-imagem');
   if (!overlay) {
     overlay = document.createElement('div');
     overlay.id = 'lightbox-imagem';
     overlay.className = 'lightbox-imagem';
-    overlay.innerHTML = '<img alt="">';
+    overlay.innerHTML = `
+      <div class="lightbox-conteudo">
+        <img alt="">
+        <span class="lightbox-contador"></span>
+        <button type="button" class="lightbox-seta lightbox-seta-esq" aria-label="Imagem anterior">‹</button>
+        <button type="button" class="lightbox-seta lightbox-seta-dir" aria-label="Imagem seguinte">›</button>
+      </div>
+    `;
     overlay.addEventListener('click', fecharImagemAmpliada);
+    overlay.querySelector('.lightbox-seta-esq').addEventListener('click', (e) => { e.stopPropagation(); navegarImagemLightbox(-1); });
+    overlay.querySelector('.lightbox-seta-dir').addEventListener('click', (e) => { e.stopPropagation(); navegarImagemLightbox(1); });
     document.addEventListener('keydown', (e) => {
+      if (!overlay.classList.contains('aberta')) return;
       if (e.key === 'Escape') fecharImagemAmpliada();
+      else if (e.key === 'ArrowLeft') navegarImagemLightbox(-1);
+      else if (e.key === 'ArrowRight') navegarImagemLightbox(1);
     });
     document.body.appendChild(overlay);
   }
-  overlay.querySelector('img').src = src;
-  overlay.querySelector('img').alt = alt || '';
+  actualizarImagemLightbox();
   overlay.classList.add('aberta');
 }
 

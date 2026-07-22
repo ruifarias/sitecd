@@ -13,6 +13,7 @@
   <div class="topo-linha1">
     <a href="index.html" class="logo"><img src="imagens/logo-transparente.png" alt="Clássico Desportivo" class="logo-icone">Clássico Desportivo</a>
     <nav class="nav-principal" id="nav-principal">
+      <button id="btn-toggle-filtros" class="botao-toggle-filtros" type="button">Filtros <span class="seta-dropdown">▾</span></button>
       <div class="separadores" id="separadores"></div>
       <div class="nav-dropdown" id="dropdown-marca">
         <button class="nav-link nav-dropdown-trigger" type="button">Marca <span class="seta-dropdown">▾</span></button>
@@ -33,26 +34,28 @@
   </div>
 
   <div class="topo-linha2">
-    <div class="nav-dropdown" id="dropdown-familia">
-      <button class="nav-link nav-dropdown-trigger" type="button">Família <span class="seta-dropdown">▾</span></button>
-      <div id="painel-familia"></div>
+    <div class="filtros-colapsaveis" id="filtros-colapsaveis">
+      <div class="nav-dropdown" id="dropdown-familia">
+        <button class="nav-link nav-dropdown-trigger" type="button">Família <span class="seta-dropdown">▾</span></button>
+        <div id="painel-familia"></div>
+      </div>
+      <div class="genero-pills" id="genero-pills"></div>
+      <div class="pesquisas-centro">
+        <div class="pesquisa-topo">
+          <input type="text" id="pesquisa-input" placeholder="Pesquisar artigos...">
+        </div>
+        <div class="pesquisa-topo">
+          <input type="text" id="pesquisa-marca" placeholder="Marca...">
+        </div>
+        <div class="pesquisa-topo">
+          <input type="text" id="pesquisa-cor" placeholder="Cor...">
+        </div>
+        <div class="pesquisa-topo">
+          <input type="text" id="pesquisa-tamanho" placeholder="Tamanho...">
+        </div>
+      </div>
+      <button id="limpar-filtros-header" class="botao-limpar-filtros">Limpar Filtros</button>
     </div>
-    <div class="genero-pills" id="genero-pills"></div>
-    <div class="pesquisas-centro">
-      <div class="pesquisa-topo">
-        <input type="text" id="pesquisa-input" placeholder="Pesquisar artigos...">
-      </div>
-      <div class="pesquisa-topo">
-        <input type="text" id="pesquisa-marca" placeholder="Marca...">
-      </div>
-      <div class="pesquisa-topo">
-        <input type="text" id="pesquisa-cor" placeholder="Cor...">
-      </div>
-      <div class="pesquisa-topo">
-        <input type="text" id="pesquisa-tamanho" placeholder="Tamanho...">
-      </div>
-    </div>
-    <button id="limpar-filtros-header" class="botao-limpar-filtros">Limpar Filtros</button>
   </div>
 </header>
 

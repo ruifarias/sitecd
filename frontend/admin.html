@@ -35,8 +35,11 @@
       <button class="menu-item" data-secao="config-novidades">
         Configuração Novidades
       </button>
-      <button class="menu-item" data-secao="portes-envio">
-        Portes de Envio
+      <button class="menu-item" data-secao="tipos-envio">
+        Tipos de Envio
+      </button>
+      <button class="menu-item" data-secao="artigos-reservados">
+        Artigos Reservados
       </button>
       <button class="menu-item" data-secao="metodos-pagamento">
         Métodos de Pagamento
@@ -77,7 +80,7 @@
           <option value="PagamentoEfectuado">Pagamento Efectuado</option>
           <option value="EmPreparacao">Encomenda em Preparação</option>
           <option value="Enviada">Encomenda Enviada</option>
-          <option value="RecebidaSemDevolucao">Recebida pelo Cliente e Estava Tudo Conforme, sem Necessidade de Devolução ou Troca</option>
+          <option value="RecebidaSemDevolucao">Recebida pelo Cliente</option>
           <option value="Anulada">Encomenda Anulada</option>
           <option value="NotaDevolucaoEmitida">Nota de Devolução Emitida</option>
           <option value="DevolucaoRecebidaAceite">Devolução Recebida e Aceite</option>
@@ -195,20 +198,51 @@
       </div>
     </section>
 
-    <!-- Portes de Envio -->
-    <section id="secao-portes-envio" class="secao">
-      <h1>Portes de Envio</h1>
-      <p class="descricao">Valor fixo cobrado pelo envio, aplicado a todas as encomendas.</p>
+    <!-- Tipos de Envio -->
+    <section id="secao-tipos-envio" class="secao">
+      <h1>Tipos de Envio</h1>
+      <p class="descricao">Active/desactive os tipos de envio disponíveis no checkout e edite a designação e o custo. A "Ordem" controla a posição em que aparecem no checkout (menor aparece primeiro, e é a opção pré-seleccionada).</p>
 
-      <div class="form-group">
-        <label for="valor-portes">Valor dos portes (€):</label>
-        <input type="number" id="valor-portes" min="0" step="0.01" value="9.90">
-        <small>Aplicado a todas as encomendas no checkout, além do total dos produtos.</small>
+      <div class="loader" id="loader-tipos-envio" style="display:none;">A carregar tipos de envio...</div>
+
+      <div class="tabela-scroll-painel">
+        <table id="tipos-envio-table" class="sync-table metodos-pagamento-table">
+          <thead>
+            <tr>
+              <th class="col-ordem">Ordem</th>
+              <th class="col-designacao-envio">Designação</th>
+              <th class="col-custo-envio">Custo (€)</th>
+              <th>Activo</th>
+              <th>Acção</th>
+            </tr>
+          </thead>
+          <tbody id="tipos-envio-tbody"></tbody>
+        </table>
       </div>
+    </section>
 
-      <div class="acoes">
-        <button id="btn-guardar-portes" class="botao-principal">Guardar</button>
-        <span id="msg-portes" class="mensagem"></span>
+    <!-- Artigos Reservados -->
+    <section id="secao-artigos-reservados" class="secao">
+      <h1>Artigos Reservados</h1>
+      <p class="descricao">Stock reservado por encomendas ainda não enviadas nem anuladas. A reserva é libertada quando a encomenda é enviada ou anulada.</p>
+
+      <div class="loader" id="loader-artigos-reservados" style="display:none;">A carregar artigos reservados...</div>
+
+      <div class="tabela-scroll-painel">
+        <table id="artigos-reservados-table" class="sync-table">
+          <thead>
+            <tr>
+              <th>Imagem</th>
+              <th>Código</th>
+              <th>Designação</th>
+              <th>Lote</th>
+              <th>Qtd. Reservada</th>
+              <th>Encomenda</th>
+              <th>Acção</th>
+            </tr>
+          </thead>
+          <tbody id="artigos-reservados-tbody"></tbody>
+        </table>
       </div>
     </section>
 

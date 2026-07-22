@@ -2,6 +2,7 @@
 // ficha de artigo completa (variantes, stock, imagens).
 const express = require('express');
 const { getPool, sql } = require('../db');
+const { imagensBaseUrl, listarImagensAdicionais } = require('../utils/imagens');
 
 const router = express.Router();
 
@@ -185,7 +186,7 @@ router.get('/', async (req, res) => {
         precoOutlet: r.Preco_Outlet,
         emOutlet: !!r.Em_Outlet,
         emNovidade: !!r.Em_Novidade,
-        imagem: r.Imagem_Principal ? `${process.env.IMAGES_BASE_URL}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+        imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
       })),
     });
   } catch (err) {
@@ -225,6 +226,16 @@ router.get('/:codigo', async (req, res) => {
       .input('codigo', sql.VarChar(20), req.params.codigo)
       .query(`SELECT Ordem, Path FROM dbo.ZAPP_DBSiteCD_Imagens WHERE Codigo_Artigo = @codigo ORDER BY Ordem;`);
 
+    // Junta as imagens da BD (normalmente só a principal, Ordem = 0) com as
+    // adicionais encontradas no disco (Ordem >= 1, ver listarImagensAdicionais).
+    const ordensExistentes = new Set(imagensRes.recordset.map((img) => img.Ordem));
+    const imagensAdicionais = listarImagensAdicionais(req.params.codigo)
+      .filter((img) => !ordensExistentes.has(img.ordem));
+    const todasImagens = [
+      ...imagensRes.recordset.map((img) => ({ ordem: img.Ordem, path: img.Path })),
+      ...imagensAdicionais,
+    ].sort((a, b) => a.ordem - b.ordem);
+
     res.json({
       codigo: a.Codigo_Artigo,
       descricao: a.Descritivo_Artigo,
@@ -246,7 +257,7 @@ router.get('/:codigo', async (req, res) => {
         descricao: v.Descricao_Lote,
         disponivel: (v.Qtd_Disponivel || 0) - (v.Qtd_Reservada || 0),
       })),
-      imagens: imagensRes.recordset.map((img) => `${process.env.IMAGES_BASE_URL}/${img.Path.replace(/^imagens\//, '')}`),
+      imagens: todasImagens.map((img) => `${imagensBaseUrl(req)}/${img.path.replace(/^imagens\//, '')}`),
     });
   } catch (err) {
     console.error(err);
@@ -392,7 +403,7 @@ router.get('/:codigo/mesma-subfamilia', async (req, res) => {
         precoOutlet: r.Preco_Outlet,
         emOutlet: !!r.Em_Outlet,
         emNovidade: !!r.Em_Novidade,
-        imagem: r.Imagem_Principal ? `${process.env.IMAGES_BASE_URL}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+        imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
       })),
     });
   } catch (err) {

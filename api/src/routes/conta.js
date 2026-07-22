@@ -14,6 +14,34 @@ const { validarIBAN } = require('../utils/iban');
 const router = express.Router();
 router.use(requireAuth);
 
+// O botão/rota de devolução deixa de estar disponível ao cliente 30 dias
+// após a encomenda ter sido enviada (ver Data_Envio, fixada em
+// PUT /admin/encomendas/:numero/avancar). Sem Data_Envio (encomendas
+// enviadas antes desta funcionalidade existir) considera-se sem limite, para
+// não bloquear devoluções antigas por falta de dados históricos.
+const DIAS_LIMITE_DEVOLUCAO_CLIENTE = 30;
+function dentroPrazoDevolucaoCliente(dataEnvio) {
+  if (!dataEnvio) return true;
+  const limite = new Date(dataEnvio);
+  limite.setDate(limite.getDate() + DIAS_LIMITE_DEVOLUCAO_CLIENTE);
+  return new Date() <= limite;
+}
+
+// Partilhado entre a lista e o detalhe de encomendas: a confirmação de receção
+// só fica disponível DiasConfirmacaoRecepcao dias depois de "Enviada".
+async function obterDiasConfirmacaoRecepcao(pool) {
+  const configRes = await pool.request().query("SELECT Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave = 'DiasConfirmacaoRecepcao';");
+  const diasConfigurados = parseInt(configRes.recordset[0]?.Valor, 10);
+  return Number.isNaN(diasConfigurados) ? 1 : diasConfigurados;
+}
+
+function calcularConfirmacaoRecepcao(estado, dataActualizacao, dias) {
+  if (estado !== 'Enviada') return { podeConfirmarRecepcao: false, dataDisponivelConfirmacao: null };
+  const dataDisponivelConfirmacao = new Date(dataActualizacao);
+  dataDisponivelConfirmacao.setDate(dataDisponivelConfirmacao.getDate() + dias);
+  return { podeConfirmarRecepcao: new Date() >= dataDisponivelConfirmacao, dataDisponivelConfirmacao };
+}
+
 // GET /api/conta/perfil
 router.get('/perfil', async (req, res) => {
   try {
@@ -93,24 +121,33 @@ router.get('/encomendas', async (req, res) => {
     const resultado = await pool.request()
       .input('clienteId', sql.Int, req.cliente.id)
       .query(`
-        SELECT e.Numero, e.Estado, e.Total, e.Portes, e.Pontos_Ganhos, e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, e.Data_Criacao
+        SELECT e.Numero, e.Estado, e.Total, e.Portes, e.Pontos_Ganhos, e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, e.Data_Criacao, e.Data_Actualizacao, e.Data_Envio
         FROM dbo.ZAPP_DBSiteCD_Encomendas e
         LEFT JOIN dbo.ZAPP_DBSiteCD_MetodosPagamento mp ON mp.Codigo = e.Metodo_Pagamento
         WHERE e.Cliente_Id = @clienteId
         ORDER BY e.Data_Criacao DESC;
       `);
 
-    res.json(resultado.recordset.map((e) => ({
-      numero: e.Numero,
-      estado: e.Estado,
-      estadoLabel: ESTADOS_LABELS[e.Estado] || e.Estado,
-      total: e.Total,
-      portes: e.Portes,
-      pontosGanhos: e.Pontos_Ganhos,
-      metodoPagamento: e.Metodo_Pagamento_Designacao || e.Metodo_Pagamento,
-      data: e.Data_Criacao,
-      podeDevolver: e.Estado === 'Enviada' || e.Estado === ESTADO_RECEBIDA_CONFORME,
-    })));
+    const diasConfirmacao = await obterDiasConfirmacaoRecepcao(pool);
+
+    res.json(resultado.recordset.map((e) => {
+      const { podeConfirmarRecepcao, dataDisponivelConfirmacao } = calcularConfirmacaoRecepcao(e.Estado, e.Data_Actualizacao, diasConfirmacao);
+      return {
+        numero: e.Numero,
+        estado: e.Estado,
+        estadoLabel: ESTADOS_LABELS[e.Estado] || e.Estado,
+        total: e.Total,
+        portes: e.Portes,
+        pontosGanhos: e.Pontos_Ganhos,
+        metodoPagamento: e.Metodo_Pagamento_Designacao || e.Metodo_Pagamento,
+        data: e.Data_Criacao,
+        podeConfirmarRecepcao,
+        dataDisponivelConfirmacao,
+        // só disponível depois do cliente confirmar a receção da encomenda,
+        // nunca antes disso (mesmo já enviada) - ver dentroPrazoDevolucaoCliente acima
+        podeDevolver: e.Estado === ESTADO_RECEBIDA_CONFORME && dentroPrazoDevolucaoCliente(e.Data_Envio),
+      };
+    }));
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao listar encomendas.' });
@@ -125,10 +162,11 @@ router.get('/encomendas/:numero', async (req, res) => {
       .input('numero', sql.VarChar(30), req.params.numero)
       .input('clienteId', sql.Int, req.cliente.id)
       .query(`
-        SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
-               e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, e.Data_Criacao, e.Data_Actualizacao, e.Motivo_Anulacao
+        SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Tipo_Envio, te.Designacao AS Tipo_Envio_Designacao, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
+               e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, e.Data_Criacao, e.Data_Actualizacao, e.Data_Envio, e.Motivo_Anulacao
         FROM dbo.ZAPP_DBSiteCD_Encomendas e
         LEFT JOIN dbo.ZAPP_DBSiteCD_MetodosPagamento mp ON mp.Codigo = e.Metodo_Pagamento
+        LEFT JOIN dbo.ZAPP_DBSiteCD_TiposEnvio te ON te.Codigo = e.Tipo_Envio
         WHERE e.Numero = @numero AND e.Cliente_Id = @clienteId;
       `);
 
@@ -152,18 +190,11 @@ router.get('/encomendas/:numero', async (req, res) => {
       `);
 
     const totalProdutos = linhas.recordset.reduce((s, l) => s + l.Preco_Unitario * l.Quantidade, 0);
-    const podeDevolver = e.Estado === 'Enviada' || e.Estado === ESTADO_RECEBIDA_CONFORME;
+    // só disponível depois do cliente confirmar a receção da encomenda, nunca antes disso (mesmo já enviada)
+    const podeDevolver = e.Estado === ESTADO_RECEBIDA_CONFORME && dentroPrazoDevolucaoCliente(e.Data_Envio);
 
-    let podeConfirmarRecepcao = false;
-    let dataDisponivelConfirmacao = null;
-    if (e.Estado === 'Enviada') {
-      const configRes = await pool.request().query("SELECT Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave = 'DiasConfirmacaoRecepcao';");
-      const diasConfigurados = parseInt(configRes.recordset[0]?.Valor, 10);
-      const dias = Number.isNaN(diasConfigurados) ? 1 : diasConfigurados;
-      dataDisponivelConfirmacao = new Date(e.Data_Actualizacao);
-      dataDisponivelConfirmacao.setDate(dataDisponivelConfirmacao.getDate() + dias);
-      podeConfirmarRecepcao = new Date() >= dataDisponivelConfirmacao;
-    }
+    const diasConfirmacao = await obterDiasConfirmacaoRecepcao(pool);
+    const { podeConfirmarRecepcao, dataDisponivelConfirmacao } = calcularConfirmacaoRecepcao(e.Estado, e.Data_Actualizacao, diasConfirmacao);
 
     let devolucao = null;
     if (ehEstadoDevolucao(e.Estado)) {
@@ -186,6 +217,7 @@ router.get('/encomendas/:numero', async (req, res) => {
       total: e.Total,
       totalProdutos,
       portes: e.Portes,
+      tipoEnvio: e.Tipo_Envio_Designacao || e.Tipo_Envio,
       valeCodigo: e.Vale_Codigo,
       valeDesconto: e.Vale_Desconto,
       pontosGanhos: e.Pontos_Ganhos,
@@ -361,19 +393,27 @@ router.put('/encomendas/:numero/confirmar-recepcao', async (req, res) => {
 });
 
 // POST /api/conta/encomendas/:numero/devolucao - o próprio cliente regista a
-// devolução de artigos de uma encomenda já enviada (os portes nunca são
-// devolvidos). Gera de imediato uma Nota de Devolução (DEV+número) e estorna
-// os pontos proporcionalmente - ver services/devolucaoService.js.
+// devolução de artigos de uma encomenda já enviada. Só disponível depois de
+// confirmar a receção (ESTADO_RECEBIDA_CONFORME) - antes disso o cliente só
+// pode "Confirmar Receção" (ver /encomendas/:numero/confirmar-recepcao). Os
+// portes nunca são devolvidos. Gera de imediato uma Nota de Devolução
+// (DEV+número) e estorna os pontos proporcionalmente - ver services/devolucaoService.js.
 router.post('/encomendas/:numero/devolucao', async (req, res) => {
   try {
     const pool = await getPool();
     const dono = await pool.request()
       .input('numero', sql.VarChar(30), req.params.numero)
       .input('clienteId', sql.Int, req.cliente.id)
-      .query('SELECT Id FROM dbo.ZAPP_DBSiteCD_Encomendas WHERE Numero = @numero AND Cliente_Id = @clienteId;');
+      .query('SELECT Id, Estado, Data_Envio FROM dbo.ZAPP_DBSiteCD_Encomendas WHERE Numero = @numero AND Cliente_Id = @clienteId;');
 
     if (dono.recordset.length === 0) {
       return res.status(404).json({ erro: 'Encomenda não encontrada.' });
+    }
+    if (dono.recordset[0].Estado !== ESTADO_RECEBIDA_CONFORME) {
+      return res.status(400).json({ erro: 'A devolução só fica disponível depois de confirmar a receção da encomenda.' });
+    }
+    if (!dentroPrazoDevolucaoCliente(dono.recordset[0].Data_Envio)) {
+      return res.status(400).json({ erro: `O prazo de ${DIAS_LIMITE_DEVOLUCAO_CLIENTE} dias após o envio para pedir devolução já terminou. Contacte-nos directamente.` });
     }
 
     const resultado = await registarDevolucao(req.params.numero, req.body.linhas, {

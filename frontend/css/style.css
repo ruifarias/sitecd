@@ -501,6 +501,36 @@ header.topo {
   margin: 0 auto;
   padding: 32px 24px;
 }
+.galeria-artigo {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+/* Coluna de miniaturas (imagens alternativas, ex: 49623-CD1.jpg, CD2.jpg...) -
+   só aparece quando há mais do que uma imagem. Sem altura fixa: o
+   align-items:stretch por defeito do flex faz-a acompanhar a altura de
+   .galeria-principal (quadrada, via aspect-ratio), com scroll se não couber. */
+.galeria-miniaturas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.miniatura-galeria {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: var(--cinza-claro);
+  flex-shrink: 0;
+}
+.miniatura-galeria.activa,
+.miniatura-galeria:hover {
+  border-color: var(--vermelho);
+}
 .galeria-principal {
   background: var(--cinza-claro);
   aspect-ratio: 1 / 1;
@@ -508,7 +538,9 @@ header.topo {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  width: 100%;
+  width: auto;
+  flex: 1 1 0;
+  min-width: 0;
   border-radius: 4px;
 }
 .galeria-principal img {
@@ -979,7 +1011,7 @@ header.topo {
 }
 .descricao-resumo-checkout { flex: 1; min-width: 0; }
 
-.linha-portes-envio { display: inline-flex; align-items: center; gap: 10px; }
+.linha-portes-envio { display: inline-flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
 .linha-portes-envio svg { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
 .lightbox-imagem {
@@ -994,16 +1026,65 @@ header.topo {
   padding: 24px;
 }
 .lightbox-imagem.aberta { display: flex; }
-.lightbox-imagem img {
+/* position:relative aqui (em vez de directamente na img) para o contador
+   1/3, 2/3... poder ficar ancorado ao canto superior direito da imagem,
+   sem depender do ecrã inteiro (ver .lightbox-contador). */
+.lightbox-conteudo {
+  position: relative;
   /* width/height (em vez de max-width/max-height) para forçar a ampliação
      mesmo quando a imagem original é pequena - max-width/max-height só
      limitam o tamanho, nunca ampliam além da resolução original */
   width: min(95vw, 1400px);
   height: min(95vh, 1400px);
+}
+.lightbox-imagem img {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   background: var(--branco);
   border-radius: 4px;
+  display: block;
 }
+.lightbox-contador {
+  display: none;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--branco);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+.lightbox-imagem.tem-navegacao .lightbox-contador { display: block; }
+/* Setas de navegação entre imagens - só aparecem quando o lightbox abre com
+   mais do que uma imagem (ver opcoes.imagens em mostrarImagemAmpliada).
+   Posicionadas em relação a .lightbox-conteudo (a própria imagem), não ao
+   ecrã inteiro - assim ficam sempre encostadas à imagem, em qualquer
+   tamanho de janela/ecrã (antes, ancoradas ao ecrã, só apareciam bem com a
+   janela maximizada). Fundo escuro (não branco) para se verem mesmo sobre
+   fotos de fundo claro, que são a maioria dos artigos. */
+.lightbox-seta {
+  display: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--branco);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 1001;
+}
+.lightbox-seta:hover { background: rgba(0, 0, 0, 0.75); }
+.lightbox-seta-esq { left: 12px; }
+.lightbox-seta-dir { right: 12px; }
+.lightbox-imagem.tem-navegacao .lightbox-seta { display: block; }
 
 .resumo-total {
   display: flex;
@@ -1133,7 +1214,16 @@ footer.rodape {
 
 @media (max-width: 800px) {
   .layout-artigo { grid-template-columns: minmax(0, 1fr); }
-  .galeria-principal { max-width: 420px; margin: 0 auto; }
+  /* Em ecrã estreito as miniaturas passam para baixo da imagem principal,
+     em linha horizontal com scroll - uma coluna vertical fica demasiado
+     estreita/inútil a toque. */
+  .galeria-artigo { flex-direction: column; max-width: 420px; margin: 0 auto; }
+  .galeria-miniaturas { flex-direction: row; overflow-x: auto; overflow-y: hidden; order: 2; }
+  /* flex:1 1 0 (usado no desktop para crescer ao lado das miniaturas) faz a
+     caixa colapsar a 0 de altura numa coluna sem altura definida - aqui volta
+     a ser uma caixa normal de largura 100%, com a altura vinda do
+     aspect-ratio:1/1 já definido em .galeria-principal. */
+  .galeria-principal { order: 1; flex: none; width: 100%; }
   header.topo nav { display: none; }
   header.topo nav.nav-principal { display: flex; width: 100%; order: 3; gap: 2px; }
   header.topo nav.nav-principal .nav-link { padding: 6px 6px; font-size: 12px; }

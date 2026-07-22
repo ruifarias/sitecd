@@ -213,7 +213,7 @@ async function verDetalheEncomendaAdmin(numero) {
         </table>
         <div class="resumo-encomenda-totais">
           <div><span>Sub-total dos Artigos</span><span>${formatarPreco(e.totalProdutos)}</span></div>
-          <div><span>Portes</span><span>${formatarPreco(e.portes)}</span></div>
+          <div><span>Portes${e.tipoEnvio ? ` (${e.tipoEnvio})` : ''}</span><span>${formatarPreco(e.portes)}</span></div>
           ${e.valeDesconto > 0 ? `<div><span>Vale aplicado (${e.valeCodigo})</span><span>-${formatarPreco(e.valeDesconto)}</span></div>` : ''}
           <div class="resumo-total-final"><span>Total</span><span>${formatarPreco(e.total)}</span></div>
         </div>
@@ -744,41 +744,117 @@ async function carregarConfigNovidades() {
   }
 }
 
-// ========== PORTES DE ENVIO ==========
-async function carregarConfigPortes() {
+// ========== ARTIGOS RESERVADOS ==========
+async function carregarArtigosReservados() {
+  const loader = document.getElementById('loader-artigos-reservados');
+  const tbody = document.getElementById('artigos-reservados-tbody');
+
+  loader.style.display = 'block';
+  tbody.innerHTML = '';
+
   try {
-    const config = await apiGet('/admin/config');
-    document.getElementById('valor-portes').value = config.PortesEnvio || 9.90;
+    const artigos = await apiGet('/admin/artigos-reservados');
+
+    if (artigos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Sem artigos reservados</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = artigos.map((a) => `
+      <tr>
+        <td>${a.imagem ? `<img src="${a.imagem}" alt="" style="width:40px;height:40px;object-fit:contain">` : '-'}</td>
+        <td>${a.codigo}</td>
+        <td>${a.descricao}</td>
+        <td>${a.lote}</td>
+        <td>${a.quantidadeReservada}</td>
+        <td>${a.numeroEncomenda}</td>
+        <td><button class="botao-secundario btn-libertar-reserva" data-codigo="${a.codigo}" data-lote="${a.codigoLote}">Apagar</button></td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('.btn-libertar-reserva').forEach((btn) => {
+      btn.addEventListener('click', () => libertarStockReservado(btn.dataset.codigo, btn.dataset.lote, btn));
+    });
   } catch (err) {
-    console.error('Erro ao carregar config:', err);
+    tbody.innerHTML = `<tr><td colspan="7" style="color:red;">Erro: ${err.message}</td></tr>`;
+  } finally {
+    loader.style.display = 'none';
   }
 }
 
-async function guardarPortes() {
-  const valor = document.getElementById('valor-portes').value;
-  const btn = document.getElementById('btn-guardar-portes');
-  const msg = document.getElementById('msg-portes');
-
-  if (valor === '' || valor < 0) {
-    msg.textContent = '✗ Valor inválido';
-    msg.className = 'mensagem erro';
-    return;
-  }
+// Repõe a Qtd_Reservada a 0 no Stock para este artigo/lote - afecta TODAS as
+// encomendas que o reservem, por isso pede confirmação explícita.
+async function libertarStockReservado(codigoArtigo, codigoLote, btn) {
+  if (!confirm(`Apagar o stock reservado do artigo ${codigoArtigo} (lote ${codigoLote})? A quantidade reservada volta a 0 - se houver mais do que uma encomenda a reservar este lote, todas ficam sem reserva.`)) return;
 
   btn.disabled = true;
-  msg.textContent = 'A guardar...';
-  msg.className = 'mensagem';
+  try {
+    await apiPost('/admin/artigos-reservados/libertar', { codigoArtigo, codigoLote });
+    carregarArtigosReservados();
+  } catch (err) {
+    alert('Erro: ' + err.message);
+    btn.disabled = false;
+  }
+}
+
+// ========== TIPOS DE ENVIO ==========
+async function carregarTiposEnvio() {
+  const loader = document.getElementById('loader-tipos-envio');
+  const tbody = document.getElementById('tipos-envio-tbody');
+
+  loader.style.display = 'block';
+  tbody.innerHTML = '';
 
   try {
-    await apiPut('/admin/config/PortesEnvio', { valor });
-    msg.textContent = '✓ Guardado com sucesso!';
-    msg.className = 'mensagem sucesso';
+    const tipos = await apiGet('/admin/tipos-envio');
+
+    if (tipos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sem tipos de envio</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = tipos.map((t) => `
+      <tr>
+        <td><input type="number" class="tipo-envio-ordem" data-codigo="${t.codigo}" value="${t.ordem}" min="1" step="1"></td>
+        <td><input type="text" class="tipo-envio-designacao" data-codigo="${t.codigo}" value="${t.designacao}"></td>
+        <td><input type="number" class="tipo-envio-custo" data-codigo="${t.codigo}" value="${t.custo}" min="0" step="0.01"></td>
+        <td><input type="checkbox" class="tipo-envio-activo" data-codigo="${t.codigo}" ${t.activo ? 'checked' : ''}></td>
+        <td><button class="btn-guardar-tipo-envio" data-codigo="${t.codigo}">Guardar</button></td>
+      </tr>
+    `).join('');
+
+    document.querySelectorAll('.btn-guardar-tipo-envio').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const codigo = btn.dataset.codigo;
+        const designacao = document.querySelector(`.tipo-envio-designacao[data-codigo="${codigo}"]`).value.trim();
+        const custo = document.querySelector(`.tipo-envio-custo[data-codigo="${codigo}"]`).value;
+        const activo = document.querySelector(`.tipo-envio-activo[data-codigo="${codigo}"]`).checked;
+        const ordem = parseInt(document.querySelector(`.tipo-envio-ordem[data-codigo="${codigo}"]`).value, 10) || 0;
+
+        if (!designacao) {
+          alert('A designação é obrigatória.');
+          return;
+        }
+        if (custo === '' || custo < 0) {
+          alert('O custo é obrigatório e não pode ser negativo.');
+          return;
+        }
+
+        btn.disabled = true;
+        try {
+          await apiPut(`/admin/tipos-envio/${codigo}`, { designacao, custo, activo, ordem });
+          btn.textContent = '✓';
+          setTimeout(() => { btn.textContent = 'Guardar'; btn.disabled = false; }, 2000);
+        } catch (err) {
+          alert('Erro: ' + err.message);
+          btn.disabled = false;
+        }
+      });
+    });
   } catch (err) {
-    msg.textContent = '✗ Erro: ' + err.message;
-    msg.className = 'mensagem erro';
+    tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Erro: ${err.message}</td></tr>`;
   } finally {
-    btn.disabled = false;
-    setTimeout(() => { msg.textContent = ''; }, 3000);
+    loader.style.display = 'none';
   }
 }
 
@@ -1136,8 +1212,11 @@ function inicializarMenu() {
         case 'config-novidades':
           carregarConfigNovidades();
           break;
-        case 'portes-envio':
-          carregarConfigPortes();
+        case 'tipos-envio':
+          carregarTiposEnvio();
+          break;
+        case 'artigos-reservados':
+          carregarArtigosReservados();
           break;
         case 'metodos-pagamento':
           carregarMetodosPagamento();
@@ -1166,7 +1245,6 @@ function inicializarMenu() {
 function inicializarEventos() {
   document.getElementById('btn-guardar-marcas').addEventListener('click', guardarMarcas);
   document.getElementById('btn-guardar-novidades').addEventListener('click', guardarNovidades);
-  document.getElementById('btn-guardar-portes').addEventListener('click', guardarPortes);
   document.getElementById('btn-guardar-pontos').addEventListener('click', guardarPontos);
   document.getElementById('filtro-erros-only').addEventListener('change', renderSyncLog);
   document.getElementById('filtro-estado-encomendas').addEventListener('change', carregarEncomendas);

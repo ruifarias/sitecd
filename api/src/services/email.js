@@ -151,7 +151,7 @@ function templateFactura(encomenda, { tituloEvento, notaEvento } = {}) {
               <td style="text-align:right;padding:2px 0;white-space:nowrap">${formatarPreco(totalProdutos)}</td>
             </tr>
             <tr>
-              <td style="text-align:left;padding:2px 0">Portes</td>
+              <td style="text-align:left;padding:2px 0">Portes${encomenda.tipoEnvio ? ` (${encomenda.tipoEnvio})` : ''}</td>
               <td style="text-align:right;padding:2px 0;white-space:nowrap">${formatarPreco(encomenda.portes)}</td>
             </tr>
             <tr>

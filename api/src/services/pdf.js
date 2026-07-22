@@ -141,7 +141,7 @@ async function gerarPdfEncomenda(numero) {
   doc.text(formatarPreco(totalProdutos), xValorTotais, y, { width: larguraValorTotais, align: 'right' });
   let yDireita = y + 14;
 
-  doc.text('Portes', xLabelTotais, yDireita, { width: larguraLabelTotais });
+  doc.text(encomenda.tipoEnvio ? `Portes (${encomenda.tipoEnvio})` : 'Portes', xLabelTotais, yDireita, { width: larguraLabelTotais });
   doc.text(formatarPreco(encomenda.portes), xValorTotais, yDireita, { width: larguraValorTotais, align: 'right' });
   yDireita += 18;
 

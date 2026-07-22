@@ -15,13 +15,14 @@ async function obterEncomendaCompleta(numero) {
   const encomendaRes = await pool.request()
     .input('numero', sql.VarChar(30), numero)
     .query(`
-      SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
+      SELECT e.Id, e.Numero, e.Estado, e.Total, e.Portes, e.Tipo_Envio, te.Designacao AS Tipo_Envio_Designacao, e.Vale_Codigo, e.Vale_Desconto, e.Pontos_Ganhos,
              e.Metodo_Pagamento, mp.Designacao AS Metodo_Pagamento_Designacao, mp.Detalhe AS Metodo_Pagamento_Detalhe, e.Data_Criacao, e.Data_Actualizacao, e.Motivo_Anulacao,
              e.Morada_Entrega, e.Localidade_Entrega, e.Codigo_Postal_Entrega,
              c.Nome AS Cliente_Nome, c.Email AS Cliente_Email, c.Telefone AS Cliente_Telefone, c.NIF AS Cliente_Nif, c.Codigo_Cliente
       FROM dbo.ZAPP_DBSiteCD_Encomendas e
       LEFT JOIN dbo.ZAPP_DBSiteCD_Clientes c ON c.Id = e.Cliente_Id
       LEFT JOIN dbo.ZAPP_DBSiteCD_MetodosPagamento mp ON mp.Codigo = e.Metodo_Pagamento
+      LEFT JOIN dbo.ZAPP_DBSiteCD_TiposEnvio te ON te.Codigo = e.Tipo_Envio
       WHERE e.Numero = @numero;
     `);
 
@@ -60,6 +61,7 @@ async function obterEncomendaCompleta(numero) {
     estado: e.Estado,
     total: e.Total,
     portes: e.Portes,
+    tipoEnvio: e.Tipo_Envio_Designacao || e.Tipo_Envio,
     valeCodigo: e.Vale_Codigo,
     valeDesconto: e.Vale_Desconto,
     pontosGanhos: e.Pontos_Ganhos,
@@ -94,6 +96,9 @@ async function obterEncomendaCompleta(numero) {
       desconto: l.Desconto,
       descontoPercentagem: l.Preco_Venda > 0 ? Math.round((l.Desconto / l.Preco_Venda) * 100) : 0,
       precoTotal: Math.round(l.Preco_Unitario * l.Quantidade * 100) / 100,
+      // Usado em emails/PDF (sem pedido HTTP associado), por isso não pode
+      // derivar o host do req como em imagensBaseUrl() - fica dependente do
+      // IMAGES_BASE_URL configurado no .env.
       imagem: l.Imagem_Path ? `${process.env.IMAGES_BASE_URL}/${l.Imagem_Path.replace(/^imagens\//, '')}` : null,
     })),
   };
