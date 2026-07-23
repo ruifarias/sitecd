@@ -300,4 +300,94 @@ async function enviarEmailRecuperacaoPassword(email, nome, link) {
   }
 }
 
-module.exports = { enviarEmailEncomenda, enviarEmailRecuperacaoPassword, templateFactura, formatarPreco, formatarData, separarNomeVariante, EMPRESA };
+// Email de confirmação/activação de conta: link com token de uso único (ver
+// routes/auth.js - POST /registo e /confirmar-email). Enviado no registo (e
+// no reenvio); a conta funciona normalmente até lá (não bloqueia a compra em
+// curso) - só passa a ser exigido em sessões de login futuras.
+async function enviarEmailConfirmacaoConta(email, nome, link) {
+  const transporte = getTransporte();
+  if (!transporte) {
+    console.warn(`[email] SMTP não configurado — a saltar envio de confirmação de conta para ${email}.`);
+    return;
+  }
+
+  const html = `
+    <div style="font-family:Arial,Helvetica,sans-serif;max-width:500px;margin:0 auto;color:#222;font-size:14px">
+      <p><img src="cid:logo-empresa" width="70" alt="Clássico Desportivo"></p>
+      <p>Olá ${nome || ''},</p>
+      <p>Obrigado por criar conta em Clássico Desportivo. Para confirmar que este email lhe pertence e activar a sua conta, clique no botão abaixo.</p>
+      <p style="margin:24px 0">
+        <a href="${link}" style="background:#111;color:#fff;padding:12px 24px;text-decoration:none;font-weight:700">Activar a Minha Conta</a>
+      </p>
+      <p style="color:#777;font-size:12px">Este link é válido por 48 horas. Se não criou esta conta, ignore este email.</p>
+      <p style="color:#999;font-size:11px;margin-top:24px">Clássico Desportivo — este email foi enviado automaticamente, não responda a esta mensagem.</p>
+    </div>
+  `;
+
+  try {
+    const anexos = [];
+    if (fs.existsSync(CAMINHO_LOGO)) {
+      anexos.push({ filename: 'logo.png', path: CAMINHO_LOGO, cid: 'logo-empresa' });
+    }
+    await transporte.sendMail({
+      from: process.env.SMTP_FROM || `"Clássico Desportivo" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: 'Active a sua conta — Clássico Desportivo',
+      html,
+      attachments: anexos,
+    });
+    console.log(`[email] Email de confirmação de conta enviado para ${email}.`);
+  } catch (err) {
+    console.error(`[email] Falha ao enviar email de confirmação de conta para ${email}:`, err.message);
+  }
+}
+
+// Notifica a loja (EMPRESA.email) quando um cliente confirma o email de uma
+// conta nova - só depois de confirmado, para não gerar aviso por cada registo
+// nunca validado (ex: email errado/bot). Ver routes/auth.js - POST /confirmar-email.
+async function enviarEmailNovoRegisto(cliente) {
+  const transporte = getTransporte();
+  if (!transporte) {
+    console.warn(`[email] SMTP não configurado — a saltar aviso de novo registo (${cliente.email}).`);
+    return;
+  }
+
+  const html = `
+    <div style="font-family:Arial,Helvetica,sans-serif;max-width:500px;margin:0 auto;color:#222;font-size:14px">
+      <p>Novo cliente registado e com email confirmado:</p>
+      <table style="border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:2px 8px 2px 0;color:#777">Nome</td><td>${cliente.nome || '-'}</td></tr>
+        <tr><td style="padding:2px 8px 2px 0;color:#777">Email</td><td>${cliente.email || '-'}</td></tr>
+        <tr><td style="padding:2px 8px 2px 0;color:#777">Telefone</td><td>${cliente.telefone || '-'}</td></tr>
+        <tr><td style="padding:2px 8px 2px 0;color:#777">NIF</td><td>${cliente.nif || '-'}</td></tr>
+        <tr><td style="padding:2px 8px 2px 0;color:#777">Morada</td><td>${cliente.morada || '-'}</td></tr>
+        <tr><td style="padding:2px 8px 2px 0;color:#777">Localidade</td><td>${cliente.localidade || '-'}</td></tr>
+        <tr><td style="padding:2px 8px 2px 0;color:#777">Código Postal</td><td>${cliente.codigoPostal || '-'}</td></tr>
+      </table>
+    </div>
+  `;
+
+  try {
+    await transporte.sendMail({
+      from: process.env.SMTP_FROM || `"Clássico Desportivo" <${process.env.SMTP_USER}>`,
+      to: EMPRESA.email,
+      subject: `Novo registo de cliente — ${cliente.nome || cliente.email}`,
+      html,
+    });
+    console.log(`[email] Aviso de novo registo enviado para ${EMPRESA.email} (cliente: ${cliente.email}).`);
+  } catch (err) {
+    console.error(`[email] Falha ao enviar aviso de novo registo:`, err.message);
+  }
+}
+
+module.exports = {
+  enviarEmailEncomenda,
+  enviarEmailRecuperacaoPassword,
+  enviarEmailConfirmacaoConta,
+  enviarEmailNovoRegisto,
+  templateFactura,
+  formatarPreco,
+  formatarData,
+  separarNomeVariante,
+  EMPRESA,
+};

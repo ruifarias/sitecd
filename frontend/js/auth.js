@@ -146,7 +146,24 @@ function renderFormularioAuth(container, onSucesso) {
       guardarToken(resultado.token);
       onSucesso();
     } catch (err) {
-      document.getElementById('erro-auth').innerHTML = `<div class="mensagem-erro">${err.message}</div>`;
+      const erroEl = document.getElementById('erro-auth');
+      if (err.dados?.codigo === 'EMAIL_NAO_CONFIRMADO') {
+        erroEl.innerHTML = `
+          <div class="mensagem-erro">${err.message}</div>
+          <p style="margin-top:8px"><a href="#" id="link-reenviar-confirmacao" style="font-size:13px;text-decoration:underline">Reenviar email de confirmação</a></p>
+        `;
+        document.getElementById('link-reenviar-confirmacao').addEventListener('click', async (ev) => {
+          ev.preventDefault();
+          try {
+            const resultado = await apiPost('/auth/reenviar-confirmacao', { email: form.email.value });
+            erroEl.innerHTML = `<div class="mensagem-sucesso">${resultado.mensagem}</div>`;
+          } catch (erroReenvio) {
+            erroEl.innerHTML = `<div class="mensagem-erro">${erroReenvio.message}</div>`;
+          }
+        });
+      } else {
+        erroEl.innerHTML = `<div class="mensagem-erro">${err.message}</div>`;
+      }
       botao.disabled = false;
     }
   }

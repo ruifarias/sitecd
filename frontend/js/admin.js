@@ -797,6 +797,202 @@ async function libertarStockReservado(codigoArtigo, codigoLote, btn) {
   }
 }
 
+// Ponto de entrada da secção "Alertas" - carrega os 8 blocos (Artigos
+// Reservados + os 7 alertas) de uma vez.
+function carregarAlertas() {
+  carregarArtigosReservados();
+  carregarAlertaSemStockComImagem();
+  carregarAlertaComStockSemImagem();
+  carregarAlertaNovidadeSemColeccao();
+  carregarAlertaStockNegativo();
+  carregarAlertaPrecoCustoZero();
+  carregarAlertaSemPrecoVenda();
+  carregarAlertaIvaIncluidoNulo();
+}
+
+async function carregarAlertaSemStockComImagem() {
+  const loader = document.getElementById('loader-sem-stock-com-imagem');
+  const tbody = document.getElementById('sem-stock-com-imagem-tbody');
+  loader.style.display = 'block';
+  tbody.innerHTML = '';
+  try {
+    const artigos = await apiGet('/admin/alertas/sem-stock-com-imagem');
+    if (artigos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Sem alertas</td></tr>';
+      return;
+    }
+    tbody.innerHTML = artigos.map((a) => `
+      <tr>
+        <td>${a.imagem ? `<img src="${a.imagem}" alt="" style="width:40px;height:40px;object-fit:contain">` : '-'}</td>
+        <td>${a.codigo}</td>
+        <td>${a.descricao}</td>
+        <td>${a.existencia}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Erro: ${err.message}</td></tr>`;
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
+async function carregarAlertaComStockSemImagem() {
+  const loader = document.getElementById('loader-com-stock-sem-imagem');
+  const tbody = document.getElementById('com-stock-sem-imagem-tbody');
+  loader.style.display = 'block';
+  tbody.innerHTML = '';
+  try {
+    const artigos = await apiGet('/admin/alertas/com-stock-sem-imagem');
+    if (artigos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Sem alertas</td></tr>';
+      return;
+    }
+    tbody.innerHTML = artigos.map((a) => `
+      <tr>
+        <td>${a.codigo}</td>
+        <td>${a.descricao}</td>
+        <td>${a.existencia}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="3" style="color:red;">Erro: ${err.message}</td></tr>`;
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
+async function carregarAlertaNovidadeSemColeccao() {
+  const loader = document.getElementById('loader-novidade-sem-coleccao');
+  const tbody = document.getElementById('novidade-sem-coleccao-tbody');
+  loader.style.display = 'block';
+  tbody.innerHTML = '';
+  try {
+    const artigos = await apiGet('/admin/alertas/novidade-sem-coleccao-actual');
+    if (artigos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Sem alertas</td></tr>';
+      return;
+    }
+    tbody.innerHTML = artigos.map((a) => `
+      <tr>
+        <td>${a.imagem ? `<img src="${a.imagem}" alt="" style="width:40px;height:40px;object-fit:contain">` : '-'}</td>
+        <td>${a.codigo}</td>
+        <td>${a.descricao}</td>
+        <td>${a.coleccaoAno ? `${a.coleccaoAno} ${a.coleccaoEstacao || ''}` : 'Sem colecção'}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Erro: ${err.message}</td></tr>`;
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
+async function carregarAlertaStockNegativo() {
+  const loader = document.getElementById('loader-stock-negativo');
+  const tbody = document.getElementById('stock-negativo-tbody');
+  loader.style.display = 'block';
+  tbody.innerHTML = '';
+  try {
+    const artigos = await apiGet('/admin/alertas/stock-negativo');
+    if (artigos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Sem alertas</td></tr>';
+      return;
+    }
+    tbody.innerHTML = artigos.map((a) => `
+      <tr>
+        <td>${a.codigo}</td>
+        <td>${a.descricao}</td>
+        <td>${a.lote}</td>
+        <td>${a.qtdDisponivel}</td>
+        <td>${a.qtdReservada}</td>
+        <td style="color:red;font-weight:600">${a.saldo}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:red;">Erro: ${err.message}</td></tr>`;
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
+async function carregarAlertaPrecoCustoZero() {
+  const loader = document.getElementById('loader-preco-custo-zero');
+  const tbody = document.getElementById('preco-custo-zero-tbody');
+  loader.style.display = 'block';
+  tbody.innerHTML = '';
+  try {
+    const artigos = await apiGet('/admin/alertas/preco-custo-zero');
+    if (artigos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Sem alertas</td></tr>';
+      return;
+    }
+    tbody.innerHTML = artigos.map((a) => `
+      <tr>
+        <td>${a.imagem ? `<img src="${a.imagem}" alt="" style="width:40px;height:40px;object-fit:contain">` : '-'}</td>
+        <td>${a.codigo}</td>
+        <td>${a.descricao}</td>
+        <td>${formatarPreco(a.precoCusto || 0)}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Erro: ${err.message}</td></tr>`;
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
+async function carregarAlertaSemPrecoVenda() {
+  const loader = document.getElementById('loader-sem-preco-venda');
+  const tbody = document.getElementById('sem-preco-venda-tbody');
+  loader.style.display = 'block';
+  tbody.innerHTML = '';
+  try {
+    const artigos = await apiGet('/admin/alertas/sem-preco-venda');
+    if (artigos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Sem alertas</td></tr>';
+      return;
+    }
+    tbody.innerHTML = artigos.map((a) => `
+      <tr>
+        <td>${a.imagem ? `<img src="${a.imagem}" alt="" style="width:40px;height:40px;object-fit:contain">` : '-'}</td>
+        <td>${a.codigo}</td>
+        <td>${a.descricao}</td>
+        <td>${a.preco == null ? 'Sem preço' : formatarPreco(a.preco)}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Erro: ${err.message}</td></tr>`;
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
+async function carregarAlertaIvaIncluidoNulo() {
+  const loader = document.getElementById('loader-iva-incluido-nulo');
+  const tbody = document.getElementById('iva-incluido-nulo-tbody');
+  loader.style.display = 'block';
+  tbody.innerHTML = '';
+  try {
+    const artigos = await apiGet('/admin/alertas/iva-incluido-nulo');
+    if (artigos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Sem alertas</td></tr>';
+      return;
+    }
+    tbody.innerHTML = artigos.map((a) => `
+      <tr>
+        <td>${a.imagem ? `<img src="${a.imagem}" alt="" style="width:40px;height:40px;object-fit:contain">` : '-'}</td>
+        <td>${a.codigo}</td>
+        <td>${a.descricao}</td>
+        <td>${a.ultimoLogin || '-'}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Erro: ${err.message}</td></tr>`;
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
 // ========== TIPOS DE ENVIO ==========
 async function carregarTiposEnvio() {
   const loader = document.getElementById('loader-tipos-envio');
@@ -1259,8 +1455,8 @@ function inicializarMenu() {
         case 'tipos-envio':
           carregarTiposEnvio();
           break;
-        case 'artigos-reservados':
-          carregarArtigosReservados();
+        case 'alertas':
+          carregarAlertas();
           break;
         case 'metodos-pagamento':
           carregarMetodosPagamento();

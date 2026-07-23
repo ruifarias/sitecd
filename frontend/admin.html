@@ -41,8 +41,8 @@
       <button class="menu-item" data-secao="tipos-envio">
         Tipos de Envio
       </button>
-      <button class="menu-item" data-secao="artigos-reservados">
-        Artigos Reservados
+      <button class="menu-item" data-secao="alertas">
+        Alertas
       </button>
       <button class="menu-item" data-secao="metodos-pagamento">
         Métodos de Pagamento
@@ -247,9 +247,12 @@
       </div>
     </section>
 
-    <!-- Artigos Reservados -->
-    <section id="secao-artigos-reservados" class="secao">
-      <h1>Artigos Reservados</h1>
+    <!-- Alertas -->
+    <section id="secao-alertas" class="secao">
+      <h1>Alertas</h1>
+
+      <!-- Artigos Reservados -->
+      <h2>Artigos Reservados</h2>
       <p class="descricao">Stock reservado por encomendas ainda não enviadas nem anuladas. A reserva é libertada quando a encomenda é enviada ou anulada.</p>
 
       <div class="loader" id="loader-artigos-reservados" style="display:none;">A carregar artigos reservados...</div>
@@ -268,6 +271,147 @@
             </tr>
           </thead>
           <tbody id="artigos-reservados-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Sem Stock mas com Imagem -->
+      <h2 style="margin-top:32px">Artigos Sem Stock mas com Imagem</h2>
+      <p class="descricao">Publicados, sem stock disponível, mas ainda com foto principal - candidatos a rever (despublicar ou confirmar reposição).</p>
+
+      <div class="loader" id="loader-sem-stock-com-imagem" style="display:none;">A carregar...</div>
+
+      <div class="tabela-scroll-painel">
+        <table id="sem-stock-com-imagem-table" class="sync-table">
+          <thead>
+            <tr>
+              <th>Imagem</th>
+              <th>Código</th>
+              <th>Designação</th>
+              <th>Existência</th>
+            </tr>
+          </thead>
+          <tbody id="sem-stock-com-imagem-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Com Stock mas sem Imagem -->
+      <h2 style="margin-top:32px">Artigos com Stock mas sem Imagem</h2>
+      <p class="descricao">Publicados, com stock disponível, mas sem foto principal - a ficha aparece sem imagem no site, o que prejudica a venda.</p>
+
+      <div class="loader" id="loader-com-stock-sem-imagem" style="display:none;">A carregar...</div>
+
+      <div class="tabela-scroll-painel">
+        <table id="com-stock-sem-imagem-table" class="sync-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Designação</th>
+              <th>Existência</th>
+            </tr>
+          </thead>
+          <tbody id="com-stock-sem-imagem-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- NEW sem Ano Actual -->
+      <h2 style="margin-top:32px">Artigos "NEW" mas sem "Ano Actual"</h2>
+      <p class="descricao">Marcados como Novidade, mas a colecção (Ano/Estação) não corresponde à Colecção Actual configurada em Backoffice - pode ser uma Novidade desactualizada ou uma colecção mal classificada.</p>
+
+      <div class="loader" id="loader-novidade-sem-coleccao" style="display:none;">A carregar...</div>
+
+      <div class="tabela-scroll-painel">
+        <table id="novidade-sem-coleccao-table" class="sync-table">
+          <thead>
+            <tr>
+              <th>Imagem</th>
+              <th>Código</th>
+              <th>Designação</th>
+              <th>Colecção</th>
+            </tr>
+          </thead>
+          <tbody id="novidade-sem-coleccao-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Stock Negativo -->
+      <h2 style="margin-top:32px">Artigos com Stock Negativo nos Lotes</h2>
+      <p class="descricao">Lotes com saldo negativo (Disponível − Reservado &lt; 0) - sintoma de erro de contagem/sincronização na origem.</p>
+
+      <div class="loader" id="loader-stock-negativo" style="display:none;">A carregar...</div>
+
+      <div class="tabela-scroll-painel">
+        <table id="stock-negativo-table" class="sync-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Designação</th>
+              <th>Lote</th>
+              <th>Qtd. Disponível</th>
+              <th>Qtd. Reservada</th>
+              <th>Saldo</th>
+            </tr>
+          </thead>
+          <tbody id="stock-negativo-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Preço de Custo a 0 -->
+      <h2 style="margin-top:32px">Artigos com Preço Custo = 0</h2>
+      <p class="descricao">Sem custo lançado no ano corrente (TB0001StkPrcCusto, origem) - distorce margens/relatórios.</p>
+
+      <div class="loader" id="loader-preco-custo-zero" style="display:none;">A carregar...</div>
+
+      <div class="tabela-scroll-painel">
+        <table id="preco-custo-zero-table" class="sync-table">
+          <thead>
+            <tr>
+              <th>Imagem</th>
+              <th>Código</th>
+              <th>Designação</th>
+              <th>Preço Custo</th>
+            </tr>
+          </thead>
+          <tbody id="preco-custo-zero-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Sem Preço de Venda -->
+      <h2 style="margin-top:32px">Artigos sem Preço de Venda, ou com Preço de Venda = 0</h2>
+      <p class="descricao">Publicados sem preço válido - normalmente já despublicados automaticamente pelo sync (preço a 0€), fica aqui como rede de segurança.</p>
+
+      <div class="loader" id="loader-sem-preco-venda" style="display:none;">A carregar...</div>
+
+      <div class="tabela-scroll-painel">
+        <table id="sem-preco-venda-table" class="sync-table">
+          <thead>
+            <tr>
+              <th>Imagem</th>
+              <th>Código</th>
+              <th>Designação</th>
+              <th>Preço</th>
+            </tr>
+          </thead>
+          <tbody id="sem-preco-venda-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- IVA Incluído Nulo -->
+      <h2 style="margin-top:32px">Artigos com IVA Incluído (is NULL)</h2>
+      <p class="descricao">Taxa_IVA_Incluido não definida na origem (TB0001StkArtigos) - por confirmar se o preço já inclui IVA.</p>
+
+      <div class="loader" id="loader-iva-incluido-nulo" style="display:none;">A carregar...</div>
+
+      <div class="tabela-scroll-painel">
+        <table id="iva-incluido-nulo-table" class="sync-table">
+          <thead>
+            <tr>
+              <th>Imagem</th>
+              <th>Código</th>
+              <th>Designação</th>
+              <th>Último Login (origem)</th>
+            </tr>
+          </thead>
+          <tbody id="iva-incluido-nulo-tbody"></tbody>
         </table>
       </div>
     </section>

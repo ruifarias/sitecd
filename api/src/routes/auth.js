@@ -6,13 +6,30 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { getPool, sql } = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { enviarEmailRecuperacaoPassword } = require('../services/email');
+const { enviarEmailRecuperacaoPassword, enviarEmailConfirmacaoConta, enviarEmailNovoRegisto } = require('../services/email');
 const { normalizarNif } = require('../utils/nif');
 
 const router = express.Router();
 
+const HORAS_VALIDADE_CONFIRMACAO = 48;
+
 function assinarToken(cliente) {
   return jwt.sign({ sub: cliente.Id, email: cliente.Email }, process.env.JWT_SECRET, { expiresIn: '30d' });
+}
+
+// Gera o token de confirmação de conta, guarda-o e envia o email - partilhado
+// entre o registo e o reenvio (POST /reenviar-confirmacao).
+async function iniciarConfirmacaoEmail(pool, clienteId, email, nome) {
+  const token = crypto.randomBytes(32).toString('hex');
+  const expira = new Date(Date.now() + HORAS_VALIDADE_CONFIRMACAO * 60 * 60 * 1000);
+  await pool.request()
+    .input('id', sql.Int, clienteId)
+    .input('token', sql.VarChar(64), token)
+    .input('expira', sql.DateTime, expira)
+    .query('UPDATE dbo.ZAPP_DBSiteCD_Clientes SET Confirmacao_Token = @token, Confirmacao_Token_Expira = @expira WHERE Id = @id;');
+
+  const link = `${process.env.FRONTEND_BASE_URL || 'http://localhost:3000'}/confirmar-email.html?token=${token}`;
+  enviarEmailConfirmacaoConta(email, nome, link).catch(() => {});
 }
 
 // POST /api/auth/registo
@@ -84,6 +101,8 @@ router.post('/registo', async (req, res) => {
       cliente = criado.recordset[0];
     }
 
+    await iniciarConfirmacaoEmail(pool, cliente.Id, cliente.Email, cliente.Nome);
+
     const token = assinarToken({ Id: cliente.Id, Email: cliente.Email });
     res.status(201).json({ token, nome: cliente.Nome, email: cliente.Email });
   } catch (err) {
@@ -105,7 +124,7 @@ router.post('/login', async (req, res) => {
     const pool = await getPool();
     const resultado = await pool.request()
       .input('email', sql.NVarChar(150), email)
-      .query('SELECT Id, Nome, Email, Password_Hash FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Email = @email;');
+      .query('SELECT Id, Nome, Email, Password_Hash, Email_Confirmado FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Email = @email;');
 
     if (resultado.recordset.length === 0 || !resultado.recordset[0].Password_Hash) {
       return res.status(401).json(mensagemGenerica);
@@ -115,6 +134,15 @@ router.post('/login', async (req, res) => {
     const correcta = await bcrypt.compare(password, cliente.Password_Hash);
     if (!correcta) {
       return res.status(401).json(mensagemGenerica);
+    }
+
+    // Só verificado depois da password estar correcta - não revela o estado
+    // de confirmação a quem não souber a password (secção de segurança).
+    if (!cliente.Email_Confirmado) {
+      return res.status(403).json({
+        erro: 'Ainda não confirmou o seu email. Verifique a caixa de entrada (e spam) ou peça um novo email de confirmação.',
+        codigo: 'EMAIL_NAO_CONFIRMADO',
+      });
     }
 
     const token = assinarToken(cliente);
@@ -202,6 +230,88 @@ router.post('/redefinir-password', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao redefinir a password.' });
+  }
+});
+
+// POST /api/auth/confirmar-email - valida o token do link enviado no registo
+// e activa a conta (Email_Confirmado = 1). Só depois disto é que a loja é
+// notificada do novo registo (ver enviarEmailNovoRegisto) - evita avisos para
+// registos nunca validados (email errado, bots).
+router.post('/confirmar-email', async (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({ erro: 'Token é obrigatório.' });
+  }
+
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('token', sql.VarChar(64), token)
+      .query(`
+        SELECT Id, Nome, Email, Telefone, NIF, Morada, Localidade, Codigo_Postal, Email_Confirmado, Confirmacao_Token_Expira
+        FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Confirmacao_Token = @token;
+      `);
+
+    if (resultado.recordset.length === 0) {
+      return res.status(400).json({ erro: 'Link de confirmação inválido ou já utilizado.' });
+    }
+    const cliente = resultado.recordset[0];
+    if (cliente.Email_Confirmado) {
+      return res.json({ ok: true, jaConfirmado: true });
+    }
+    if (!cliente.Confirmacao_Token_Expira || new Date(cliente.Confirmacao_Token_Expira) < new Date()) {
+      return res.status(400).json({ erro: 'Link de confirmação expirado. Peça um novo em "Reenviar email de confirmação".' });
+    }
+
+    await pool.request()
+      .input('id', sql.Int, cliente.Id)
+      .query(`
+        UPDATE dbo.ZAPP_DBSiteCD_Clientes
+        SET Email_Confirmado = 1, Confirmacao_Token = NULL, Confirmacao_Token_Expira = NULL
+        WHERE Id = @id;
+      `);
+
+    enviarEmailNovoRegisto({
+      nome: cliente.Nome,
+      email: cliente.Email,
+      telefone: cliente.Telefone,
+      nif: cliente.NIF,
+      morada: cliente.Morada,
+      localidade: cliente.Localidade,
+      codigoPostal: cliente.Codigo_Postal,
+    }).catch(() => {});
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao confirmar o email.' });
+  }
+});
+
+// POST /api/auth/reenviar-confirmacao - gera um novo token e reenvia o email
+// (ex: link anterior expirado). Resposta sempre genérica, para não revelar
+// quais emails estão registados.
+router.post('/reenviar-confirmacao', async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ erro: 'O email é obrigatório.' });
+  }
+
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('email', sql.NVarChar(150), email)
+      .query('SELECT Id, Nome, Email_Confirmado FROM dbo.ZAPP_DBSiteCD_Clientes WHERE Email = @email AND Password_Hash IS NOT NULL;');
+
+    if (resultado.recordset.length > 0 && !resultado.recordset[0].Email_Confirmado) {
+      const cliente = resultado.recordset[0];
+      await iniciarConfirmacaoEmail(pool, cliente.Id, email, cliente.Nome);
+    }
+
+    res.json({ ok: true, mensagem: 'Se a conta existir e ainda não estiver confirmada, foi enviado um novo email de confirmação.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao reenviar o email de confirmação.' });
   }
 });
 

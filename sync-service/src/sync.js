@@ -183,6 +183,10 @@ async function syncArtigos(pool) {
             tgt.Codigo_Modelo       = NULLIF(src.Code_Modelo, ''),
             tgt.Codigo_Familia      = NULLIF(src.Code_Familia, ''),
             tgt.Peso                = src.Peso,
+            -- Taxa_IVA_Incluido vem como texto na origem (TB0001StkArtigos,
+            -- varchar) - TRY_CAST em vez de CAST para não rebentar a
+            -- sincronização se algum artigo tiver lixo em vez de um número.
+            tgt.Taxa_IVA_Incluido   = TRY_CAST(src.Iva AS DECIMAL(5,2)),
             tgt.Descricao_Longa     = src.Texto_Especificacoes,
             tgt.Data_Ult_Compra     = src.Data_Compra,
             tgt.Data_Hora_Origem    = src.UpdateDate,
@@ -191,9 +195,9 @@ async function syncArtigos(pool) {
             tgt.Data_Sincronizacao  = GETDATE()
     WHEN NOT MATCHED BY TARGET THEN
         INSERT (Codigo_Artigo, Descritivo_Artigo, Tipo_Artigo, Codigo_Marca, Codigo_Modelo,
-                Codigo_Familia, Peso, Descricao_Longa, Data_Ult_Compra, Data_Hora_Origem, Publicado)
+                Codigo_Familia, Peso, Taxa_IVA_Incluido, Descricao_Longa, Data_Ult_Compra, Data_Hora_Origem, Publicado)
         VALUES (src.Code_Artigo, src.Descricao, src.Internet, NULLIF(src.Code_Marca,''), NULLIF(src.Code_Modelo,''),
-                NULLIF(src.Code_Familia,''), src.Peso, src.Texto_Especificacoes, src.Data_Compra, src.UpdateDate, 1);
+                NULLIF(src.Code_Familia,''), src.Peso, TRY_CAST(src.Iva AS DECIMAL(5,2)), src.Texto_Especificacoes, src.Data_Compra, src.UpdateDate, 1);
   `);
 
   await pool.request().query(`

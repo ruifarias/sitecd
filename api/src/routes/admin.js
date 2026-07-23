@@ -223,6 +223,231 @@ router.post('/artigos-reservados/libertar', async (req, res) => {
   }
 });
 
+// ---- Alertas (secção "Alertas" do Backoffice, junto com Artigos Reservados) ----
+
+// Publicados sem stock (Existencia <= 0) mas ainda com imagem principal -
+// candidatos a rever (despublicar, ou confirmar que vão mesmo repor stock).
+router.get('/alertas/sem-stock-com-imagem', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request().query(`
+      SELECT a.Codigo_Artigo, a.Descritivo_Artigo,
+             (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal,
+             ISNULL((
+               SELECT SUM(s.Qtd_Disponivel - s.Qtd_Reservada)
+               FROM dbo.ZAPP_DBSiteCD_Stock s
+               WHERE s.Codigo_Artigo = a.Codigo_Artigo AND s.Codigo_Armazem = '001'
+             ), 0) AS Existencia
+      FROM dbo.ZAPP_DBSiteCD_Artigos a
+      WHERE a.Publicado = 1
+        AND EXISTS (SELECT 1 FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0)
+        AND ISNULL((
+          SELECT SUM(s.Qtd_Disponivel - s.Qtd_Reservada)
+          FROM dbo.ZAPP_DBSiteCD_Stock s
+          WHERE s.Codigo_Artigo = a.Codigo_Artigo AND s.Codigo_Armazem = '001'
+        ), 0) <= 0
+      ORDER BY a.Descritivo_Artigo;
+    `);
+    res.json(resultado.recordset.map((r) => ({
+      codigo: r.Codigo_Artigo,
+      descricao: r.Descritivo_Artigo,
+      imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+      existencia: r.Existencia,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter artigos sem stock com imagem.' });
+  }
+});
+
+// Publicados com stock mas sem imagem principal - prejudica vendas (o
+// cliente vê a ficha sem foto nenhuma).
+router.get('/alertas/com-stock-sem-imagem', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request().query(`
+      SELECT a.Codigo_Artigo, a.Descritivo_Artigo,
+             ISNULL((
+               SELECT SUM(s.Qtd_Disponivel - s.Qtd_Reservada)
+               FROM dbo.ZAPP_DBSiteCD_Stock s
+               WHERE s.Codigo_Artigo = a.Codigo_Artigo AND s.Codigo_Armazem = '001'
+             ), 0) AS Existencia
+      FROM dbo.ZAPP_DBSiteCD_Artigos a
+      WHERE a.Publicado = 1
+        AND NOT EXISTS (SELECT 1 FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0)
+        AND ISNULL((
+          SELECT SUM(s.Qtd_Disponivel - s.Qtd_Reservada)
+          FROM dbo.ZAPP_DBSiteCD_Stock s
+          WHERE s.Codigo_Artigo = a.Codigo_Artigo AND s.Codigo_Armazem = '001'
+        ), 0) > 0
+      ORDER BY a.Descritivo_Artigo;
+    `);
+    res.json(resultado.recordset.map((r) => ({
+      codigo: r.Codigo_Artigo,
+      descricao: r.Descritivo_Artigo,
+      existencia: r.Existencia,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter artigos com stock sem imagem.' });
+  }
+});
+
+// Marcados como "Novidade" (manual ou por Data_Ult_Compra dentro de
+// NovidadesDias - mesma regra de artigos.js::emNovidadeExpr) mas cuja
+// colecção (Colecao_Ano/Colecao_Estacao) não é a "actual" configurada em
+// Backoffice > Colecção Actual - pode ser uma Novidade desactualizada ou uma
+// colecção mal classificada.
+router.get('/alertas/novidade-sem-coleccao-actual', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const configRes = await pool.request().query(`
+      SELECT Chave, Valor FROM dbo.ZAPP_DBSiteCD_Config
+      WHERE Chave IN ('NovidadesDias', 'ColecaoAnoActual', 'ColecaoEstacaoActual');
+    `);
+    const config = {};
+    configRes.recordset.forEach((r) => { config[r.Chave] = r.Valor; });
+    const diasNovidades = parseInt(config.NovidadesDias, 10) || parseInt(process.env.NOVIDADES_DIAS, 10) || 180;
+    const coleccaoAnoActual = parseInt(config.ColecaoAnoActual, 10) || null;
+    const coleccaoEstacaoActual = config.ColecaoEstacaoActual || null;
+
+    const resultado = await pool.request()
+      .input('diasNovidades', sql.Int, diasNovidades)
+      .input('coleccaoAnoActual', sql.SmallInt, coleccaoAnoActual)
+      .input('coleccaoEstacaoActual', sql.Char(2), coleccaoEstacaoActual)
+      .query(`
+        SELECT a.Codigo_Artigo, a.Descritivo_Artigo, a.Colecao_Ano, a.Colecao_Estacao,
+               (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal
+        FROM dbo.ZAPP_DBSiteCD_Artigos a
+        WHERE a.Publicado = 1
+          AND (a.Novidade_Manual = 1 OR (a.Novidade_Manual IS NULL AND a.Data_Ult_Compra >= DATEADD(day, -@diasNovidades, GETDATE())))
+          AND (
+            a.Colecao_Ano IS NULL OR a.Colecao_Ano <> @coleccaoAnoActual
+            OR a.Colecao_Estacao IS NULL OR a.Colecao_Estacao <> @coleccaoEstacaoActual
+          )
+        ORDER BY a.Descritivo_Artigo;
+      `);
+    res.json(resultado.recordset.map((r) => ({
+      codigo: r.Codigo_Artigo,
+      descricao: r.Descritivo_Artigo,
+      imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+      coleccaoAno: r.Colecao_Ano,
+      coleccaoEstacao: r.Colecao_Estacao,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter artigos novidade sem colecção actual.' });
+  }
+});
+
+// Lotes com saldo negativo (Qtd_Disponivel - Qtd_Reservada < 0) - sintoma de
+// erro de contagem/sincronização na origem (venda registada sem stock, etc.).
+router.get('/alertas/stock-negativo', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request().query(`
+      SELECT a.Codigo_Artigo, a.Descritivo_Artigo, s.Codigo_Lote, v.Descricao_Lote, s.Qtd_Disponivel, s.Qtd_Reservada
+      FROM dbo.ZAPP_DBSiteCD_Stock s
+      INNER JOIN dbo.ZAPP_DBSiteCD_Artigos a ON a.Codigo_Artigo = s.Codigo_Artigo
+      LEFT JOIN dbo.ZAPP_DBSiteCD_Variantes v ON v.Codigo_Artigo = s.Codigo_Artigo AND v.Codigo_Lote = s.Codigo_Lote
+      WHERE s.Codigo_Armazem = '001' AND (s.Qtd_Disponivel - s.Qtd_Reservada) < 0 AND a.Publicado = 1
+      ORDER BY a.Descritivo_Artigo, s.Codigo_Lote;
+    `);
+    res.json(resultado.recordset.map((r) => ({
+      codigo: r.Codigo_Artigo,
+      descricao: r.Descritivo_Artigo,
+      lote: r.Descricao_Lote || r.Codigo_Lote,
+      qtdDisponivel: r.Qtd_Disponivel,
+      qtdReservada: r.Qtd_Reservada,
+      saldo: r.Qtd_Disponivel - r.Qtd_Reservada,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter artigos com stock negativo.' });
+  }
+});
+
+// Preço de custo a 0€ no ano corrente (TB0001StkPrcCusto, DBClassico - uma
+// linha por Ano/Armazém/Artigo, sempre existe para o ano em curso nos
+// artigos publicados) - indica compra/custo por lançar, distorce margens.
+router.get('/alertas/preco-custo-zero', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('ano', sql.Int, new Date().getFullYear())
+      .query(`
+        SELECT a.Codigo_Artigo, a.Descritivo_Artigo, c.Ultimo_Preco_Custo,
+               (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal
+        FROM dbo.ZAPP_DBSiteCD_Artigos a
+        INNER JOIN DBClassico.dbo.TB0001StkPrcCusto c
+            ON c.Codigo_Artigo = a.Codigo_Artigo COLLATE DATABASE_DEFAULT AND c.Codigo_Armazem = '001' AND c.Ano = @ano
+        WHERE a.Publicado = 1 AND ISNULL(c.Ultimo_Preco_Custo, 0) = 0
+        ORDER BY a.Descritivo_Artigo;
+      `);
+    res.json(resultado.recordset.map((r) => ({
+      codigo: r.Codigo_Artigo,
+      descricao: r.Descritivo_Artigo,
+      imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+      precoCusto: r.Ultimo_Preco_Custo,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter artigos com preço de custo a 0.' });
+  }
+});
+
+// Sem preço de venda (sem linha em Precos) ou preço a 0€ - normalmente já
+// impedido pelo sync (validarPrecoZero despublica automaticamente), mas fica
+// aqui como rede de segurança para NULL (sem linha) ou falhas de sincronização.
+router.get('/alertas/sem-preco-venda', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request().query(`
+      SELECT a.Codigo_Artigo, a.Descritivo_Artigo, p.Preco,
+             (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal
+      FROM dbo.ZAPP_DBSiteCD_Artigos a
+      LEFT JOIN dbo.ZAPP_DBSiteCD_Precos p ON p.Codigo_Artigo = a.Codigo_Artigo
+      WHERE a.Publicado = 1 AND (p.Preco IS NULL OR p.Preco = 0)
+      ORDER BY a.Descritivo_Artigo;
+    `);
+    res.json(resultado.recordset.map((r) => ({
+      codigo: r.Codigo_Artigo,
+      descricao: r.Descritivo_Artigo,
+      imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+      preco: r.Preco,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter artigos sem preço de venda.' });
+  }
+});
+
+// Taxa_IVA_Incluido nula na origem (TB0001StkArtigos, DBClassico) - este campo
+// nunca chegou a ser sincronizado para o site (não é usado em mais nenhum
+// lado do código); o alerta lê directamente da origem, tal como pedido.
+router.get('/alertas/iva-incluido-nulo', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request().query(`
+      SELECT a.Codigo_Artigo, a.Descritivo_Artigo, src.Ultimo_Login,
+             (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal
+      FROM dbo.ZAPP_DBSiteCD_Artigos a
+      INNER JOIN DBClassico.dbo.TB0001StkArtigos src ON src.Codigo_Artigo = a.Codigo_Artigo COLLATE DATABASE_DEFAULT
+      WHERE a.Publicado = 1 AND src.Taxa_IVA_Incluido IS NULL
+      ORDER BY a.Descritivo_Artigo;
+    `);
+    res.json(resultado.recordset.map((r) => ({
+      codigo: r.Codigo_Artigo,
+      descricao: r.Descritivo_Artigo,
+      imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+      ultimoLogin: r.Ultimo_Login,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter artigos com IVA incluído nulo.' });
+  }
+});
+
 // ---- Log de sincronização ----
 router.get('/sync-log', async (req, res) => {
   try {
