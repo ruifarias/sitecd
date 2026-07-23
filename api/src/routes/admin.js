@@ -233,25 +233,26 @@ router.get('/alertas/sem-stock-com-imagem', async (req, res) => {
     const resultado = await pool.request().query(`
       SELECT a.Codigo_Artigo, a.Descritivo_Artigo,
              (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal,
-             ISNULL((
-               SELECT SUM(s.Qtd_Disponivel - s.Qtd_Reservada)
-               FROM dbo.ZAPP_DBSiteCD_Stock s
-               WHERE s.Codigo_Artigo = a.Codigo_Artigo AND s.Codigo_Armazem = '001'
-             ), 0) AS Existencia
+             stk.Qtd_Disponivel, stk.Qtd_Reservada, stk.Existencia
       FROM dbo.ZAPP_DBSiteCD_Artigos a
+      CROSS APPLY (
+        SELECT ISNULL(SUM(s.Qtd_Disponivel), 0) AS Qtd_Disponivel,
+               ISNULL(SUM(s.Qtd_Reservada), 0) AS Qtd_Reservada,
+               ISNULL(SUM(s.Qtd_Disponivel - s.Qtd_Reservada), 0) AS Existencia
+        FROM dbo.ZAPP_DBSiteCD_Stock s
+        WHERE s.Codigo_Artigo = a.Codigo_Artigo AND s.Codigo_Armazem = '001'
+      ) stk
       WHERE a.Publicado = 1
         AND EXISTS (SELECT 1 FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0)
-        AND ISNULL((
-          SELECT SUM(s.Qtd_Disponivel - s.Qtd_Reservada)
-          FROM dbo.ZAPP_DBSiteCD_Stock s
-          WHERE s.Codigo_Artigo = a.Codigo_Artigo AND s.Codigo_Armazem = '001'
-        ), 0) <= 0
+        AND stk.Existencia <= 0
       ORDER BY a.Descritivo_Artigo;
     `);
     res.json(resultado.recordset.map((r) => ({
       codigo: r.Codigo_Artigo,
       descricao: r.Descritivo_Artigo,
       imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+      qtdDisponivel: r.Qtd_Disponivel,
+      qtdReservada: r.Qtd_Reservada,
       existencia: r.Existencia,
     })));
   } catch (err) {
@@ -445,6 +446,43 @@ router.get('/alertas/iva-incluido-nulo', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Falha ao obter artigos com IVA incluído nulo.' });
+  }
+});
+
+// Verificação de consistência na origem: soma das quantidades por lote
+// (TB0001StkLotesAcumul) deve bater certo com a Existência acumulada do
+// artigo no ano corrente (TB0001StkAcumulQtd) - se não bater, há um erro de
+// contagem/sincronização interna na ERP (query fornecida pelo utilizador).
+router.get('/alertas/soma-lotes-diferente-existencia', async (req, res) => {
+  try {
+    const pool = await getPool();
+    const resultado = await pool.request()
+      .input('ano', sql.Int, new Date().getFullYear())
+      .query(`
+        SELECT a.Codigo_Artigo, a.Descritivo_Artigo, lotes.SomaQtdLotes, acum.Existencia,
+               (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = a.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal
+        FROM dbo.ZAPP_DBSiteCD_Artigos a
+        INNER JOIN (
+          SELECT Codigo_Artigo, SUM(Qtd_Disponivel) AS SomaQtdLotes
+          FROM DBClassico.dbo.TB0001StkLotesAcumul
+          WHERE Codigo_Armazem = '001'
+          GROUP BY Codigo_Artigo
+        ) lotes ON lotes.Codigo_Artigo = a.Codigo_Artigo COLLATE DATABASE_DEFAULT
+        INNER JOIN DBClassico.dbo.TB0001StkAcumulQtd acum
+            ON acum.Codigo_Artigo = a.Codigo_Artigo COLLATE DATABASE_DEFAULT AND acum.Codigo_Armazem = '001' AND acum.Ano = @ano
+        WHERE a.Publicado = 1 AND acum.Existencia <> lotes.SomaQtdLotes
+        ORDER BY a.Descritivo_Artigo;
+      `);
+    res.json(resultado.recordset.map((r) => ({
+      codigo: r.Codigo_Artigo,
+      descricao: r.Descritivo_Artigo,
+      imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
+      somaQtdLotes: r.SomaQtdLotes,
+      existencia: r.Existencia,
+    })));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Falha ao obter artigos com soma de lotes diferente da existência.' });
   }
 });
 

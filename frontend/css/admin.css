@@ -357,16 +357,6 @@ a.menu-item {
   border-radius: 6px;
 }
 
-/* "As Minhas Encomendas" (área de cliente) - caixa baixa, mostra ~2 linhas e
-   usa a scrollbar interna para o resto do histórico, em vez de ocupar a
-   página toda. */
-.lista-encomendas-compacta {
-  max-height: 230px;
-  /* reserva sempre o espaço da scrollbar - sem isto, a scrollbar nativa
-     desenha-se por cima do canto arredondado do cabeçalho sticky */
-  scrollbar-gutter: stable;
-}
-
 /* Sync Table */
 .sync-table {
   width: 100%;
@@ -396,6 +386,88 @@ a.menu-item {
 .sync-table tr:hover {
   background: var(--cinza-claro);
 }
+
+/* "As Minhas Encomendas" (área de cliente) - caixa baixa, mostra ~1 encomenda
+   de cada vez, com scrollbar para o resto do histórico. Ao contrário das
+   outras tabelas (.sync-table thead sticky, scrollbar ao lado do cabeçalho
+   inteiro), aqui o cabeçalho fica fixo FORA da área de scroll - thead/tbody
+   passam a "display:block" (cada tr mantém "display:table" para as colunas
+   continuarem alinhadas entre as duas), com o scroll só no tbody. Vem depois
+   de ".sync-table" de propósito, para o "position:static" ganhar ao
+   "position:sticky" (mesma especificidade - o último no ficheiro é que
+   conta). Só afecta esta tabela, as restantes páginas com .sync-table
+   mantêm o comportamento antigo (sticky).
+*/
+.lista-encomendas-compacta table { display: block; }
+.lista-encomendas-compacta thead,
+.lista-encomendas-compacta tbody,
+.lista-encomendas-compacta tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+.lista-encomendas-compacta thead { position: static; }
+.lista-encomendas-compacta tbody {
+  display: block;
+  /* altura de ~1 encomenda (varia um pouco com o número de acções/texto do
+     estado) - o resto fica acessível por scroll. */
+  max-height: 138px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+/* Sombreado alternado (linha sim, linha não) - ver mesma regra em
+   .tabela-encomendas-admin, abaixo. */
+.lista-encomendas-compacta tbody tr:nth-child(even) { background: var(--cinza-claro); }
+.lista-encomendas-compacta tbody tr:nth-child(even):hover { background: var(--cinza-medio); }
+/* Larguras próprias por coluna (em vez da divisão igual do table-layout:fixed)
+   - "Acções" precisa de espaço para até 3 botões empilhados (um deles com
+   texto longo, "Confirmar Receção da Encomenda"); sem isto a coluna ficava
+   estreita a mais e o conteúdo empurrava a linha para fora, criando scroll
+   horizontal. Aplicado ao cabeçalho E ao corpo (thead/tbody são caixas
+   "table" separadas desde a regra acima - table-layout:fixed usa a primeira
+   linha de CADA UMA para decidir as larguras, por isso têm de bater certo). */
+.lista-encomendas-compacta th:nth-child(1), .lista-encomendas-compacta td:nth-child(1) { width: 11%; }
+.lista-encomendas-compacta th:nth-child(2), .lista-encomendas-compacta td:nth-child(2) { width: 11%; }
+.lista-encomendas-compacta th:nth-child(3), .lista-encomendas-compacta td:nth-child(3) { width: 18%; }
+.lista-encomendas-compacta th:nth-child(4), .lista-encomendas-compacta td:nth-child(4) { width: 10%; }
+.lista-encomendas-compacta th:nth-child(5), .lista-encomendas-compacta td:nth-child(5) { width: 12%; }
+.lista-encomendas-compacta th:nth-child(6), .lista-encomendas-compacta td:nth-child(6) { width: 38%; }
+/* rede de segurança em ecrãs mais estreitos - deixa o texto do botão quebrar
+   em vez de forçar overflow horizontal (ex: "Confirmar Receção da Encomenda") */
+.lista-encomendas-compacta .acoes-encomenda button { white-space: normal; }
+
+/* Encomendas (Backoffice) - mesma técnica de cabeçalho fixo fora da área de
+   scroll (ver .lista-encomendas-compacta acima para a explicação completa). */
+.tabela-encomendas-admin table { display: block; }
+.tabela-encomendas-admin thead,
+.tabela-encomendas-admin tbody,
+.tabela-encomendas-admin tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+.tabela-encomendas-admin thead { position: static; }
+.tabela-encomendas-admin tbody {
+  display: block;
+  /* mesma dimensão da caixa "As Minhas Encomendas" (.lista-encomendas-compacta) */
+  max-height: 138px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+/* Larguras próprias por coluna - "Acções" pode ter até 4 botões empilhados
+   (Ver/Avançar/Anular/Devolução, um deles com texto longo tipo "Avançar
+   para: Encomenda em Preparação"); "Cliente" tem nome+email+código. */
+.tabela-encomendas-admin th:nth-child(1), .tabela-encomendas-admin td:nth-child(1) { width: 10%; }
+.tabela-encomendas-admin th:nth-child(2), .tabela-encomendas-admin td:nth-child(2) { width: 10%; }
+.tabela-encomendas-admin th:nth-child(3), .tabela-encomendas-admin td:nth-child(3) { width: 26%; }
+.tabela-encomendas-admin th:nth-child(4), .tabela-encomendas-admin td:nth-child(4) { width: 10%; }
+.tabela-encomendas-admin th:nth-child(5), .tabela-encomendas-admin td:nth-child(5) { width: 16%; }
+.tabela-encomendas-admin th:nth-child(6), .tabela-encomendas-admin td:nth-child(6) { width: 28%; }
+.tabela-encomendas-admin .acoes-encomenda button { white-space: normal; }
+/* Sombreado alternado (linha sim, linha não) - facilita acompanhar cada
+   encomenda ao longo da linha inteira, tabela com muitas colunas/scroll. */
+.tabela-encomendas-admin tbody tr:nth-child(even) { background: var(--cinza-claro); }
+.tabela-encomendas-admin tbody tr:nth-child(even):hover { background: var(--cinza-medio); }
 
 .sync-table tr.linha-clicavel {
   cursor: pointer;

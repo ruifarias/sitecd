@@ -797,8 +797,8 @@ async function libertarStockReservado(codigoArtigo, codigoLote, btn) {
   }
 }
 
-// Ponto de entrada da secção "Alertas" - carrega os 8 blocos (Artigos
-// Reservados + os 7 alertas) de uma vez.
+// Ponto de entrada da secção "Alertas" - carrega os 9 blocos (Artigos
+// Reservados + os 8 alertas) de uma vez.
 function carregarAlertas() {
   carregarArtigosReservados();
   carregarAlertaSemStockComImagem();
@@ -808,6 +808,7 @@ function carregarAlertas() {
   carregarAlertaPrecoCustoZero();
   carregarAlertaSemPrecoVenda();
   carregarAlertaIvaIncluidoNulo();
+  carregarAlertaSomaLotesExistencia();
 }
 
 async function carregarAlertaSemStockComImagem() {
@@ -818,7 +819,7 @@ async function carregarAlertaSemStockComImagem() {
   try {
     const artigos = await apiGet('/admin/alertas/sem-stock-com-imagem');
     if (artigos.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Sem alertas</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Sem alertas</td></tr>';
       return;
     }
     tbody.innerHTML = artigos.map((a) => `
@@ -826,11 +827,13 @@ async function carregarAlertaSemStockComImagem() {
         <td>${a.imagem ? `<img src="${a.imagem}" alt="" style="width:40px;height:40px;object-fit:contain">` : '-'}</td>
         <td>${a.codigo}</td>
         <td>${a.descricao}</td>
+        <td>${a.qtdDisponivel}</td>
+        <td>${a.qtdReservada}</td>
         <td>${a.existencia}</td>
       </tr>
     `).join('');
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Erro: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="color:red;">Erro: ${err.message}</td></tr>`;
   } finally {
     loader.style.display = 'none';
   }
@@ -988,6 +991,33 @@ async function carregarAlertaIvaIncluidoNulo() {
     `).join('');
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="4" style="color:red;">Erro: ${err.message}</td></tr>`;
+  } finally {
+    loader.style.display = 'none';
+  }
+}
+
+async function carregarAlertaSomaLotesExistencia() {
+  const loader = document.getElementById('loader-soma-lotes-existencia');
+  const tbody = document.getElementById('soma-lotes-existencia-tbody');
+  loader.style.display = 'block';
+  tbody.innerHTML = '';
+  try {
+    const artigos = await apiGet('/admin/alertas/soma-lotes-diferente-existencia');
+    if (artigos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sem alertas</td></tr>';
+      return;
+    }
+    tbody.innerHTML = artigos.map((a) => `
+      <tr>
+        <td>${a.imagem ? `<img src="${a.imagem}" alt="" style="width:40px;height:40px;object-fit:contain">` : '-'}</td>
+        <td>${a.codigo}</td>
+        <td>${a.descricao}</td>
+        <td>${a.somaQtdLotes}</td>
+        <td>${a.existencia}</td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:red;">Erro: ${err.message}</td></tr>`;
   } finally {
     loader.style.display = 'none';
   }

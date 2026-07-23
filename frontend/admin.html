@@ -16,7 +16,7 @@
   <!-- Menu Lateral -->
   <aside class="menu-lateral">
     <div class="menu-header">
-      <a href="index.html" class="btn-voltar" title="Voltar à página">← Voltar</a>
+      <a href="conta.html" class="btn-voltar" title="Voltar à área de cliente">← Voltar</a>
       <h2>Backoffice</h2>
     </div>
     <nav class="menu-opcoes">
@@ -92,7 +92,7 @@
         </select>
       </div>
 
-      <div class="tabela-scroll-painel">
+      <div class="tabela-scroll-painel tabela-encomendas-admin">
         <table id="encomendas-table" class="sync-table">
           <thead>
             <tr>
@@ -287,6 +287,8 @@
               <th>Imagem</th>
               <th>Código</th>
               <th>Designação</th>
+              <th>Disponível</th>
+              <th>Reservado</th>
               <th>Existência</th>
             </tr>
           </thead>
@@ -412,6 +414,27 @@
             </tr>
           </thead>
           <tbody id="iva-incluido-nulo-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Soma dos Lotes ≠ Existência -->
+      <h2 style="margin-top:32px">Verificação Somatório Qtd. Lotes = Existência do Artigo</h2>
+      <p class="descricao">A soma das quantidades por lote (origem) não bate certo com a Existência acumulada do artigo no ano corrente - sintoma de erro de contagem/sincronização interna na ERP.</p>
+
+      <div class="loader" id="loader-soma-lotes-existencia" style="display:none;">A carregar...</div>
+
+      <div class="tabela-scroll-painel">
+        <table id="soma-lotes-existencia-table" class="sync-table">
+          <thead>
+            <tr>
+              <th>Imagem</th>
+              <th>Código</th>
+              <th>Designação</th>
+              <th>Soma Qtd. Lotes</th>
+              <th>Existência</th>
+            </tr>
+          </thead>
+          <tbody id="soma-lotes-existencia-tbody"></tbody>
         </table>
       </div>
     </section>
