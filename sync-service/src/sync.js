@@ -352,6 +352,25 @@ async function limparImagens(pool, codigosDespublicados) {
 // ter sido trocada (re-extrai e sobrescreve) ou apagada na ficha do artigo na
 // origem (Imagem_Art a NULL) - nesse caso apaga tambem do lado do site
 // (ficheiro + registo), tal como pedido pelo utilizador (2026-07-02).
+// Ano/Estação da colecção (Localiz1/Localiz2 em TB0001StkArmazArt, armazém
+// '001') - não faz parte do delta de TArtigosSincro, por isso corre sempre,
+// para todos os artigos publicados, em vez de ficar dependente de outra
+// alteração coincidente no artigo para se manter actualizado. Valores fora
+// do formato esperado (ano de 4 dígitos "1xxx"/"2xxx", 'PV'/'OI') ficam a
+// NULL - há muito dado antigo sujo nestes campos (texto livre, promoções).
+async function sincronizarColeccao(classicoPool, sitecdPool) {
+  const result = await sitecdPool.request().query(`
+    UPDATE tgt
+    SET tgt.Colecao_Ano = CASE WHEN src.Localiz1 LIKE '[12][0-9][0-9][0-9]' THEN CAST(src.Localiz1 AS SMALLINT) ELSE NULL END,
+        tgt.Colecao_Estacao = CASE WHEN src.Localiz2 IN ('PV', 'OI') THEN src.Localiz2 ELSE NULL END
+    FROM dbo.ZAPP_DBSiteCD_Artigos tgt
+    INNER JOIN DBClassico.dbo.TB0001StkArmazArt src
+        ON src.Codigo_Artigo = tgt.Codigo_Artigo COLLATE DATABASE_DEFAULT AND src.Codigo_Armazem = '001'
+    WHERE tgt.Publicado = 1;
+  `);
+  return result.rowsAffected[0] || 0;
+}
+
 async function sincronizarImagensPrincipais(classicoPool, sitecdPool, codigosAlterados) {
   if (codigosAlterados.length === 0) return { gravadas: 0, removidas: 0 };
 
@@ -466,6 +485,13 @@ async function runSync() {
       await logResultado(pool, 'Marcas', true, nMarcas);
     } catch (err) {
       await logResultado(pool, 'Marcas', false, 0, detalheErro(err));
+    }
+
+    try {
+      const nColeccao = await sincronizarColeccao(classicoPool, pool);
+      await logResultado(pool, 'Coleccao', true, nColeccao);
+    } catch (err) {
+      await logResultado(pool, 'Coleccao', false, 0, detalheErro(err));
     }
 
     const nAlterados = await popularAlteracoes(pool, ultimaSincronizacao);

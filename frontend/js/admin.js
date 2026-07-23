@@ -933,6 +933,47 @@ async function guardarNovidades() {
   }
 }
 
+// ========== COLECÇÃO ACTUAL ==========
+async function carregarConfigColeccao() {
+  try {
+    const config = await apiGet('/admin/config');
+    document.getElementById('coleccao-ano').value = config.ColecaoAnoActual || 2026;
+    document.getElementById('coleccao-estacao').value = config.ColecaoEstacaoActual || 'PV';
+  } catch (err) {
+    console.error('Erro ao carregar config:', err);
+  }
+}
+
+async function guardarColeccao() {
+  const ano = document.getElementById('coleccao-ano').value;
+  const estacao = document.getElementById('coleccao-estacao').value;
+  const btn = document.getElementById('btn-guardar-coleccao');
+  const msg = document.getElementById('msg-coleccao');
+
+  if (!ano || ano < 2000 || ano > 2100) {
+    msg.textContent = '✗ Ano inválido';
+    msg.className = 'mensagem erro';
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = 'A guardar...';
+  msg.className = 'mensagem';
+
+  try {
+    await apiPut('/admin/config/ColecaoAnoActual', { valor: ano });
+    await apiPut('/admin/config/ColecaoEstacaoActual', { valor: estacao });
+    msg.textContent = '✓ Guardado com sucesso!';
+    msg.className = 'mensagem sucesso';
+  } catch (err) {
+    msg.textContent = '✗ Erro: ' + err.message;
+    msg.className = 'mensagem erro';
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { msg.textContent = ''; }, 3000);
+  }
+}
+
 // ========== MÉTODOS DE PAGAMENTO ==========
 async function carregarMetodosPagamento() {
   const loader = document.getElementById('loader-metodos-pagamento');
@@ -1212,6 +1253,9 @@ function inicializarMenu() {
         case 'config-novidades':
           carregarConfigNovidades();
           break;
+        case 'colecao-actual':
+          carregarConfigColeccao();
+          break;
         case 'tipos-envio':
           carregarTiposEnvio();
           break;
@@ -1245,6 +1289,7 @@ function inicializarMenu() {
 function inicializarEventos() {
   document.getElementById('btn-guardar-marcas').addEventListener('click', guardarMarcas);
   document.getElementById('btn-guardar-novidades').addEventListener('click', guardarNovidades);
+  document.getElementById('btn-guardar-coleccao').addEventListener('click', guardarColeccao);
   document.getElementById('btn-guardar-pontos').addEventListener('click', guardarPontos);
   document.getElementById('filtro-erros-only').addEventListener('change', renderSyncLog);
   document.getElementById('filtro-estado-encomendas').addEventListener('change', carregarEncomendas);

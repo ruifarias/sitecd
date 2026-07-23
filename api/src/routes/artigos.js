@@ -35,6 +35,27 @@ async function obterDiasNovidades(pool) {
   return parseInt(configRes.recordset[0]?.Valor, 10) || parseInt(process.env.NOVIDADES_DIAS, 10) || 180;
 }
 
+// Colecção "actual" (Ano+Estação), configurável no Backoffice - ponto de
+// partida da ordenação "Colecção" (secção seguinte) e usado para assinalar
+// os artigos dessa colecção (Em_Coleccao_Actual).
+async function obterColeccaoActual(pool) {
+  const configRes = await pool.request().query(
+    `SELECT Chave, Valor FROM dbo.ZAPP_DBSiteCD_Config WHERE Chave IN ('ColecaoAnoActual', 'ColecaoEstacaoActual');`
+  );
+  const config = {};
+  configRes.recordset.forEach((r) => { config[r.Chave] = r.Valor; });
+  return {
+    ano: parseInt(config.ColecaoAnoActual, 10) || null,
+    estacao: config.ColecaoEstacaoActual || null,
+  };
+}
+
+// Ano+Estação combinados num único número comparável (2026 PV = 20261, 2025
+// OI = 20252, 2025 PV = 20251...) para ordenar cronologicamente decrescente
+// com uma única expressão; NULL (sem colecção) fica sempre no fim porque
+// ORDER BY ... DESC coloca NULLs por último no SQL Server.
+const COLECCAO_ORDEM = "(Colecao_Ano * 10 + CASE Colecao_Estacao WHEN 'OI' THEN 2 WHEN 'PV' THEN 1 ELSE 0 END)";
+
 const ORDENACOES = {
   descricao: 'Descritivo_Artigo ASC',
   preco_asc: `${PRECO_EFECTIVO} ASC`,
@@ -42,6 +63,7 @@ const ORDENACOES = {
   familia: `Familia_Grau1 ASC, Familia_Grau2 ASC, Familia_Grau3 ASC, Familia_Grau4 ASC, ${PRECO_EFECTIVO} DESC`,
   genero: `Genero ASC, ${PRECO_EFECTIVO} DESC`,
   modalidade: `Modalidade ASC, ${PRECO_EFECTIVO} DESC`,
+  coleccao: `Familia_Grau1 ASC, Familia_Grau2 ASC, Familia_Grau3 ASC, Familia_Grau4 ASC, ${COLECCAO_ORDEM} DESC, ${PRECO_EFECTIVO} DESC`,
 };
 
 // GET /api/artigos?familia=&marca=&modalidade=&genero=&q=&separador=&ordenar=&page=&pageSize=
@@ -148,6 +170,9 @@ router.get('/', async (req, res) => {
 
     const whereClause = condicoes.join(' AND ');
 
+    const coleccaoActual = await obterColeccaoActual(pool);
+    request.input('coleccaoAnoActual', sql.SmallInt, coleccaoActual.ano);
+    request.input('coleccaoEstacaoActual', sql.Char(2), coleccaoActual.estacao);
     request.input('offset', sql.Int, offset);
     request.input('pageSize', sql.Int, pageSize);
 
@@ -155,7 +180,14 @@ router.get('/', async (req, res) => {
       SELECT Codigo_Artigo, Descritivo_Artigo, Slug, Marca, Familia_Grau1, Familia_Grau2, Familia_Grau3, Familia_Grau4, Codigo_Familia,
              Modalidade, Genero, Preco, Percentagem_Desconto, Preco_Outlet, Em_Outlet,
              ${emNovidadeExpr()} AS Em_Novidade,
+             Colecao_Ano, Colecao_Estacao,
+             CASE WHEN Colecao_Ano = @coleccaoAnoActual AND Colecao_Estacao = @coleccaoEstacaoActual THEN 1 ELSE 0 END AS Em_Coleccao_Actual,
              (SELECT TOP 1 Path FROM dbo.ZAPP_DBSiteCD_Imagens img WHERE img.Codigo_Artigo = ZAPP_DBSiteCD_VCatalogo.Codigo_Artigo AND img.Ordem = 0) AS Imagem_Principal,
+             ISNULL((
+               SELECT SUM(s.Qtd_Disponivel - s.Qtd_Reservada)
+               FROM dbo.ZAPP_DBSiteCD_Stock s
+               WHERE s.Codigo_Artigo = ZAPP_DBSiteCD_VCatalogo.Codigo_Artigo AND s.Codigo_Armazem = '001'
+             ), 0) AS Existencia,
              COUNT(*) OVER() AS Total
       FROM dbo.ZAPP_DBSiteCD_VCatalogo
       WHERE ${whereClause}
@@ -169,6 +201,7 @@ router.get('/', async (req, res) => {
       pageSize,
       total,
       totalPages: Math.ceil(total / pageSize),
+      coleccaoActual,
       artigos: result.recordset.map((r) => ({
         codigo: r.Codigo_Artigo,
         descricao: r.Descritivo_Artigo,
@@ -186,6 +219,10 @@ router.get('/', async (req, res) => {
         precoOutlet: r.Preco_Outlet,
         emOutlet: !!r.Em_Outlet,
         emNovidade: !!r.Em_Novidade,
+        coleccaoAno: r.Colecao_Ano,
+        coleccaoEstacao: r.Colecao_Estacao,
+        emColeccaoActual: !!r.Em_Coleccao_Actual,
+        existencia: r.Existencia,
         imagem: r.Imagem_Principal ? `${imagensBaseUrl(req)}/${r.Imagem_Principal.replace(/^imagens\//, '')}` : null,
       })),
     });

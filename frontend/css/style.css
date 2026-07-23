@@ -397,6 +397,14 @@ header.topo {
   cursor: pointer;
   display: block;
 }
+/* Destaque para artigos da colecção "actual" (ver emColeccaoActual) - bordo
+   à volta do cartão inteiro, para saltar à vista na grelha. */
+.cartao-produto-coleccao-actual {
+  border: 2px solid var(--vermelho);
+  border-radius: 4px;
+  padding: 6px;
+}
+.cartao-produto-coleccao-actual .imagem-wrap { margin-bottom: 4px; }
 .cartao-produto .imagem-wrap {
   position: relative;
   background: var(--cinza-claro);
@@ -438,6 +446,33 @@ header.topo {
   border-radius: 4px;
   z-index: 10;
 }
+/* Ano+Estação (ordenar=coleccao) e existência (stock disponível) - canto
+   superior direito, empilhadas verticalmente, para não colidir com
+   .tag-novidade (esquerda). A colecção fica a vermelho quando corresponde à
+   colecção "actual" configurada no Backoffice (emColeccaoActual) - o cartão
+   inteiro também fica destacado nesse caso (.cartao-produto-coleccao-actual). */
+.tags-topo-direita {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  z-index: 10;
+}
+.tag-coleccao,
+.tag-existencia {
+  background: rgba(0, 0, 0, 0.65);
+  color: var(--branco);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  text-transform: uppercase;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.tag-coleccao-actual { background: var(--vermelho); }
 .cartao-produto .marca {
   font-size: 11px;
   color: var(--cinza-texto);

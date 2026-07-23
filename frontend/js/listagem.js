@@ -1,3 +1,8 @@
+// Colecção "actual" (Ano+Estação), configurável no Backoffice - devolvida
+// junto com a listagem para destacar o sub-cabeçalho correspondente em
+// renderProdutosAgrupadosPorColeccao().
+let coleccaoActual = { ano: null, estacao: null };
+
 const estado = {
   familia: null,
   marca: null,
@@ -44,13 +49,15 @@ function renderProdutos(artigos) {
     return;
   }
 
-  // Se a ordenação é por família, género ou modalidade, agrupar
+  // Se a ordenação é por família, género, modalidade ou colecção, agrupar
   if (estado.ordenar === 'familia') {
     renderProdutosAgrupadosPorFamilia(artigos);
   } else if (estado.ordenar === 'genero') {
     renderProdutosAgrupadosPorGenero(artigos);
   } else if (estado.ordenar === 'modalidade') {
     renderProdutosAgrupadosPorModalidade(artigos);
+  } else if (estado.ordenar === 'coleccao') {
+    renderProdutosAgrupadosPorColeccao(artigos);
   } else {
     renderProdutosSimples(artigos);
   }
@@ -211,6 +218,69 @@ function renderProdutosAgrupadosPorFamilia(artigos) {
   grelha.innerHTML = html;
 }
 
+// Ordenação "Colecção": igual ao agrupamento por família (sem quebrar a
+// grelha por ano/colecção) - o backend já entrega os artigos ordenados por
+// colecção dentro de cada família (mais recente primeiro; sem colecção fica
+// sempre no fim). O Ano+Estação de cada artigo aparece como etiqueta sobre a
+// própria imagem, destacada quando corresponde à colecção "actual"
+// configurada no Backoffice.
+function renderProdutosAgrupadosPorColeccao(artigos) {
+  const grelha = document.getElementById('grelha-produtos');
+
+  const grupos = {};
+  const ordemFamilias = [];
+  artigos.forEach((a) => {
+    const chave = `${a.familiaGrau1 || 'Sem Família'}|${a.familiaGrau2 || ''}|${a.familiaGrau3 || ''}|${a.familiaGrau4 || ''}`;
+    if (!grupos[chave]) {
+      const codigoFamilia = a.codigoFamilia || '';
+      grupos[chave] = {
+        grau1: a.familiaGrau1 || 'Sem Família',
+        grau2: a.familiaGrau2 || '',
+        grau3: a.familiaGrau3 || '',
+        grau4: a.familiaGrau4 || '',
+        codigoGrau1: codigoFamilia.substring(0, 1),
+        codigoGrau2: codigoFamilia.substring(0, 2),
+        codigoGrau3: codigoFamilia.substring(0, 3),
+        codigoGrau4: codigoFamilia,
+        artigos: [],
+      };
+      ordemFamilias.push(chave);
+    }
+    grupos[chave].artigos.push(a);
+  });
+
+  let html = '';
+  ordemFamilias.forEach((chave) => {
+    const familia = grupos[chave];
+    const familiaLabel = familia.grau1 === 'Sem Família'
+      ? 'Sem Família'
+      : construirBreadcrumbFamilia(familia);
+
+    html += `<div class="grupo-titulo grupo-familia">${familiaLabel}</div>`;
+    html += familia.artigos.map((a) => `
+      <a class="cartao-produto ${a.emColeccaoActual ? 'cartao-produto-coleccao-actual' : ''}" href="${construirURLArtigo(a.codigo)}">
+        <div class="imagem-wrap">
+          ${a.emOutlet ? '<span class="tag-outlet">Outlet</span>' : ''}
+        ${a.emNovidade ? '<span class="tag-novidade">NEW</span>' : ''}
+          <div class="tags-topo-direita">
+            ${a.coleccaoAno ? `<span class="tag-coleccao ${a.emColeccaoActual ? 'tag-coleccao-actual' : ''}">${a.coleccaoAno} ${a.coleccaoEstacao || ''}</span>` : ''}
+            <span class="tag-existencia">${a.existencia} disp.</span>
+          </div>
+          <img src="${a.imagem || ''}" alt="${a.descricao}" loading="lazy" onerror="this.style.opacity=0">
+        </div>
+        <div class="marca">${a.marca || ''} <span class="codigo-artigo">${a.codigo}</span></div>
+        <div class="nome">${a.descricao}</div>
+        <div class="precos">
+          <span class="preco-actual">${formatarPreco(a.emOutlet ? a.precoOutlet : a.preco)}</span>
+          ${a.emOutlet ? `<span class="preco-original">${formatarPreco(a.preco)}</span><span class="desconto-percentagem">${formatarDesconto(a.preco, a.precoOutlet)}</span>` : ''}
+        </div>
+      </a>
+    `).join('');
+  });
+
+  grelha.innerHTML = html;
+}
+
 function renderBotaoCarregarMais(pagina, totalPaginas) {
   const container = document.getElementById('carregar-mais-container');
   if (pagina >= totalPaginas) {
@@ -254,6 +324,7 @@ async function carregarArtigos(acumular = false) {
 
   try {
     const dados = await apiGet(`/artigos?${params.toString()}`);
+    coleccaoActual = dados.coleccaoActual || { ano: null, estacao: null };
     artigosCarregados = acumular ? artigosCarregados.concat(dados.artigos) : dados.artigos;
     document.getElementById('contagem-resultados').textContent = artigosCarregados.length < dados.total
       ? `${artigosCarregados.length} de ${dados.total} artigos`
